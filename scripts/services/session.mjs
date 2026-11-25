@@ -6,6 +6,7 @@ import { merchantFlags } from "../data/flags.mjs";
 import { accessProblem, squaresBetween } from "../engine/access.mjs";
 import { attitudeAdjustment, attitudeBand } from "../engine/attitude.mjs";
 import { attitudeTables, attitudeValue } from "./attitude.mjs";
+import { appraisalKey, appraisalState } from "../engine/appraisal.mjs";
 import { haggleDC, isLocked } from "../engine/haggle.mjs";
 import { coinsToCopper, payFrom } from "../engine/money.mjs";
 import { feature, getTables } from "../settings.mjs";
@@ -19,17 +20,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {string} customerName
  * @property {string} userId
  * @property {{ id: string, from?: string, price: number, quantity: number, day: number }[]} sold
- * @property {{ discount: number, pending: PendingHaggle | null, last: { nonce: string, outcome: object } | null }} haggle
- */
-
-/**
- * @typedef {object} PendingHaggle
- * @property {string} nonce
- * @property {number} ask
- * @property {string | null} skill
- * @property {string | null} tool
- * @property {boolean} helped
- * @property {string} userId
+ * @property {{ discount: number }} haggle
  */
 
 /**
@@ -67,6 +58,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {string} customer
  * @property {{ on: boolean, band: string, adjustment: number }} attitude
  * @property {HaggleView} haggle
+ * @property {{ on: boolean, items: Record<string, "appraised" | "failed"> }} appraisal
  * @property {ShelfItem[]} shelf
  * @property {{ id: string, price: number, quantity: number }[]} buyback
  */
@@ -107,7 +99,7 @@ async function openSession({ merchant, customer }, sender) {
     customerName: pair.customer.name,
     userId: keepUser ? current.userId : sender.id,
     sold: sameCustomer ? current.sold : [],
-    haggle: sameCustomer ? current.haggle : { discount: 0, pending: null, last: null },
+    haggle: sameCustomer ? current.haggle : { discount: 0 },
   });
   return snapshot(pair.merchant, pair.customer);
 }
@@ -175,6 +167,36 @@ export function haggleView(merchant, customer) {
     dcs: opposed ? null : Object.fromEntries(tables.haggle.asks.map((ask) => [String(ask), haggleDC({ insight, ask, attitude }, tables)])),
     opposed,
   };
+}
+
+// What this merchant made of the customer's unpriced items: appraised for good, or failed today.
+/**
+ * @param {any} merchant
+ * @param {any} customer
+ */
+export function appraisalView(merchant, customer) {
+  const on = feature("appraisal");
+  /** @type {Record<string, "appraised" | "failed">} */
+  const items = {};
+  if (on) {
+    const records = merchantFlags(merchant).appraisals;
+    const today = currentDay();
+    for (const item of customer.items) {
+      const state = appraisalState(records[appraisalKey(customer.id, item.id)], today);
+      if (state) items[item.id] = state;
+    }
+  }
+  return { on, items };
+}
+
+// Ids of the customer's items this merchant pays full rate for after an appraisal.
+/**
+ * @param {any} merchant
+ * @param {any} customer
+ */
+export function appraisedIds(merchant, customer) {
+  const { items } = appraisalView(merchant, customer);
+  return Object.keys(items).filter((id) => items[id] === "appraised");
 }
 
 export function currentDay() {
@@ -272,6 +294,7 @@ export function snapshot(merchant, customer) {
     },
     customer: customer.uuid,
     haggle: haggleView(merchant, customer),
+    appraisal: appraisalView(merchant, customer),
     attitude: {
       on: attitudeOn,
       band,

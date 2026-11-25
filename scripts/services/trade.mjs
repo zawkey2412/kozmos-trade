@@ -12,7 +12,7 @@ import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
 import { buyQuote, sellQuote } from "./offer.mjs";
 import { attitudeTables, attitudeValue, recordAttitude } from "./attitude.mjs";
-import { checkAccess, haggleDiscount, resolvePair, sessionAt, soldToday, updateSold, useHaggle, visibleShelf } from "./session.mjs";
+import { appraisedIds, checkAccess, haggleDiscount, resolvePair, sessionAt, soldToday, updateSold, useHaggle, visibleShelf } from "./session.mjs";
 import { recordTrade } from "./receipts.mjs";
 import { shelf } from "./shop.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
@@ -91,6 +91,7 @@ export function priceContextFor(merchant, customer) {
     attitudeAdjustment: attitudeAdjustment(attitudeValue(merchant, customer), getTables().attitude),
     haggle: haggleDiscount(merchant.uuid, customer.uuid),
     market: 1,
+    appraised: appraisedIds(merchant, customer),
   };
 }
 

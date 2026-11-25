@@ -8,21 +8,27 @@ import { feature, getTables } from "../settings.mjs";
 import { getArchetypes } from "./archetypes.mjs";
 import { attitudeValue, recordAttitude } from "./attitude.mjs";
 import { TradeError } from "./errors.mjs";
+import { expectRoll, registerRollKind } from "./rolls.mjs";
 import { checkAccess, haggleView, resolvePair, sessionAt } from "./session.mjs";
-import { isAnsweringWindow } from "./sessions.mjs";
 import { MESSAGES, onRequest } from "./socket.mjs";
 
-/** @import { PendingHaggle } from "./session.mjs"; */
+/** @import { ExpectedRoll } from "./rolls.mjs"; */
+
+/**
+ * @typedef {object} HaggleAsk
+ * @property {number} ask
+ * @property {string | null} skill
+ * @property {string | null} tool
+ * @property {boolean} helped
+ */
 
 // Skills anyone can haggle with. The archetype's own skills and tools come on top.
 export const HAGGLE_SKILLS = Object.freeze(["per", "dec", "itm"]);
-const ROLL_WAIT = 3000;
+export const HAGGLE_ROLL = "haggle";
 
 export function registerHaggleHandlers() {
-  const queueKey = (/** @type {any} */ payload) => payload?.merchant;
-  onRequest(MESSAGES.HAGGLE_START, startHaggle, { queueKey });
-  onRequest(MESSAGES.HAGGLE_ROLL, finishHaggle, { queueKey });
-  Hooks.on("createChatMessage", (message) => onRollMessage(message));
+  onRequest(MESSAGES.HAGGLE_START, startHaggle, { queueKey: (payload) => payload?.merchant });
+  registerRollKind(HAGGLE_ROLL, settleHaggle);
 }
 
 // The checks a customer may haggle with, and which give advantage.
@@ -44,118 +50,80 @@ export function haggleChoices(customer, archetypeId) {
  */
 async function startHaggle({ merchant: merchantUuid, customer: customerUuid, ask, check, helped }, sender) {
   const { merchant, customer } = await resolvePair(merchantUuid, customerUuid, sender);
-  const session = sessionAt(merchant.uuid);
-  if (session?.customer !== customer.uuid) throw new TradeError("KT.Error.NotInSession");
+  if (sessionAt(merchant.uuid)?.customer !== customer.uuid) throw new TradeError("KT.Error.NotInSession");
   if (!sender.isGM) checkAccess(merchant, customer);
   if (!feature("haggle")) throw new TradeError("KT.Haggle.Off");
   const view = haggleView(merchant, customer);
   if (view.locked) throw new TradeError("KT.Haggle.Locked", { name: merchant.name });
   if (view.discount) throw new TradeError("KT.Haggle.Already");
-  const tables = getTables();
-  const chosenAsk = tables.haggle.asks.find((value) => Math.abs(value - Number(ask)) < 1e-9);
+  const chosenAsk = getTables().haggle.asks.find((value) => Math.abs(value - Number(ask)) < 1e-9);
   if (chosenAsk === undefined) throw new TradeError("KT.Haggle.BadAsk");
   const choice = haggleChoices(customer, merchantFlags(merchant).archetype).find((c) => c.value === check);
   if (!choice) throw new TradeError("KT.Haggle.BadCheck");
   const [kind, key] = check.split(":");
-  /** @type {PendingHaggle} */
-  const pending = {
-    nonce: foundry.utils.randomID(),
-    ask: chosenAsk,
-    skill: kind === "skill" ? key : null,
-    tool: kind === "tool" ? key : null,
-    helped: Boolean(helped),
-    userId: sender.id,
-  };
-  session.haggle.pending = pending;
-  return { nonce: pending.nonce, advantage: choice.specialty || pending.helped, skill: pending.skill, tool: pending.tool };
+  /** @type {HaggleAsk} */
+  const data = { ask: chosenAsk, skill: kind === "skill" ? key : null, tool: kind === "tool" ? key : null, helped: Boolean(helped) };
+  const nonce = expectRoll({ kind: HAGGLE_ROLL, merchant: merchant.uuid, customer: customer.uuid, userId: sender.id, data });
+  return { nonce, advantage: choice.specialty || data.helped, skill: data.skill, tool: data.tool };
 }
 
-// The window's own report of its roll. The roll message may already have settled it.
 /**
- * @param {{ merchant: string, customer: string, nonce: string, messageId: string }} payload
- * @param {any} sender
+ * @param {ExpectedRoll} entry
+ * @param {number} total
  */
-async function finishHaggle({ merchant, customer, nonce, messageId }, sender) {
-  const session = sessionAt(merchant);
-  if (session?.customer !== customer) throw new TradeError("KT.Error.NotInSession");
-  for (let waited = 0; waited <= ROLL_WAIT; waited += 250) {
-    if (session.haggle.last?.nonce === nonce) return session.haggle.last.outcome;
-    const message = game.messages.get(messageId);
-    if (message) {
-      const outcome = await settleHaggle(merchant, message);
-      if (outcome) return outcome;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  throw new TradeError("KT.Haggle.NoRoll");
-}
-
-/** @param {any} message */
-async function onRollMessage(message) {
-  const flag = message.flags?.[MODULE_ID]?.haggle;
-  if (!flag?.merchant || !game.users.activeGM?.isSelf || !(await isAnsweringWindow())) return;
-  await settleHaggle(flag.merchant, message).catch((error) => console.error("Kozmos Trade | Haggle failed", error));
-}
-
-// Settles the pending haggle this message rolled for, once.
-/**
- * @param {string} merchantUuid
- * @param {any} message
- */
-async function settleHaggle(merchantUuid, message) {
-  const session = sessionAt(merchantUuid);
-  const pending = session?.haggle.pending;
-  const flag = message.flags?.[MODULE_ID]?.haggle;
-  if (!pending || flag?.nonce !== pending.nonce) return null;
-  const author = message.author ?? game.users.get(message.user);
-  if (author?.id !== pending.userId && !author?.isGM) return null;
-  const total = message.rolls?.[0]?.total;
-  if (!Number.isFinite(total)) return null;
-  session.haggle.pending = null;
-
-  const merchant = /** @type {any} */ (await foundry.utils.fromUuid(merchantUuid));
-  const customer = /** @type {any} */ (await foundry.utils.fromUuid(session.customer));
+async function settleHaggle(entry, total) {
+  const data = /** @type {HaggleAsk} */ (entry.data);
+  const session = sessionAt(entry.merchant);
+  const merchant = /** @type {any} */ (await foundry.utils.fromUuid(entry.merchant));
+  const customer = /** @type {any} */ (await foundry.utils.fromUuid(entry.customer));
   const tables = getTables();
   let insight = passiveScore(merchant, "ins");
-  let opposedRoll = null;
+  let opposed = false;
   if (feature("rolledInsight")) {
     const roll = await new foundry.dice.Roll("1d20 + @bonus", { bonus: skillBonus(merchant, "ins") }).evaluate();
     await roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor: merchant }), flavor: game.i18n.localize("KT.Haggle.MerchantInsight") }, { messageMode: "gm" });
     insight = roll.total;
-    opposedRoll = roll.total;
+    opposed = true;
   }
-  const dc = haggleDC({ insight, ask: pending.ask, attitude: attitudeValue(merchant, customer) }, tables);
-  const result = haggleResult({ total, dc, ask: pending.ask, intimidation: pending.skill === "itm" }, tables.haggle);
-  if (result.success) session.haggle.discount = result.discount;
-  else {
+  const dc = haggleDC({ insight, ask: data.ask, attitude: attitudeValue(merchant, customer) }, tables);
+  const result = haggleResult({ total, dc, ask: data.ask, intimidation: data.skill === "itm" }, tables.haggle);
+  if (result.success && session?.customer === entry.customer) session.haggle.discount = result.discount;
+  if (!result.success) {
     const { now, day } = clock();
     await merchant.update({ [`flags.${MODULE_ID}.haggleLock.${customer.id}`]: lockUntil(now, day) });
   }
   const attitudeChange = await recordAttitude(merchant, customer, result.events);
-  await postResult({ merchant, customer, pending, dc, total, opposedRoll, result, attitudeChange });
-  const outcome = { success: result.success, discount: result.discount, dc, total, locked: result.locked, attitudeChange, haggle: haggleView(merchant, customer) };
-  session.haggle.last = { nonce: pending.nonce, outcome };
-  return outcome;
+  await postResult({ merchant, customer, data, dc, total, opposed, success: result.success, attitudeChange });
+  return { success: result.success, discount: result.discount, dc, total, locked: result.locked, attitudeChange, haggle: haggleView(merchant, customer) };
 }
 
 /**
- * @param {{ merchant: any, customer: any, pending: PendingHaggle, dc: number, total: number, opposedRoll: number | null, result: { success: boolean }, attitudeChange: number }} data
+ * @param {{ merchant: any, customer: any, data: HaggleAsk, dc: number, total: number, opposed: boolean, success: boolean, attitudeChange: number }} result
  */
-async function postResult({ merchant, customer, pending, dc, total, opposedRoll, result, attitudeChange }) {
-  const percent = Math.round(pending.ask * 100);
-  const check = pending.tool ? toolLabel(pending.tool) : skillLabel(pending.skill ?? "");
+async function postResult({ merchant, customer, data, dc, total, opposed, success, attitudeChange }) {
+  const percent = Math.round(data.ask * 100);
+  const check = data.tool ? toolLabel(data.tool) : skillLabel(data.skill ?? "");
   const lines = [
     game.i18n.localize("KT.Haggle.Card.Ask", { customer: foundry.utils.escapeHTML(customer.name), percent, check }),
-    game.i18n.localize(opposedRoll === null ? "KT.Haggle.Card.Dc" : "KT.Haggle.Card.Opposed", { dc, total }),
-    game.i18n.localize(result.success ? "KT.Haggle.Card.Success" : "KT.Haggle.Card.Failure", { percent }),
+    ...(data.helped ? [game.i18n.localize("KT.Haggle.Card.Helped")] : []),
+    game.i18n.localize(opposed ? "KT.Haggle.Card.Opposed" : "KT.Haggle.Card.Dc", { dc, total }),
+    game.i18n.localize(success ? "KT.Haggle.Card.Success" : "KT.Haggle.Card.Failure", { percent }),
+    ...(attitudeChange ? [game.i18n.localize("KT.Haggle.Card.Attitude", { change: `${attitudeChange > 0 ? "+" : ""}${attitudeChange}` })] : []),
   ];
-  if (pending.helped) lines.splice(1, 0, game.i18n.localize("KT.Haggle.Card.Helped"));
-  if (attitudeChange) lines.push(game.i18n.localize("KT.Haggle.Card.Attitude", { change: `${attitudeChange > 0 ? "+" : ""}${attitudeChange}` }));
-  const state = result.success ? "success" : "failure";
-  await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor: merchant }),
-    content: `<div class="${MODULE_ID} kt-haggle-card ${state}">${lines.map((line) => `<p>${line}</p>`).join("")}</div>`,
-    flags: { [MODULE_ID]: { haggleResult: true } },
-  });
+  await postCheckCard(merchant, lines, success, "haggleResult");
 }
 
+// A public result card from the merchant, edged by the outcome.
+/**
+ * @param {any} merchant
+ * @param {string[]} lines
+ * @param {boolean} success
+ * @param {string} flag
+ */
+export function postCheckCard(merchant, lines, success, flag) {
+  return ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: merchant }),
+    content: `<div class="${MODULE_ID} kt-check-card ${success ? "success" : "failure"}">${lines.map((line) => `<p>${line}</p>`).join("")}</div>`,
+    flags: { [MODULE_ID]: { [flag]: true } },
+  });
+}

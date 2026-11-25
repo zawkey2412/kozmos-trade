@@ -113,3 +113,18 @@
   padding: var(--kt-space-tight) var(--kt-space-small);
   font-size: var(--kt-font-tiny);
 }
+
+/* Appraise button beside the scrap price. */
+.kozmos-trade .kt-card-side:has(.kt-appraise-button) {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--kt-space-small);
+}
+
+.kozmos-trade .kt-appraise-button {
+  flex: none;
+  width: var(--kt-icon-small);
+  height: var(--kt-icon-small);
+  padding: 0;
+  font-size: var(--kt-font-small);
+}

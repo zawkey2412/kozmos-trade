@@ -16,6 +16,11 @@
       <i class="fa-solid fa-box-open" inert></i> <span>{{localize "KT.Barter.Empty"}}</span>
     </button>
     {{else}}
+    {{#if canAppraise}}
+    <button type="button" class="kt-appraise-button icon" data-action="appraise" data-tooltip-text="{{localize "KT.Appraise.Button"}}" aria-label="{{localize "KT.Appraise.Button"}}">
+      <i class="fa-solid fa-magnifying-glass-dollar" inert></i>
+    </button>
+    {{/if}}
     <span class="kt-card-price">{{priceLabel}}</span>
     {{#if (gt quantity 1)}}<span class="kt-card-quantity">{{available}}</span>{{/if}}
     {{/if}}

@@ -1,7 +1,8 @@
 // The barter window: both inventories, both offer trays and the balance between them.
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID } from "../constants.mjs";
-import { coinLabels, combatStats, holdingFacts, itemDescription, itemFacts, locale, purse, rarityLabel, rollCheck } from "../adapter/dnd5e.mjs";
+import { coinLabels, combatStats, holdingFacts, itemDescription, itemFacts, locale, purse, rarityLabel, rollCheck, skillLabel } from "../adapter/dnd5e.mjs";
+import { appraisalDC } from "../engine/appraisal.mjs";
 import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
 import { COPPER, coinsToCopper, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
@@ -11,7 +12,9 @@ import { proposalOf } from "../services/approval.mjs";
 import { archetypeLabel } from "../services/archetypes.mjs";
 import { ATTITUDE_ICONS } from "../services/attitude.mjs";
 import { TradeError, warn } from "../services/errors.mjs";
-import { haggleChoices } from "../services/haggle.mjs";
+import { APPRAISE_ROLL } from "../services/appraisal.mjs";
+import { HAGGLE_ROLL, haggleChoices } from "../services/haggle.mjs";
+import { rollFlags } from "../services/rolls.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
 import { ledgerOf, revertEntry } from "../services/receipts.mjs";
@@ -54,6 +57,7 @@ export default class BarterWindow extends HandlebarsApplication {
       merchantTab: BarterWindow.#onTab,
       restock: BarterWindow.#onRestock,
       haggle: BarterWindow.#onHaggle,
+      appraise: BarterWindow.#onAppraise,
     },
   };
 
@@ -168,6 +172,7 @@ export default class BarterWindow extends HandlebarsApplication {
       attitudeAdjustment: this.snapshot.attitude.adjustment,
       haggle: this.snapshot.haggle?.discount ?? 0,
       market: 1,
+      appraised: Object.keys(this.snapshot.appraisal?.items ?? {}).filter((id) => this.snapshot.appraisal.items[id] === "appraised"),
     };
   }
 
@@ -366,7 +371,10 @@ export default class BarterWindow extends HandlebarsApplication {
       if (holding.attuned) tags.push(tag("attuned", "fa-solid fa-link"));
       if (full) tags.push(tag("full", "fa-solid fa-box-open"));
       if (facts.identified === false) tags.push(tag("unidentified", "fa-solid fa-question"));
+      const appraisal = this.snapshot.appraisal?.items[item.id];
       if (quote.scrap) tags.push(tag("scrap", "fa-solid fa-recycle"));
+      if (appraisal === "appraised") tags.push(tag("appraised", "fa-solid fa-magnifying-glass-dollar"));
+      if (quote.scrap && appraisal === "failed") tags.push(tag("appraiseFailed", "fa-solid fa-clock"));
       if (quote.favored) tags.push(tag("favored", "fa-solid fa-thumbs-up"));
       const staged = this.offer.give.get(item.id) ?? 0;
       cards.push({
@@ -376,6 +384,7 @@ export default class BarterWindow extends HandlebarsApplication {
         tags: [facts.identified === false ? null : rarityTag(facts.rarity), ...tags].filter(Boolean),
         disabled: !quote.forSale || full,
         canEmpty: full,
+        canAppraise: Boolean(this.snapshot.appraisal?.on && quote.scrap && !appraisal && !this.counter && !this.busy),
         warn: holding.equipped || holding.attuned,
       });
     }
@@ -601,14 +610,58 @@ export default class BarterWindow extends HandlebarsApplication {
     try {
       const payload = { merchant, customer: this.customer.uuid };
       const start = await request(MESSAGES.HAGGLE_START, { ...payload, ask: Number(data.ask), check: data.check, helped: Boolean(data.helped) });
-      const flags = { [MODULE_ID]: { haggle: { nonce: start.nonce, merchant } } };
+      const flags = rollFlags(HAGGLE_ROLL, start.nonce, merchant);
       const message = await rollCheck(this.customer, { skill: start.skill ?? undefined, tool: start.tool ?? undefined, advantage: start.advantage, flags, event });
       if (!message) return;
-      const outcome = await request(MESSAGES.HAGGLE_ROLL, { ...payload, nonce: start.nonce, messageId: message.id });
+      const outcome = await request(MESSAGES.ROLL_REPORT, { merchant, nonce: start.nonce, messageId: message.id });
       this.snapshot.haggle = outcome.haggle;
       const percent = Math.round(outcome.discount * 100);
       if (outcome.success) ui.notifications.info(game.i18n.localize("KT.Haggle.Result.Success", { percent }));
       else ui.notifications.warn("KT.Haggle.Result.Failure", { localize: true });
+    } catch (error) {
+      warn(error);
+    } finally {
+      this.busy = false;
+      this.tooltips.clear();
+      this.refresh();
+    }
+  }
+
+  // Asks the merchant to look again at an unpriced item: a check the GM settles, once a day.
+  /**
+   * @param {string} id
+   * @param {PointerEvent} event
+   */
+  async appraise(id, event) {
+    const item = this.customer.items.get(id);
+    if (!item) return;
+    const tables = getTables().appraisal;
+    const dc = appraisalDC(itemFacts(item), tables);
+    const select = foundry.applications.fields.createSelectInput({
+      name: "skill",
+      options: tables.skills.map((skill) => ({ value: skill, label: skillLabel(skill) })),
+      value: tables.skills[0],
+    });
+    const group = foundry.applications.fields.createFormGroup({ label: game.i18n.localize("KT.Haggle.Check"), input: select });
+    const hint = game.i18n.localize("KT.Appraise.Hint", { name: foundry.utils.escapeHTML(item.name), dc });
+    const data = /** @type {any} */ (await foundry.applications.api.DialogV2.input(/** @type {any} */ ({
+      window: { title: game.i18n.localize("KT.Appraise.Title", { name: item.name }), icon: "fa-solid fa-magnifying-glass-dollar" },
+      content: `<p class="hint">${hint}</p>${group.outerHTML}`,
+      ok: { label: "KT.Haggle.Roll", icon: "fa-solid fa-dice-d20" },
+      rejectClose: false,
+    })));
+    if (!data) return;
+    this.busy = true;
+    this.refresh(["customer", "footer"]);
+    try {
+      const merchant = this.snapshot.merchant.uuid;
+      const start = await request(MESSAGES.APPRAISE_START, { merchant, customer: this.customer.uuid, itemId: id, skill: data.skill });
+      const message = await rollCheck(this.customer, { skill: start.skill, flags: rollFlags(APPRAISE_ROLL, start.nonce, merchant), event });
+      if (!message) return;
+      const outcome = await request(MESSAGES.ROLL_REPORT, { merchant, nonce: start.nonce, messageId: message.id });
+      this.snapshot.appraisal = outcome.appraisal;
+      if (outcome.success) ui.notifications.info(game.i18n.localize("KT.Appraise.Result.Success", { name: item.name }));
+      else ui.notifications.warn(game.i18n.localize("KT.Appraise.Result.Failure", { name: item.name }));
     } catch (error) {
       warn(error);
     } finally {
@@ -859,6 +912,17 @@ export default class BarterWindow extends HandlebarsApplication {
    */
   static #onHaggle(event) {
     return this.haggle(event);
+  }
+
+  /**
+   * @this {BarterWindow}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static #onAppraise(event, target) {
+    event.stopPropagation();
+    const id = /** @type {HTMLElement} */ (target.closest(".kt-card")).dataset.itemId;
+    return this.appraise(id, event);
   }
 
   /**

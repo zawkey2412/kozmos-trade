@@ -1,13 +1,16 @@
-// The scales button for GMs on NPC token HUDs and actor sheet headers.
+// GM controls: the scales button on NPC token HUDs and actor sheet headers, and an item's true value.
 import ConfigureShop from "../apps/configure-shop.mjs";
 import { openTrade, pickCustomer } from "../services/open-trade.mjs";
-import { canBeShop, isShop } from "../services/shop.mjs";
+import { canBeShop, isShop, setTrueValue } from "../services/shop.mjs";
+import { itemFlags } from "../data/flags.mjs";
+import { COPPER } from "../engine/money.mjs";
 
 const ICON = "fa-solid fa-scale-balanced";
 
 export function registerGmControls() {
   Hooks.on("renderTokenHUD", addHudButton);
   Hooks.on("getHeaderControlsActorSheetV2", addHeaderControl);
+  Hooks.on("getHeaderControlsDocumentSheetV2", addTrueValueControl);
 }
 
 // The barter window for a shop that is set up, Configure Shop for anything else.
@@ -43,6 +46,31 @@ function addHudButton(hud, element) {
     openShopFor(actor);
   });
   column.append(button);
+}
+
+/**
+ * @param {any} sheet
+ * @param {object[]} controls
+ */
+function addTrueValueControl(sheet, controls) {
+  const item = sheet.document;
+  if (!game.user.isGM || item?.documentName !== "Item") return;
+  controls.push({ icon: "fa-solid fa-magnifying-glass-dollar", label: "KT.TrueValue.Control", action: "kozmosTradeTrueValue", onClick: () => askTrueValue(item) });
+}
+
+// What an appraised merchant pays on, in gold. Empty clears it.
+/** @param {any} item */
+async function askTrueValue(item) {
+  const current = itemFlags(item).trueValue;
+  // Core's JSDoc marks every number input option as required.
+  const input = foundry.applications.fields.createNumberInput(/** @type {any} */ ({ name: "value", value: current === null ? undefined : current / COPPER.gp, min: 0, step: 0.01 }));
+  const group = foundry.applications.fields.createFormGroup({ label: game.i18n.localize("KT.TrueValue.Label"), input, units: game.i18n.localize("DND5E.CurrencyAbbrGP") });
+  const data = /** @type {any} */ (await foundry.applications.api.DialogV2.input(/** @type {any} */ ({
+    window: { title: game.i18n.localize("KT.TrueValue.Title", { name: item.name }), icon: "fa-solid fa-magnifying-glass-dollar" },
+    content: `<p class="hint">${game.i18n.localize("KT.TrueValue.Hint")}</p>${group.outerHTML}`,
+    rejectClose: false,
+  })));
+  if (data) await setTrueValue(item, Number.isFinite(data.value) ? data.value : null);
 }
 
 /**

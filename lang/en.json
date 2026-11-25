@@ -63,7 +63,8 @@
       "RevertMoved": "{name} has changed hands since the trade, so it can't be reverted.",
       "RevertCoins": "The coins from that trade have been spent, so it can't be reverted.",
       "SoldOut": "That item is no longer available.",
-      "NoArchetype": "There is no archetype called {name}."
+      "NoArchetype": "There is no archetype called {name}.",
+      "NoRoll": "The roll did not reach the GM. Try again."
     },
     "Shop": {
       "Control": "Shop"
@@ -195,7 +196,9 @@
       "limited": "Limited Stock",
       "pinned": "Pinned",
       "buyback": "Buy back at the price you sold it for",
-      "underCounter": "Under the counter"
+      "underCounter": "Under the counter",
+      "appraised": "Appraised",
+      "appraiseFailed": "Appraise again tomorrow"
     },
     "Balance": {
       "short": "Short",
@@ -352,7 +355,6 @@
       "Already": "You already won a discount for this trade.",
       "BadAsk": "That discount cannot be asked for.",
       "BadCheck": "That check cannot be used to haggle here.",
-      "NoRoll": "The roll did not reach the GM. Try again.",
       "NeedPurchase": "Put something to buy on offer first.",
       "MerchantInsight": "Insight against a haggle",
       "Card": {
@@ -368,6 +370,31 @@
         "Success": "Haggle won: {percent}% off this trade.",
         "Failure": "Haggle lost. Try again tomorrow."
       }
+    },
+    "Appraise": {
+      "Button": "Appraise",
+      "Title": "Appraise {name}",
+      "Hint": "The merchant offers only scrap for {name}. Convince them it is worth more: DC {dc}. One try a day.",
+      "Off": "Appraisal checks are turned off in this world.",
+      "NotScrap": "That item already has a price.",
+      "Done": "{name} is already appraised here.",
+      "Tomorrow": "The merchant will look at {name} again tomorrow.",
+      "BadSkill": "That check cannot be used to appraise.",
+      "Card": {
+        "Ask": "{customer} asks the merchant to look again at {item}, using {check}.",
+        "Success": "Appraised: the merchant pays a fair rate for it now.",
+        "Failure": "Not convinced. The merchant will look again tomorrow."
+      },
+      "Result": {
+        "Success": "{name} appraised: the merchant pays a fair rate now.",
+        "Failure": "The merchant is not convinced about {name}. Try again tomorrow."
+      }
+    },
+    "TrueValue": {
+      "Control": "True value",
+      "Title": "True value: {name}",
+      "Label": "True value",
+      "Hint": "What a merchant pays on once this item is appraised. Leave empty to use its type's floor price."
     }
   }
 }

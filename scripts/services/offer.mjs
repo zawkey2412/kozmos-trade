@@ -1,5 +1,6 @@
 // Unit prices for the lines of an offer, the same in the customer's window and in the GM's check.
 import { itemFacts, rulesVersion } from "../adapter/dnd5e.mjs";
+import { itemFlags } from "../data/flags.mjs";
 import { getArchetypes } from "./archetypes.mjs";
 import { sellFit } from "../engine/fit.mjs";
 import { baseValue, buyPrice, sellBasis, sellPrice, sellRate } from "../engine/pricing.mjs";
@@ -13,6 +14,7 @@ import { getTables } from "../settings.mjs";
  * @property {number} attitudeAdjustment
  * @property {number} haggle
  * @property {number} market
+ * @property {string[]} [appraised]
  */
 
 /**
@@ -35,7 +37,7 @@ export function sellQuote(item, context) {
   const facts = itemFacts(item);
   const value = baseValue(facts, tables, { rules: rulesVersion() });
   if (!value.forSale) return { forSale: false, unit: 0, modifiers: [], scrap: false, favored: false };
-  const basis = sellBasis(facts, value, tables);
+  const basis = sellBasis(facts, value, tables, { appraised: Boolean(context.appraised?.includes(item.id)), trueValue: itemFlags(item).trueValue });
   const fit = sellFit(facts, getArchetypes()[context.archetype]);
   const rate = sellRate({ scrap: basis.scrap, fence: fit.fence, favored: fit.favored }, tables);
   const price = sellPrice(basis.copper, { rate, attitudeAdjustment: context.attitudeAdjustment, market: context.market });

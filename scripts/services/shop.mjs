@@ -5,7 +5,9 @@ import { DEFAULT_ARCHETYPE } from "../data/archetypes.mjs";
 import { cleanFlags, ItemFlags, itemFlags, MerchantFlags, merchantFlags } from "../data/flags.mjs";
 import { baseValue } from "../engine/pricing.mjs";
 import { onShelf, shelfPriceOf } from "../engine/shelf.mjs";
+import { COPPER } from "../engine/money.mjs";
 import { getTables } from "../settings.mjs";
+import { TradeError } from "./errors.mjs";
 import { broadcast, MESSAGES } from "./socket.mjs";
 
 /** @import { BaseValue, ItemFacts } from "../engine/pricing.mjs"; */
@@ -73,6 +75,18 @@ export async function saveShop(actor, { shop, items = {} }) {
   }
   if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
   broadcast(MESSAGES.SHOP_CHANGED, { merchant: actor.uuid });
+}
+
+// A GM-set value an appraised merchant pays on, in gold, or null to clear it.
+/**
+ * @param {any} item
+ * @param {number | null} gold
+ */
+export async function setTrueValue(item, gold) {
+  if (!game.user.isGM) throw new TradeError("KT.Error.GMOnly");
+  const copper = gold === null || !Number.isFinite(Number(gold)) || Number(gold) < 0 ? null : Math.round(Number(gold) * COPPER.gp);
+  await item.update({ [`flags.${MODULE_ID}.trueValue`]: copper });
+  return copper;
 }
 
 /** @param {any} actor */

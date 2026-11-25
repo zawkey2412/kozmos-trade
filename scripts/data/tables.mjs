@@ -112,6 +112,11 @@ export const TABLES = {
     bigWin: 10,
     bigLoss: 5,
   },
+  appraisal: {
+    skills: ["inv", "arc", "nat"],
+    dc: 12,
+    magicalDc: 15,
+  },
   attitude: {
     min: -50,
     max: 50,
