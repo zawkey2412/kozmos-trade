@@ -1,4 +1,5 @@
 import { MODES, MODULE_ID, SETTINGS } from "./constants.mjs";
+import { TABLES } from "./data/tables.mjs";
 
 /** @import { SettingConfig } from "@client/_types.mjs"; */
 
@@ -19,6 +20,22 @@ export function registerSettings() {
       },
     }),
   });
+
+  // The GM's changes to the default tables.
+  register(SETTINGS.TABLES, {
+    name: "KT.Settings.Tables.Name",
+    hint: "KT.Settings.Tables.Hint",
+    scope: "world",
+    config: false,
+    type: new foundry.data.fields.ObjectField({ initial: {} }),
+  });
+}
+
+// Default tables with the GM's changes laid over them.
+/** @returns {typeof TABLES} */
+export function getTables() {
+  const changes = game.settings.get(MODULE_ID, SETTINGS.TABLES);
+  return /** @type {typeof TABLES} */ (foundry.utils.mergeObject(TABLES, changes, { inplace: false }));
 }
 
 /**

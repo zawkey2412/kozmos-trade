@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { MONEY } from "../scripts/data/tables.mjs";
+import { TABLES } from "../scripts/data/tables.mjs";
 import { coinsToCopper, formatCopper, payFrom, splitCopper, toCopper } from "../scripts/engine/money.mjs";
 
-const tolerance = MONEY.changeTolerance;
+const tolerance = TABLES.money.changeTolerance;
 
 describe("copper conversion", () => {
   it("converts each coin to copper", () => {

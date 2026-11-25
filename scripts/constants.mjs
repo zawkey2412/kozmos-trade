@@ -4,6 +4,7 @@ export const SOCKET = `module.${MODULE_ID}`;
 
 export const SETTINGS = Object.freeze({
   MODE: "mode",
+  TABLES: "tables",
 });
 
 export const MODES = Object.freeze({

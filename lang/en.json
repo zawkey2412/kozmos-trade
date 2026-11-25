@@ -7,6 +7,10 @@
         "Simple": "Simple",
         "Standard": "Standard",
         "Crunchy": "Crunchy"
+      },
+      "Tables": {
+        "Name": "Price tables",
+        "Hint": "Prices, rates and rounding steps that differ from the defaults."
       }
     }
   }
