@@ -312,9 +312,79 @@
 .kt-barter .kt-scale {
   font-size: var(--kt-scale-size);
   color: var(--kt-text-muted);
+  transition: color var(--kt-transition), transform var(--kt-transition);
+}
+
+.kt-barter .kt-balance.short .kt-scale,
+.kt-barter .kt-balance.short .kt-readout {
+  color: var(--kt-short);
+}
+
+.kt-barter .kt-balance.even .kt-scale,
+.kt-barter .kt-balance.even .kt-readout {
+  color: var(--kt-even);
+}
+
+.kt-barter .kt-balance.generous .kt-scale,
+.kt-barter .kt-balance.generous .kt-readout {
+  color: var(--kt-generous);
+}
+
+.kt-barter .kt-readout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-tight);
+}
+
+.kt-barter .kt-net {
+  font-size: var(--kt-font-large);
+}
+
+.kt-barter .kt-word {
+  font-size: var(--kt-font-small);
+  text-transform: uppercase;
+  letter-spacing: var(--kt-letter-spacing);
+}
+
+.kt-barter .kt-change {
+  margin: 0;
+  font-size: var(--kt-font-small);
+}
+
+.kt-barter .kt-modifiers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-tight);
+  margin: 0;
+  font-size: var(--kt-font-small);
+}
+
+.kt-barter .kt-modifiers .good strong {
+  color: var(--kt-even);
+}
+
+.kt-barter .kt-modifiers .bad strong {
+  color: var(--kt-short);
+}
+
+.kt-barter .kt-warning {
+  margin: 0;
+  color: var(--kt-short);
+  font-size: var(--kt-font-small);
 }
 
 /* Footer. */
+.kt-barter .kt-footer-reason {
+  flex: 1;
+  text-align: right;
+}
+
+.kt-barter .kt-barter-footer .kt-accept {
+  flex: none;
+  width: auto;
+  min-width: var(--kt-meter-width);
+}
+
 .kt-barter .kt-barter-footer {
   display: flex;
   align-items: center;

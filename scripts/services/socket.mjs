@@ -18,6 +18,7 @@ export const MESSAGES = Object.freeze({
   PING: "ping",
   SESSION_OPEN: "session.open",
   SESSION_CLOSE: "session.close",
+  PURSE_CHECK: "purse.check",
 });
 
 /** @type {Map<string, RequestHandler>} */

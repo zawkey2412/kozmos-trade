@@ -5,7 +5,7 @@ import { combatStats, itemDescription, purse, tokensOf } from "../adapter/dnd5e.
 import { merchantFlags } from "../data/flags.mjs";
 import { accessProblem, squaresBetween } from "../engine/access.mjs";
 import { attitudeAdjustment, attitudeBand } from "../engine/attitude.mjs";
-import { coinsToCopper } from "../engine/money.mjs";
+import { coinsToCopper, payFrom } from "../engine/money.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
 import { shelf } from "./shop.mjs";
@@ -50,6 +50,7 @@ const sessions = new Map();
 export function registerSessionHandlers() {
   onRequest(MESSAGES.SESSION_OPEN, openSession, { queueKey: (payload) => payload?.merchant });
   onRequest(MESSAGES.SESSION_CLOSE, closeSession, { queueKey: (payload) => payload?.merchant });
+  onRequest(MESSAGES.PURSE_CHECK, checkPurse);
   Hooks.on("userConnected", (user, connected) => {
     if (!connected) for (const [merchant, session] of sessions) if (session.userId === user.id) sessions.delete(merchant);
   });
@@ -92,6 +93,17 @@ async function closeSession({ merchant, customer }, sender) {
   const actor = /** @type {any} */ (await foundry.utils.fromUuid(customer));
   if (sender.isGM || current.userId === sender.id || actor?.testUserPermission(sender, "OWNER")) sessions.delete(merchant);
   return true;
+}
+
+// Whether the merchant can pay an amount in coins.
+/**
+ * @param {{ merchant: string, amount: number }} payload
+ */
+async function checkPurse({ merchant, amount }) {
+  const actor = /** @type {any} */ (await foundry.utils.fromUuid(merchant));
+  if (!actor || !Number.isInteger(amount) || amount < 0) return false;
+  if (!feature("purseLimit")) return true;
+  return payFrom(purse(actor), amount, { maxOver: getTables().money.changeTolerance }) !== null;
 }
 
 // Both actors of a session, checked against the sender.

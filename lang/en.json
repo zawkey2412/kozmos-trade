@@ -108,7 +108,8 @@
       "ConfirmWorn": {
         "Title": "Trade worn gear?",
         "Body": "{name} is equipped or attuned. Put it on offer anyway?"
-      }
+      },
+      "Propose": "Propose Trade"
     },
     "Attitude": {
       "hostile": "Hostile",
@@ -140,6 +141,19 @@
       "favored": "Favored",
       "limited": "Limited Stock",
       "pinned": "Pinned"
+    },
+    "Balance": {
+      "short": "Short",
+      "even": "Even",
+      "generous": "Generous",
+      "Change": "Change back: {amount}",
+      "Attitude": "Attitude: {band}",
+      "CannotCover": "Merchant can't cover this. Add goods to make up the gap."
+    },
+    "Footer": {
+      "Empty": "Put something on offer.",
+      "Short": "Your offer is short.",
+      "CannotCover": "The merchant can't pay that much in coins."
     }
   }
 }

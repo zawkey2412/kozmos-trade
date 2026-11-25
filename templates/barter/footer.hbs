@@ -1,6 +1,7 @@
 <footer class="kt-barter-footer form-footer">
-  <button type="button" class="kt-accept" disabled>
-    <i class="fa-solid fa-handshake" inert></i>
-    <span>{{localize "KT.Barter.Accept"}}</span>
+  <span class="kt-footer-reason kt-muted">{{footer.reason}}</span>
+  <button type="button" class="kt-accept" data-action="accept" {{disabled footer.disabled}}>
+    <i class="{{footer.icon}}" inert></i>
+    <span>{{localize footer.label}}</span>
   </button>
 </footer>

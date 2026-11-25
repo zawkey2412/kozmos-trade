@@ -1,9 +1,26 @@
-<section class="kt-balance">
-  <i class="fa-solid fa-scale-balanced kt-scale" inert></i>
+<section class="kt-balance {{balance.state}}" aria-live="polite">
+  <i class="fa-solid {{balance.icon}} kt-scale" inert></i>
+  <div class="kt-readout">
+    <strong class="kt-net">{{balance.readout}}</strong>
+    <span class="kt-word">{{balance.word}}</span>
+  </div>
+  {{#if balance.change}}
+  <p class="kt-change">{{localize "KT.Balance.Change" amount=balance.change}}</p>
+  {{/if}}
   <dl class="kt-sides">
     <dt>{{localize "KT.Barter.YouOffer"}}</dt>
     <dd>{{balance.customer}}</dd>
     <dt>{{localize "KT.Barter.YouGet"}}</dt>
     <dd>{{balance.merchant}}</dd>
   </dl>
+  {{#if balance.modifiers.length}}
+  <ul class="kt-modifiers plain">
+    {{#each balance.modifiers as |modifier|}}
+    <li class="{{modifier.tone}}"><span>{{modifier.label}}</span> <strong>{{modifier.value}}</strong></li>
+    {{/each}}
+  </ul>
+  {{/if}}
+  {{#if balance.cannotCover}}
+  <p class="kt-warning"><i class="fa-solid fa-triangle-exclamation" inert></i> {{localize "KT.Balance.CannotCover"}}</p>
+  {{/if}}
 </section>

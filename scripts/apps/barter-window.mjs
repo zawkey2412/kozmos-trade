@@ -5,15 +5,19 @@ import { coinLabels, combatStats, holdingFacts, itemFacts, locale, purse, rarity
 import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
 import { COPPER, coinsToCopper, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
-import { addCoins, clampCoins, emptyOffer, setLine, stageAmount } from "../engine/tray.mjs";
+import { settle } from "../engine/quote.mjs";
+import { addCoins, clampCoins, emptyOffer, isEmpty, setLine, stageAmount } from "../engine/tray.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
+import { MESSAGES, request } from "../services/socket.mjs";
+import { getTables } from "../settings.mjs";
 import ConfigureShop from "./configure-shop.mjs";
 import { HandlebarsApplication } from "./base.mjs";
 
 /** @import { Snapshot } from "../services/session.mjs"; */
 /** @import { PriceContext } from "../services/offer.mjs"; */
 /** @import { Offer } from "../engine/tray.mjs"; */
+/** @import { Settlement } from "../engine/quote.mjs"; */
 
 const ATTITUDE_ICONS = {
   hostile: "fa-regular fa-face-angry",
@@ -134,9 +138,11 @@ export default class BarterWindow extends HandlebarsApplication {
     const budget = coinsToCopper(held);
     const customerCards = this.#customerCards();
     const merchantCards = this.#merchantCards(budget);
-    const values = this.#trayValues();
+    const result = this.#settlement();
+    this.#checkPurse(result);
     return Object.assign(context, {
-      balance: { customer: formatCopper(values.customer, this.money), merchant: formatCopper(values.merchant, this.money) },
+      balance: this.#balance(result),
+      footer: this.#footer(result),
       gm: game.user.isGM,
       header: this.#header(budget),
       customerColumn: this.#column("customer", customerCards, budget),
@@ -353,20 +359,96 @@ export default class BarterWindow extends HandlebarsApplication {
     this.refresh(["give", "balance", "take", "footer"]);
   }
 
-  // Copper each side has put up so far.
+  // Copper each side has put up so far, in goods and in coins.
   #trayValues() {
     const context = this.priceContext;
-    let customer = coinsToCopper(this.offer.coinsGive);
+    let customerItems = 0;
     for (const [id, quantity] of this.offer.give) {
       const item = this.customer.items.get(id);
-      if (item) customer += sellQuote(item, context).unit * quantity;
+      if (item) customerItems += sellQuote(item, context).unit * quantity;
     }
-    let merchant = coinsToCopper(this.offer.coinsTake);
+    let merchantItems = 0;
     for (const [id, quantity] of this.offer.take) {
       const entry = this.snapshot.shelf.find((e) => e.id === id);
-      if (entry) merchant += buyQuote(entry.price, context).copper * quantity;
+      if (entry) merchantItems += buyQuote(entry.price, context).copper * quantity;
     }
-    return { customer, merchant };
+    const coinsGive = coinsToCopper(this.offer.coinsGive);
+    const coinsTake = coinsToCopper(this.offer.coinsTake);
+    return { customerItems, merchantItems, coinsGive, coinsTake, customer: customerItems + coinsGive, merchant: merchantItems + coinsTake };
+  }
+
+  #settlement() {
+    const values = this.#trayValues();
+    return settle({
+      giveItems: values.customerItems,
+      takeItems: values.merchantItems,
+      coinsGive: values.coinsGive,
+      coinsTake: values.coinsTake,
+      keepChange: this.offer.keepChange,
+      sweetenStep: getTables().attitude.sweeten.step,
+    });
+  }
+
+  // The scale's state, readout, modifiers and purse warning.
+  /** @param {Settlement} result */
+  #balance(result) {
+    const shown = result.net < 0 ? result.net : result.overpay;
+    const sign = shown < 0 ? "-" : shown > 0 ? "+" : "";
+    const modifiers = [];
+    const { attitude } = this.snapshot;
+    if (attitude.on && attitude.adjustment) {
+      modifiers.push({
+        label: game.i18n.localize("KT.Balance.Attitude", { band: game.i18n.localize(`KT.Attitude.${attitude.band}`) }),
+        value: `${attitude.adjustment > 0 ? "+" : "-"}${Math.round(Math.abs(attitude.adjustment) * 100)}%`,
+        tone: attitude.adjustment > 0 ? "good" : "bad",
+      });
+    }
+    const needed = this.#coinsNeeded(result);
+    return {
+      state: result.state,
+      icon: { short: "fa-scale-unbalanced-flip", even: "fa-scale-balanced", generous: "fa-scale-unbalanced" }[result.state],
+      word: game.i18n.localize(`KT.Balance.${result.state}`),
+      readout: `${sign}${formatCopper(Math.abs(shown), this.money)}`,
+      customer: formatCopper(result.customerGives, this.money),
+      merchant: formatCopper(result.merchantGives, this.money),
+      change: result.change ? formatCopper(result.change, this.money) : null,
+      modifiers,
+      cannotCover: needed > 0 && this.purseCheck?.amount === needed && !this.purseCheck.covers,
+    };
+  }
+
+  /** @param {Settlement} result */
+  #coinsNeeded(result) {
+    return coinsToCopper(this.offer.coinsTake) + result.change;
+  }
+
+  // Asks the GM whether the merchant can pay, once the offer stops changing.
+  /** @param {Settlement} result */
+  #checkPurse(result) {
+    const amount = this.#coinsNeeded(result);
+    if (this.snapshot.merchant.purse === null || amount <= 0 || this.purseCheck?.amount === amount) return;
+    window.clearTimeout(this.purseTimer);
+    this.purseTimer = window.setTimeout(async () => {
+      const covers = await request(MESSAGES.PURSE_CHECK, { merchant: this.snapshot.merchant.uuid, amount }).catch(() => true);
+      this.purseCheck = { amount, covers };
+      if (this.rendered) this.render({ parts: ["balance", "footer"] });
+    }, 300);
+  }
+
+  /** @param {Settlement} result */
+  #footer(result) {
+    const approval = this.snapshot.merchant.executionMode === "approval";
+    let reason = null;
+    if (!game.users.activeGM) reason = "KT.Error.NoGM";
+    else if (isEmpty(this.offer)) reason = "KT.Footer.Empty";
+    else if (!approval && result.state === "short") reason = "KT.Footer.Short";
+    else if (this.#balance(result).cannotCover) reason = "KT.Footer.CannotCover";
+    return {
+      label: approval ? "KT.Barter.Propose" : "KT.Barter.Accept",
+      icon: approval ? "fa-solid fa-paper-plane" : "fa-solid fa-handshake",
+      disabled: Boolean(reason),
+      reason: reason ? game.i18n.localize(reason) : null,
+    };
   }
 
   /**
