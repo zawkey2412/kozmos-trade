@@ -5,6 +5,7 @@ import { clock, combatStats, itemDescription, purse, tokensOf } from "../adapter
 import { merchantFlags } from "../data/flags.mjs";
 import { accessProblem, squaresBetween } from "../engine/access.mjs";
 import { attitudeAdjustment, attitudeBand } from "../engine/attitude.mjs";
+import { attitudeTables, attitudeValue } from "./attitude.mjs";
 import { coinsToCopper, payFrom } from "../engine/money.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
@@ -31,6 +32,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {string} rarity
  * @property {boolean} identified
  * @property {boolean} limited
+ * @property {boolean} underCounter
  * @property {boolean} magical
  * @property {string} description
  * @property {{ damage: string | null, ac: number | null }} stats
@@ -169,7 +171,7 @@ export function checkAccess(merchant, customer) {
     open: flags.open,
     now: game.time.worldTime,
     bannedUntil: flags.banned[customer.id],
-    attitude: feature("attitude") ? (flags.attitude[customer.id]?.value ?? 0) : null,
+    attitude: feature("attitude") ? attitudeValue(merchant, customer) : null,
     refuseAt: tables.attitude.refuseAt,
     squares: proximity ? nearest(merchant, customer) : null,
     maxSquares: proximity ? tables.access.proximity : null,
@@ -187,7 +189,8 @@ export function snapshot(merchant, customer) {
   const flags = merchantFlags(merchant);
   const tables = getTables();
   const attitudeOn = feature("attitude");
-  const attitudeValue = attitudeOn ? (flags.attitude[customer.id]?.value ?? 0) : 0;
+  const value = attitudeValue(merchant, customer);
+  const band = attitudeBand(value, attitudeTables());
   const purseTop = tables.tiers[flags.tier]?.purse[1] ?? 1;
   return {
     merchant: {
@@ -202,16 +205,15 @@ export function snapshot(merchant, customer) {
     customer: customer.uuid,
     attitude: {
       on: attitudeOn,
-      band: attitudeBand(attitudeValue, tables.attitude),
-      adjustment: attitudeAdjustment(attitudeValue, tables.attitude),
+      band,
+      adjustment: attitudeAdjustment(value, tables.attitude),
     },
     buyback: soldToday(merchant.uuid, customer.uuid).flatMap((entry) => {
       const item = merchant.items.get(entry.id);
       const held = Number(item?.system?.quantity) || 0;
       return held > 0 ? [{ id: entry.id, price: entry.price, quantity: Math.min(entry.quantity, held) }] : [];
     }),
-    shelf: shelf(merchant)
-      .filter((entry) => entry.price !== null)
+    shelf: visibleShelf(merchant, customer)
       .map(({ item, facts, holding, flags: itemFlagData, price }) => ({
         id: item.id,
         name: item.name,
@@ -223,11 +225,22 @@ export function snapshot(merchant, customer) {
         rarity: facts.identified === false ? "" : (facts.rarity ?? ""),
         identified: facts.identified !== false,
         limited: itemFlagData.limited,
+        underCounter: itemFlagData.underCounter,
         magical: Boolean(facts.magical || facts.rarity || facts.magicalBonus),
         description: itemDescription(item),
         stats: combatStats(item),
       })),
   };
+}
+
+// Priced shelf entries this customer may see. Items under the counter only show to friendly customers.
+/**
+ * @param {any} merchant
+ * @param {any} customer
+ */
+export function visibleShelf(merchant, customer) {
+  const friendly = attitudeBand(attitudeValue(merchant, customer), attitudeTables()) === "friendly";
+  return shelf(merchant).filter((entry) => entry.price !== null && (friendly || !entry.flags.underCounter));
 }
 
 /**

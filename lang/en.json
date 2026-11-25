@@ -23,6 +23,16 @@
       "RestockDays": {
         "Name": "Restock every",
         "Hint": "In-game days between automatic restocks of every shop. 0 turns automatic restocks off."
+      },
+      "AttitudeScope": {
+        "Name": "Attitude is kept",
+        "Hint": "Each merchant remembers every character on their own, or the whole party as one.",
+        "Character": "Per character",
+        "Party": "For the whole party"
+      },
+      "AttitudeDecay": {
+        "Name": "Attitude fades",
+        "Hint": "Each full in-game week, every merchant's attitude moves 1 point back toward neutral."
       }
     },
     "Error": {
@@ -155,7 +165,11 @@
       "cold": "Cold",
       "neutral": "Neutral",
       "warm": "Warm",
-      "friendly": "Friendly"
+      "friendly": "Friendly",
+      "Title": "Attitude",
+      "Hint": "From -50 to 50. Players see only the face.",
+      "Party": "Party",
+      "Nobody": "No player characters yet."
     },
     "Category": {
       "weapons": "Weapons",
@@ -180,7 +194,8 @@
       "favored": "Favored",
       "limited": "Limited Stock",
       "pinned": "Pinned",
-      "buyback": "Buy back at the price you sold it for"
+      "buyback": "Buy back at the price you sold it for",
+      "underCounter": "Under the counter"
     },
     "Balance": {
       "short": "Short",

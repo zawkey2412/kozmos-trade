@@ -9,6 +9,7 @@ import { settle } from "../engine/quote.mjs";
 import { addCoins, clampCoins, emptyOffer, isEmpty, setLine, stageAmount } from "../engine/tray.mjs";
 import { proposalOf } from "../services/approval.mjs";
 import { archetypeLabel } from "../services/archetypes.mjs";
+import { ATTITUDE_ICONS } from "../services/attitude.mjs";
 import { TradeError, warn } from "../services/errors.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
@@ -26,13 +27,6 @@ import { HandlebarsApplication } from "./base.mjs";
 /** @import { Offer } from "../engine/tray.mjs"; */
 /** @import { Settlement } from "../engine/quote.mjs"; */
 
-const ATTITUDE_ICONS = {
-  hostile: "fa-regular fa-face-angry",
-  cold: "fa-regular fa-face-frown",
-  neutral: "fa-regular fa-face-meh",
-  warm: "fa-regular fa-face-smile",
-  friendly: "fa-regular fa-face-grin-beam",
-};
 
 const COINS = Object.keys(COPPER);
 const DRAG_TYPE = "kozmos-trade";
@@ -394,6 +388,7 @@ export default class BarterWindow extends HandlebarsApplication {
       const unit = buyQuote(entry.price, context).copper;
       const tags = [entry.identified ? rarityTag(entry.rarity) : null];
       if (entry.limited) tags.push(tag("limited", "fa-solid fa-hourglass-half"));
+      if (entry.underCounter) tags.push(tag("underCounter", "fa-solid fa-box-open"));
       if (actor?.items.get(entry.id)?.flags?.[MODULE_ID]?.pinned) tags.push(tag("pinned", "fa-solid fa-thumbtack"));
       if (!entry.identified) tags.push(tag("unidentified", "fa-solid fa-question"));
       const staged = this.offer.take.get(entry.id) ?? 0;

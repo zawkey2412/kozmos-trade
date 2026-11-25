@@ -57,6 +57,7 @@ describe("item flags", () => {
       pinned: false,
       limited: false,
       curio: false,
+      underCounter: false,
       trueValue: null,
       stolen: null,
     });

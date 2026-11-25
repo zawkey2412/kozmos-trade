@@ -9,7 +9,7 @@ import { rarityRank } from "../engine/catalog.mjs";
 import { baseValue } from "../engine/pricing.mjs";
 import { TRADE_TYPES } from "../engine/shelf.mjs";
 import { rollShelf } from "../engine/stock.mjs";
-import { getTables } from "../settings.mjs";
+import { feature, getTables } from "../settings.mjs";
 import { getArchetypes } from "./archetypes.mjs";
 import { TradeError } from "./errors.mjs";
 import { isAnsweringWindow } from "./sessions.mjs";
@@ -62,6 +62,7 @@ export async function generateStock(merchant, { archetype, tier } = {}) {
     tables,
     random,
     value: (candidate) => baseValue(candidate.facts, tables.pricing, { rules, random }),
+    underCounter: feature("attitude") ? tables.stock.underCounter : 0,
   });
 
   const old = shelf(merchant).filter((entry) => !entry.flags.pinned).map((entry) => entry.item.id);
@@ -73,7 +74,7 @@ export async function generateStock(merchant, { archetype, tier } = {}) {
     const source = /** @type {any} */ (game.items.fromCompendium(item));
     const limited = pick.limited || rarityRank(itemFacts(item).rarity) >= rarityRank("uncommon");
     source.system.quantity = limited ? 1 : pick.quantity;
-    source.flags = { ...(source.flags ?? {}), [MODULE_ID]: cleanFlags(ItemFlags, { listedPrice: pick.price, limited, curio: pick.curio }) };
+    source.flags = { ...(source.flags ?? {}), [MODULE_ID]: cleanFlags(ItemFlags, { listedPrice: pick.price, limited, curio: pick.curio, underCounter: pick.underCounter }) };
     data.push(source);
   }
   const created = data.length ? await merchant.createEmbeddedDocuments("Item", data) : [];

@@ -28,6 +28,7 @@ import { TABLES } from "./tables.mjs";
  * @property {boolean} pinned
  * @property {boolean} limited
  * @property {boolean} curio
+ * @property {boolean} underCounter
  * @property {number | null} trueValue
  * @property {{ source: string, time: number } | null} stolen
  */
@@ -91,6 +92,7 @@ export class ItemFlags extends foundry.abstract.DataModel {
       pinned: new BooleanField(),
       limited: new BooleanField(),
       curio: new BooleanField(),
+      underCounter: new BooleanField(),
       trueValue: new NumberField({ integer: true, min: 0, nullable: true, initial: null }),
       stolen: new SchemaField(
         {

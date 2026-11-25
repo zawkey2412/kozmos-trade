@@ -6,8 +6,10 @@ import {
   attitudeBand,
   attitudeMod,
   changeAttitude,
+  currentAttitude,
   freshAttitude,
   refusesTrade,
+  setAttitudeValue,
   sweetenGain,
 } from "../scripts/engine/attitude.mjs";
 
@@ -162,5 +164,29 @@ describe("attitude decay", () => {
   it("keeps the part of a week already passed", () => {
     const half = change(withValue(20), [], at(DAY * 10 + WEEK * 1.5), decaying).state;
     assert.equal(change(half, [], at(DAY * 10 + WEEK * 2), decaying).state.value, 18);
+  });
+});
+
+describe("attitude set by hand and read later", () => {
+  const decaying = { ...tables, decay: { enabled: true, perWeek: 1 } };
+
+  it("starts at 0 for a customer never seen", () => {
+    assert.equal(currentAttitude(undefined, start, tables).value, 0);
+  });
+
+  it("decays on read when decay is on, and not when it is off", () => {
+    const state = withValue(20);
+    assert.equal(currentAttitude(state, at(DAY * 10 + WEEK * 3), decaying).value, 17);
+    assert.equal(currentAttitude(state, at(DAY * 10 + WEEK * 3), tables).value, 20);
+  });
+
+  it("sets a whole value inside the range and keeps the daily cap", () => {
+    const state = { ...withValue(5), gained: 7 };
+    const next = setAttitudeValue(state, 33.6, start, tables);
+    assert.equal(next.value, 34);
+    assert.equal(next.gained, 7);
+    assert.equal(setAttitudeValue(state, 90, start, tables).value, 50);
+    assert.equal(setAttitudeValue(state, -90, start, tables).value, -50);
+    assert.equal(setAttitudeValue(state, "x", start, tables).value, 0);
   });
 });

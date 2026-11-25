@@ -66,6 +66,21 @@
   color: var(--kt-text-muted);
 }
 
+.kt-configure-shop .kt-under-counter {
+  flex: none;
+  color: var(--kt-info);
+}
+
+.kt-configure-attitude .kt-attitude {
+  flex: none;
+  color: var(--kt-text-muted);
+  white-space: nowrap;
+}
+
+.kt-configure-attitude input[type="number"] {
+  flex: 0 0 var(--kt-value-width);
+}
+
 .kt-configure-shop .kt-stock-value {
   font-size: var(--kt-font-small);
   color: var(--kt-text-muted);

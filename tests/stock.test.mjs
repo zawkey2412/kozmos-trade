@@ -122,6 +122,16 @@ describe("a whole shelf", () => {
     for (let seed = 1; seed < 30; seed++) assert.ok(!roll(seed, "poor").picks.some((p) => p.name === "Plate"), `seed ${seed}`);
   });
 
+  it("adds items under the counter from the archetype, apart from the shelf", () => {
+    const swords = Array.from({ length: 20 }, (_, i) => candidate(`Sword ${i}`, { type: "weapon", subtype: "martialM", baseItem: "longsword" }, 1500));
+    const { picks } = rollShelf([...pool, ...swords], { archetype: ARCHETYPES.blacksmith, tier: "modest", tables: TABLES, random: seeded(21), value: (c) => c.value, underCounter: 1 });
+    const hidden = picks.filter((p) => p.underCounter);
+    assert.equal(hidden.length, 1);
+    assert.ok(!hidden[0].curio);
+    assert.equal(new Set(picks.map((p) => p.name)).size, picks.length);
+    assert.ok(roll(21).picks.every((p) => !p.underCounter));
+  });
+
   it("prices every pick on a shelf step", () => {
     for (const pick of roll(13).picks) assert.ok(Number.isInteger(pick.price) && pick.price > 0, `${pick.name} ${pick.price}`);
   });

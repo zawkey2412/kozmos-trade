@@ -25,6 +25,7 @@ import { rarityRank } from "./catalog.mjs";
  * @property {number} price
  * @property {boolean} limited
  * @property {boolean} curio
+ * @property {boolean} underCounter
  */
 
 const ARMS = { weapon: ["simpleM", "simpleR", "martialM", "martialR"], equipment: ["light", "medium", "heavy", "shield"] };
@@ -102,13 +103,13 @@ export function stackSize(facts, tier, stock, random) {
   return 1;
 }
 
-// A new shelf for a shop: the archetype's stock, one or two curios from outside it, and the purse.
+// A new shelf for a shop: the archetype's stock, one or two curios from outside it, any items kept under the counter, and the purse.
 /**
  * @param {Candidate[]} candidates
- * @param {{ archetype: Archetype, tier: string, tables: Tables, random: () => number, value: (candidate: Candidate) => BaseValue }} options
+ * @param {{ archetype: Archetype, tier: string, tables: Tables, random: () => number, value: (candidate: Candidate) => BaseValue, underCounter?: number }} options
  * @returns {{ picks: Pick[], purse: number }}
  */
-export function rollShelf(candidates, { archetype, tier, tables, random, value }) {
+export function rollShelf(candidates, { archetype, tier, tables, random, value, underCounter = 0 }) {
   const tierTable = tables.tiers[tier] ?? tables.tiers.modest;
   const weights = tables.stock.weights[tier] ?? tables.stock.weights.modest;
   const eligible = candidates.filter((candidate) => rollable(candidate, tierTable.maxRarity, tierTable.maxMundane));
@@ -119,8 +120,9 @@ export function rollShelf(candidates, { archetype, tier, tables, random, value }
   const curioCount = Math.min(outside.length, randomInt(tables.stock.curios[0], tables.stock.curios[1], random));
   const main = weightedPick(inArchetype, weights, Math.max(0, size - curioCount), random);
   const curios = weightedPick(outside, weights, curioCount, random);
+  const hidden = underCounter ? weightedPick(inArchetype.filter((candidate) => !main.includes(candidate)), weights, underCounter, random) : [];
 
-  const pick = (/** @type {Candidate} */ candidate, /** @type {boolean} */ curio) => {
+  const pick = (/** @type {Candidate} */ candidate, /** @type {boolean} */ curio, hiddenPick = false) => {
     const base = value(candidate);
     return {
       uuid: candidate.uuid,
@@ -129,8 +131,9 @@ export function rollShelf(candidates, { archetype, tier, tables, random, value }
       price: shelfPrice(base.copper, tables.pricing, { random, tier }),
       limited: rarityRank(candidate.facts.rarity) >= rarityRank("uncommon"),
       curio,
+      underCounter: hiddenPick,
     };
   };
   const purseGp = randomInt(Math.ceil(tierTable.purse[0] / COPPER.gp), Math.floor(tierTable.purse[1] / COPPER.gp), random);
-  return { picks: [...main.map((c) => pick(c, false)), ...curios.map((c) => pick(c, true))], purse: purseGp * COPPER.gp };
+  return { picks: [...main.map((c) => pick(c, false)), ...curios.map((c) => pick(c, true)), ...hidden.map((c) => pick(c, false, true))], purse: purseGp * COPPER.gp };
 }

@@ -2,6 +2,8 @@
 import { MODULE_ID } from "../constants.mjs";
 import { DEFAULT_ARCHETYPE } from "../data/archetypes.mjs";
 import { archetypeLabel, getArchetypes } from "../services/archetypes.mjs";
+import { attitudeRows, attitudeTables, setAttitude } from "../services/attitude.mjs";
+import { feature } from "../settings.mjs";
 import { EXECUTION_MODES, merchantFlags, TIERS } from "../data/flags.mjs";
 import { coinsToCopper, COPPER, formatCopper, toCopper } from "../engine/money.mjs";
 import { coinLabels, locale } from "../adapter/dnd5e.mjs";
@@ -26,6 +28,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
 
   static PARTS = {
     settings: { template: `modules/${MODULE_ID}/templates/configure/settings.hbs` },
+    attitude: { template: `modules/${MODULE_ID}/templates/configure/attitude.hbs` },
     stock: { template: `modules/${MODULE_ID}/templates/configure/stock.hbs`, scrollable: [".kt-stock-list"] },
     ledger: { template: `modules/${MODULE_ID}/templates/configure/ledger.hbs`, scrollable: [".kt-ledger-list"] },
     footer: { template: "templates/generic/form-footer.hbs" },
@@ -67,6 +70,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
       price: itemFlagData.listedPrice === null ? "" : itemFlagData.listedPrice / COPPER.gp,
       placeholder: price === null ? "" : price / COPPER.gp,
       pinned: itemFlagData.pinned,
+      underCounter: itemFlagData.underCounter,
       forSale: value.forSale,
     }));
     const names = (/** @type {{ quantity: number, name: string }[]} */ lines, /** @type {Record<string, number>} */ coins) => [...lines.map((l) => game.i18n.localize("KT.Ledger.Item", { quantity: l.quantity, name: l.name })),...(coinsToCopper(coins) ? [formatCopper(coinsToCopper(coins), money)] : [])].join(", ") || game.i18n.localize("KT.Proposal.Nothing");
@@ -76,8 +80,11 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
       reverted: entry.reverted,
       summary: game.i18n.localize("KT.Ledger.Summary", { gets: names(entry.received, entry.paid), gives: names(entry.given, entry.coinsGive) }),
     }));
+    const tables = attitudeTables();
     return Object.assign(context, {
       ledger,
+      attitudes: attitudeRows(this.document),
+      attitudeRange: { min: tables.min, max: tables.max },
       shop: { ...flags, archetype: flags.archetype || DEFAULT_ARCHETYPE },
       archetypes: Object.fromEntries(Object.keys(getArchetypes()).map((id) => [id, archetypeLabel(id)])),
       tiers: Object.fromEntries(TIERS.map((id) => [id, `KT.Tier.${id}`])),
@@ -117,6 +124,16 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
       ]),
     );
     await saveShop(this.document, { shop, items });
+    const shown = new Map(attitudeRows(this.document).map((row) => [row.key, row.value]));
+    for (const [key, value] of Object.entries(data.attitude ?? {})) {
+      if (Number.isFinite(value) && shown.has(key) && shown.get(key) !== value) await setAttitude(this.document, key, value);
+    }
+  }
+
+  _configureRenderParts(options) {
+    const parts = super._configureRenderParts(options);
+    if (!merchantFlags(this.document).enabled || !feature("attitude")) delete parts.attitude;
+    return parts;
   }
 
   /**

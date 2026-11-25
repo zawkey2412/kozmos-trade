@@ -3,7 +3,7 @@
 import { MODULE_ID } from "../constants.mjs";
 import { holdingFacts, itemFacts, purse } from "../adapter/dnd5e.mjs";
 import { merchantFlags } from "../data/flags.mjs";
-import { attitudeAdjustment } from "../engine/attitude.mjs";
+import { attitudeAdjustment, sweetenGain } from "../engine/attitude.mjs";
 import { COPPER, coinsToCopper } from "../engine/money.mjs";
 import { settle } from "../engine/quote.mjs";
 import { tradeable } from "../engine/shelf.mjs";
@@ -11,7 +11,8 @@ import { planCoins } from "../engine/trade.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
 import { buyQuote, sellQuote } from "./offer.mjs";
-import { checkAccess, resolvePair, sessionAt, soldToday, updateSold } from "./session.mjs";
+import { attitudeTables, attitudeValue, recordAttitude } from "./attitude.mjs";
+import { checkAccess, resolvePair, sessionAt, soldToday, updateSold, visibleShelf } from "./session.mjs";
 import { recordTrade } from "./receipts.mjs";
 import { shelf } from "./shop.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
@@ -19,6 +20,7 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
 /** @import { PriceContext } from "./offer.mjs"; */
 /** @import { Settlement } from "../engine/quote.mjs"; */
 /** @import { CoinPlan } from "../engine/trade.mjs"; */
+/** @import { AttitudeEvent } from "../engine/attitude.mjs"; */
 
 /**
  * @typedef {object} TradeRequest
@@ -84,8 +86,7 @@ async function instantTrade(payload, sender) {
  */
 export function priceContextFor(merchant, customer) {
   const flags = merchantFlags(merchant);
-  const value = feature("attitude") ? (flags.attitude[customer.id]?.value ?? 0) : 0;
-  return { archetype: flags.archetype, attitudeAdjustment: attitudeAdjustment(value, getTables().attitude), haggle: 0, market: 1 };
+  return { archetype: flags.archetype, attitudeAdjustment: attitudeAdjustment(attitudeValue(merchant, customer), getTables().attitude), haggle: 0, market: 1 };
 }
 
 /**
@@ -103,6 +104,7 @@ export async function runTrade(payload, sender, { requireBalance = true } = {}) 
   });
   const sold = trade.give.map((line, index) => ({ id: record.merchantCreated[index], from: line.item.id, price: line.unit, quantity: line.quantity }));
   updateSold(trade.merchant.uuid, trade.customer.uuid, sold, trade.boughtBack);
+  await recordAttitude(trade.merchant, trade.customer, tradeEvents(trade.result)).catch((error) => console.error("Kozmos Trade | Attitude failed", error));
   Hooks.callAll("kozmosTrade.trade", trade, record);
   broadcast(MESSAGES.TRADE_DONE, { merchant: trade.merchant.uuid, customer: trade.customer.uuid });
   return { paid: trade.coins.paid, change: trade.result.change, receipt: entry?.id ?? null };
@@ -136,9 +138,10 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
   });
 
   const stock = shelf(merchant);
+  const visible = visibleShelf(merchant, customer);
   /** @type {TradeLine[]} */
   const take = cleanLines(payload.take).map(([id, quantity]) => {
-    const entry = stock.find((e) => e.item.id === id);
+    const entry = visible.find((e) => e.item.id === id);
     if (!entry || entry.price === null) throw new TradeError("KT.Error.SoldOut");
     if (quantity > entry.holding.quantity) throw new TradeError("KT.Error.ItemGone", { name: entry.item.name });
     return { item: entry.item, quantity, unit: buyQuote(entry.price, context).copper, held: entry.holding.quantity };
@@ -303,6 +306,17 @@ export function transferData(item, quantity, restoreFlags) {
   if (data.flags) delete data.flags[MODULE_ID];
   if (stolen || restoreFlags) data.flags[MODULE_ID] = { ...(restoreFlags ?? {}), ...(stolen ? { stolen } : {}) };
   return data;
+}
+
+// A balanced trade pleases the merchant once a day, and overpaying pleases it more.
+/**
+ * @param {Settlement} result
+ * @returns {(AttitudeEvent | { gain: number })[]}
+ */
+export function tradeEvents(result) {
+  if (result.state === "short") return [];
+  const gain = sweetenGain(result.overpay, result.merchantGives, attitudeTables());
+  return gain ? ["fairTrade", { gain }] : ["fairTrade"];
 }
 
 // Valid lines only, one per item.

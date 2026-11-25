@@ -1,5 +1,6 @@
 // The public API at game.modules.get("kozmos-trade").api.
 import { registerArchetype } from "./services/archetypes.mjs";
+import { PARTY_KEY, setAttitude } from "./services/attitude.mjs";
 import { openTrade } from "./services/open-trade.mjs";
 import { generateStock, restock } from "./services/stock.mjs";
 
@@ -9,5 +10,18 @@ export function createApi() {
     registerArchetype,
     generateStock,
     restock,
+    setAttitude: apiSetAttitude,
   });
+}
+
+// Takes documents or UUIDs, and "party" for the shared score.
+/**
+ * @param {any | string} merchant
+ * @param {any | string} customer
+ * @param {number} value
+ */
+async function apiSetAttitude(merchant, customer, value) {
+  const shop = typeof merchant === "string" ? await foundry.utils.fromUuid(merchant) : merchant;
+  const who = customer === PARTY_KEY ? PARTY_KEY : typeof customer === "string" ? await foundry.utils.fromUuid(customer) : customer;
+  return setAttitude(shop, who, value);
 }

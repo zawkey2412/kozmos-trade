@@ -19,6 +19,7 @@
         <img src="{{row.img}}" alt="">
         <span>{{row.name}}</span>
         {{#if (gt row.quantity 1)}}<span class="kt-quantity">{{row.quantity}}</span>{{/if}}
+        {{#if row.underCounter}}<i class="fa-solid fa-box-open kt-under-counter" data-tooltip aria-label="{{localize "KT.Tag.underCounter"}}"></i>{{/if}}
       </span>
       <span class="kt-stock-value">{{row.value}}</span>
       <span class="kt-stock-price">

@@ -20,6 +20,8 @@ export const SETTINGS = Object.freeze({
   COMPENDIUMS: "compendiums",
   RESTOCK_DAYS: "restockDays",
   FEATURES: "features",
+  ATTITUDE_SCOPE: "attitudeScope",
+  ATTITUDE_DECAY: "attitudeDecay",
 });
 
 export const MODES = Object.freeze({

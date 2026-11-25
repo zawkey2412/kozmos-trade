@@ -101,6 +101,29 @@ export function changeAttitude(state, events, clock, tables) {
   return { state: next, change: next.value - before };
 }
 
+// The stored state as it stands now, after any decay since it was written.
+/**
+ * @param {AttitudeState | undefined} state
+ * @param {Clock} clock
+ * @param {AttitudeTables} tables
+ */
+export function currentAttitude(state, clock, tables) {
+  return decayed(state ?? freshAttitude(clock), clock, tables);
+}
+
+// A value the GM sets by hand. It leaves the daily gain cap and fair trade day alone.
+/**
+ * @param {AttitudeState | undefined} state
+ * @param {number} value
+ * @param {Clock} clock
+ * @param {AttitudeTables} tables
+ */
+export function setAttitudeValue(state, value, clock, tables) {
+  const next = currentAttitude(state, clock, tables);
+  next.value = clamp(Math.round(Number(value) || 0), tables.min, tables.max);
+  return next;
+}
+
 /**
  * @param {AttitudeState} state
  * @param {Clock} clock

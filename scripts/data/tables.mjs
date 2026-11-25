@@ -96,6 +96,8 @@ export const TABLES = {
     consumableDice: { poor: [1, 4], modest: [1, 6], wealthy: [2, 6] },
     armsDice: [1, 2],
     curios: [1, 2],
+    // Items kept under the counter for friendly customers, each restock.
+    underCounter: 1,
   },
   access: {
     // Grid squares between the customer's and the merchant's tokens.

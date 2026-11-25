@@ -32,6 +32,27 @@ export function registerSettings() {
     type: new foundry.data.fields.BooleanField({ initial: false }),
   });
 
+  register(SETTINGS.ATTITUDE_SCOPE, {
+    name: "KT.Settings.AttitudeScope.Name",
+    hint: "KT.Settings.AttitudeScope.Hint",
+    scope: "world",
+    config: true,
+    type: new foundry.data.fields.StringField({
+      required: true,
+      blank: false,
+      initial: "character",
+      choices: { character: "KT.Settings.AttitudeScope.Character", party: "KT.Settings.AttitudeScope.Party" },
+    }),
+  });
+
+  register(SETTINGS.ATTITUDE_DECAY, {
+    name: "KT.Settings.AttitudeDecay.Name",
+    hint: "KT.Settings.AttitudeDecay.Hint",
+    scope: "world",
+    config: true,
+    type: new foundry.data.fields.BooleanField({ initial: false }),
+  });
+
   register(SETTINGS.COMPENDIUMS, {
     name: "KT.Settings.Compendiums.Name",
     hint: "KT.Settings.Compendiums.Hint",
