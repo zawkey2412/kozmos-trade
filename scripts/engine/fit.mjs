@@ -12,6 +12,7 @@
 
 /**
  * @typedef {object} Archetype
+ * @property {string} [label]
  * @property {ItemFilter[]} stocks
  * @property {ItemFilter[]} favored
  * @property {boolean} [fence]
@@ -47,4 +48,56 @@ export function matchesAny(item, filters) {
 export function sellFit(item, archetype) {
   if (!archetype) return { fence: false, favored: false };
   return { fence: Boolean(archetype.fence), favored: matchesAny(item, archetype.favored) };
+}
+
+// A filter with only the keys a filter may have, each of the right kind.
+/** @param {unknown} filter */
+export function cleanFilter(filter) {
+  if (!filter || typeof filter !== "object" || Array.isArray(filter)) throw new Error("A filter must be an object");
+  /** @type {ItemFilter} */
+  const clean = {};
+  for (const [key, value] of Object.entries(filter)) {
+    if (key === "type") {
+      if (typeof value !== "string" || !value) throw new Error(`"type" must be text`);
+      clean.type = value;
+    } else if (key === "subtypes" || key === "baseItems") {
+      if (!Array.isArray(value) || !value.every((entry) => typeof entry === "string")) throw new Error(`"${key}" must be a list of text`);
+      clean[key] = [...value];
+    } else if (key === "magical") {
+      if (typeof value !== "boolean") throw new Error(`"magical" must be true or false`);
+      clean.magical = value;
+    } else {
+      throw new Error(`"${key}" is not a filter key`);
+    }
+  }
+  return clean;
+}
+
+// Takes any value because archetypes come from settings, other modules and the editor.
+/**
+ * @param {any} archetype
+ * @returns {Archetype}
+ */
+export function cleanArchetype(archetype) {
+  if (!archetype || typeof archetype !== "object") throw new Error("An archetype must be an object");
+  const texts = (/** @type {unknown} */ value, /** @type {string} */ name) => {
+    if (value === undefined) return [];
+    if (!Array.isArray(value) || !value.every((entry) => typeof entry === "string")) throw new Error(`"${name}" must be a list of text`);
+    return [...value];
+  };
+  const filters = (/** @type {unknown} */ value, /** @type {string} */ name) => {
+    if (value === undefined) return [];
+    if (!Array.isArray(value)) throw new Error(`"${name}" must be a list of filters`);
+    return value.map(cleanFilter);
+  };
+  /** @type {Archetype} */
+  const clean = {
+    stocks: filters(archetype.stocks, "stocks"),
+    favored: filters(archetype.favored, "favored"),
+    fence: Boolean(archetype.fence),
+    skills: texts(archetype.skills, "skills"),
+    tools: texts(archetype.tools, "tools"),
+  };
+  if (typeof archetype.label === "string" && archetype.label.trim()) clean.label = archetype.label.trim();
+  return clean;
 }

@@ -227,6 +227,29 @@
     "ShopCard": {
       "Body": "{name} is open for business.",
       "Browse": "Browse wares"
+    },
+    "Archetypes": {
+      "Title": "Shop archetypes",
+      "Open": "Edit archetypes",
+      "Hint": "What each kind of shop stocks, which trade-ins it favors, and its haggling skills. Add your own or change the defaults.",
+      "Custom": "Yours",
+      "New": "New archetype",
+      "Create": "Create",
+      "Name": "Name",
+      "Id": "Id: {id}",
+      "Fence": "Buys anything",
+      "FenceHint": "Pays the Fence rate for every item, stolen goods included.",
+      "Skills": "Haggling skills",
+      "Tools": "Haggling tools",
+      "ToolsHint": "Tool keys from dnd5e, separated by commas, such as smith, thief, alchemist or jeweler.",
+      "Stocks": "Stocks (filters)",
+      "Favored": "Favored trade-ins (filters)",
+      "FilterHint": "A list of filters. Each filter may have a type (weapon, equipment, consumable, tool, loot, container), subtypes, baseItems, and magical: true. An item matches if it fits any filter.",
+      "Delete": "Delete this archetype",
+      "Reset": "Reset to the default",
+      "Saved": "Archetypes saved.",
+      "Invalid": "{name}: {error}",
+      "BadJson": "{field} is not valid JSON."
     }
   }
 }

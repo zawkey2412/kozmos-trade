@@ -1,5 +1,6 @@
 import { MODES, MODULE_ID, SETTINGS } from "./constants.mjs";
 import { MODE_FEATURES } from "./data/modes.mjs";
+import { forgetArchetypes } from "./services/archetypes.mjs";
 import { TABLES } from "./data/tables.mjs";
 
 /** @import { SettingConfig } from "@client/_types.mjs"; */
@@ -29,6 +30,16 @@ export function registerSettings() {
     scope: "world",
     config: true,
     type: new foundry.data.fields.BooleanField({ initial: false }),
+  });
+
+  // The GM's archetypes and changes to the defaults.
+  register(SETTINGS.ARCHETYPES, {
+    name: "KT.Archetypes.Title",
+    hint: "KT.Archetypes.Hint",
+    scope: "world",
+    config: false,
+    type: new foundry.data.fields.ObjectField({ initial: {} }),
+    onChange: () => forgetArchetypes(),
   });
 
   // The GM's changes to the default tables.

@@ -1,0 +1,43 @@
+/* Archetype editor. */
+.kt-archetype-editor .kt-archetype-layout {
+  display: grid;
+  grid-template-columns: var(--kt-editor-list-width) minmax(0, 1fr);
+  gap: var(--kt-space-large);
+  min-height: 0;
+  height: 100%;
+}
+
+.kt-archetype-editor .kt-archetype-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-small);
+  overflow-y: auto;
+}
+
+.kt-archetype-editor .kt-archetype-entry {
+  justify-content: space-between;
+}
+
+.kt-archetype-editor .kt-archetype-entry.active {
+  border-color: var(--kt-highlight);
+  box-shadow: var(--kt-ring);
+}
+
+.kt-archetype-editor .kt-archetype-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space);
+  overflow-y: auto;
+  padding-right: var(--kt-space-small);
+}
+
+.kt-archetype-editor .kt-json {
+  min-height: var(--kt-json-height);
+  font-family: var(--font-monospace, monospace);
+  font-size: var(--kt-font-small);
+}
+
+.kt-archetype-editor .kt-muted {
+  color: var(--kt-text-muted);
+  font-size: var(--kt-font-small);
+}

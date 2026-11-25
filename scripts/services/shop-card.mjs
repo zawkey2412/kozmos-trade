@@ -2,6 +2,7 @@
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID } from "../constants.mjs";
 import { merchantFlags } from "../data/flags.mjs";
+import { archetypeLabel } from "./archetypes.mjs";
 import { openTrade } from "./open-trade.mjs";
 
 const TEMPLATE = `modules/${MODULE_ID}/templates/chat/shop.hbs`;
@@ -11,7 +12,7 @@ export async function postShopCard(merchant) {
   const flags = merchantFlags(merchant);
   const content = await foundry.applications.handlebars.renderTemplate(TEMPLATE, {
     name: merchant.name,
-    archetype: game.i18n.localize(`KT.Archetype.${flags.archetype}`),
+    archetype: archetypeLabel(flags.archetype),
   });
   return ChatMessage.create(/** @type {any} */ ({
     content,

@@ -1,6 +1,7 @@
 // Configure Shop: turns an NPC into a merchant and sets its prices and pins.
 import { MODULE_ID } from "../constants.mjs";
-import { ARCHETYPES, DEFAULT_ARCHETYPE } from "../data/archetypes.mjs";
+import { DEFAULT_ARCHETYPE } from "../data/archetypes.mjs";
+import { archetypeLabel, getArchetypes } from "../services/archetypes.mjs";
 import { EXECUTION_MODES, merchantFlags, TIERS } from "../data/flags.mjs";
 import { coinsToCopper, COPPER, formatCopper, toCopper } from "../engine/money.mjs";
 import { coinLabels, locale } from "../adapter/dnd5e.mjs";
@@ -64,7 +65,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     return Object.assign(context, {
       ledger,
       shop: { ...flags, archetype: flags.archetype || DEFAULT_ARCHETYPE },
-      archetypes: Object.fromEntries(Object.keys(ARCHETYPES).map((id) => [id, `KT.Archetype.${id}`])),
+      archetypes: Object.fromEntries(Object.keys(getArchetypes()).map((id) => [id, archetypeLabel(id)])),
       tiers: Object.fromEntries(TIERS.map((id) => [id, `KT.Tier.${id}`])),
       modes: Object.fromEntries(EXECUTION_MODES.map((id) => [id, `KT.ExecutionMode.${id}`])),
       rows,

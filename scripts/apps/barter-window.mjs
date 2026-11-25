@@ -8,6 +8,7 @@ import { tradeable } from "../engine/shelf.mjs";
 import { settle } from "../engine/quote.mjs";
 import { addCoins, clampCoins, emptyOffer, isEmpty, setLine, stageAmount } from "../engine/tray.mjs";
 import { proposalOf } from "../services/approval.mjs";
+import { archetypeLabel } from "../services/archetypes.mjs";
 import { TradeError, warn } from "../services/errors.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
@@ -285,7 +286,7 @@ export default class BarterWindow extends HandlebarsApplication {
       merchant: {
         name: merchant.name,
         img: merchant.img,
-        archetype: game.i18n.localize(`KT.Archetype.${merchant.archetype}`),
+        archetype: archetypeLabel(merchant.archetype),
         purse: merchant.purse,
         exactPurse: actor ? formatCopper(coinsToCopper(purse(actor)), this.money) : null,
       },

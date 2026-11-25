@@ -1,0 +1,66 @@
+<div class="kt-archetype-layout">
+  <nav class="kt-archetype-list">
+    {{#each archetypes as |archetype|}}
+    <button type="button" class="kt-archetype-entry{{#if archetype.active}} active{{/if}}" data-action="select" data-id="{{archetype.id}}"
+            aria-pressed="{{archetype.active}}">
+      <span>{{archetype.label}}</span>
+      {{#if archetype.custom}}<span class="kt-muted">{{localize "KT.Archetypes.Custom"}}</span>{{/if}}
+    </button>
+    {{/each}}
+    <button type="button" data-action="create"><i class="fa-solid fa-plus" inert></i> {{localize "KT.Archetypes.New"}}</button>
+  </nav>
+
+  {{#if selected}}
+  <section class="kt-archetype-form">
+    <div class="form-group">
+      <label for="{{rootId}}-label">{{localize "KT.Archetypes.Name"}}</label>
+      <div class="form-fields">
+        <input type="text" id="{{rootId}}-label" name="label" value="{{selected.label}}" placeholder="{{selected.placeholder}}">
+      </div>
+      <p class="hint">{{localize "KT.Archetypes.Id" id=selected.id}}</p>
+    </div>
+
+    <div class="form-group">
+      <label for="{{rootId}}-fence">{{localize "KT.Archetypes.Fence"}}</label>
+      <div class="form-fields">
+        <input type="checkbox" id="{{rootId}}-fence" name="fence" {{checked selected.fence}}>
+      </div>
+      <p class="hint">{{localize "KT.Archetypes.FenceHint"}}</p>
+    </div>
+
+    <div class="form-group">
+      <label>{{localize "KT.Archetypes.Skills"}}</label>
+      <div class="form-fields">
+        <multi-select name="skills">{{selectOptions skillOptions selected=selected.skills}}</multi-select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="{{rootId}}-tools">{{localize "KT.Archetypes.Tools"}}</label>
+      <div class="form-fields">
+        <input type="text" id="{{rootId}}-tools" name="tools" value="{{selected.tools}}" placeholder="smith, thief">
+      </div>
+      <p class="hint">{{localize "KT.Archetypes.ToolsHint"}}</p>
+    </div>
+
+    <div class="form-group stacked">
+      <label for="{{rootId}}-stocks">{{localize "KT.Archetypes.Stocks"}}</label>
+      <textarea id="{{rootId}}-stocks" name="stocks" class="kt-json" spellcheck="false">{{selected.stocks}}</textarea>
+    </div>
+
+    <div class="form-group stacked">
+      <label for="{{rootId}}-favored">{{localize "KT.Archetypes.Favored"}}</label>
+      <textarea id="{{rootId}}-favored" name="favored" class="kt-json" spellcheck="false">{{selected.favored}}</textarea>
+      <p class="hint">{{localize "KT.Archetypes.FilterHint"}}</p>
+    </div>
+
+    <button type="button" data-action="remove">
+      {{#if selected.custom}}
+      <i class="fa-solid fa-trash" inert></i> {{localize "KT.Archetypes.Delete"}}
+      {{else}}
+      <i class="fa-solid fa-rotate-left" inert></i> {{localize "KT.Archetypes.Reset"}}
+      {{/if}}
+    </button>
+  </section>
+  {{/if}}
+</div>
