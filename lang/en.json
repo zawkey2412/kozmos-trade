@@ -12,6 +12,10 @@
         "Name": "Price tables",
         "Hint": "Prices, rates and rounding steps that differ from the defaults."
       }
+    },
+    "Error": {
+      "NoGM": "A GM must be online to trade.",
+      "NoAnswer": "The GM did not answer. Try again."
     }
   }
 }
