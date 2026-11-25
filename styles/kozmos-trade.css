@@ -1,6 +1,7 @@
 @import "./tokens.css";
 @import "./components/card.css";
 @import "./components/chat.css";
+@import "./components/proximity.css";
 @import "./apps/configure-shop.css";
 @import "./apps/barter.css";
 @import "./apps/archetype-editor.css";

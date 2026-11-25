@@ -38,6 +38,8 @@
   --kt-generous: var(--color-warm-2);
   --kt-info: var(--color-level-info);
   --kt-surface: color-mix(in srgb, var(--color-text-primary) 4%, transparent);
+  --kt-solid: var(--color-cool-5);
+  --kt-solid-text: var(--color-light-1);
   --kt-surface-strong: color-mix(in srgb, var(--color-text-primary) 9%, transparent);
   --kt-dim: 0.45;
   --kt-letter-spacing: 0.08em;

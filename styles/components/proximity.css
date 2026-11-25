@@ -1,0 +1,18 @@
+/* The floating Trade button above a merchant's token. */
+#interface .kt-proximity {
+  position: fixed;
+  z-index: calc(var(--z-index-canvas) + 1);
+  left: var(--kt-x);
+  top: var(--kt-y);
+  transform: translate(-50%, calc(-100% - var(--kt-space)));
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-small);
+  width: auto;
+  padding: var(--kt-space-small) var(--kt-space);
+  background: var(--kt-solid);
+  color: var(--kt-solid-text);
+  border: 1px solid var(--kt-highlight);
+  pointer-events: all;
+  white-space: nowrap;
+}

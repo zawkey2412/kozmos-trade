@@ -12,6 +12,7 @@ import { listen, MESSAGES, onBroadcast } from "./services/socket.mjs";
 import { registerTradeHandlers } from "./services/trade.mjs";
 import { registerSettings } from "./settings.mjs";
 import { registerGmControls } from "./ui/gm-controls.mjs";
+import { registerProximityButton } from "./ui/proximity.mjs";
 
 Hooks.once("init", () => {
   registerSettings();
@@ -32,6 +33,7 @@ Hooks.once("ready", () => {
   registerApprovalHandlers();
   registerReceiptHandlers();
   registerAutoRestock();
+  registerProximityButton();
   onBroadcast(MESSAGES.TRADE_DONE, ({ merchant }) => BarterWindow.refreshFor(merchant));
   onBroadcast(MESSAGES.SHOP_CHANGED, ({ merchant }) => BarterWindow.refreshFor(merchant));
   onBroadcast(MESSAGES.PROPOSAL_RESULT, (result) => BarterWindow.onProposalResult(result));
