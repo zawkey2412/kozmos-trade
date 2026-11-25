@@ -6,6 +6,7 @@ import { registerApprovalHandlers, registerProposalCards, setCounterWindow } fro
 import { setTradeWindow } from "./services/open-trade.mjs";
 import { registerReceiptCards, registerReceiptHandlers } from "./services/receipts.mjs";
 import { registerShopCards } from "./services/shop-card.mjs";
+import { registerAutoRestock } from "./services/stock.mjs";
 import { registerSessionHandlers } from "./services/session.mjs";
 import { listen, MESSAGES, onBroadcast } from "./services/socket.mjs";
 import { registerTradeHandlers } from "./services/trade.mjs";
@@ -30,6 +31,7 @@ Hooks.once("ready", () => {
   registerTradeHandlers();
   registerApprovalHandlers();
   registerReceiptHandlers();
+  registerAutoRestock();
   onBroadcast(MESSAGES.TRADE_DONE, ({ merchant }) => BarterWindow.refreshFor(merchant));
   onBroadcast(MESSAGES.SHOP_CHANGED, ({ merchant }) => BarterWindow.refreshFor(merchant));
   onBroadcast(MESSAGES.PROPOSAL_RESULT, (result) => BarterWindow.onProposalResult(result));

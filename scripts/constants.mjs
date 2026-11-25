@@ -18,6 +18,7 @@ export const SETTINGS = Object.freeze({
   PROXIMITY: "proximity",
   ARCHETYPES: "archetypes",
   COMPENDIUMS: "compendiums",
+  RESTOCK_DAYS: "restockDays",
 });
 
 export const MODES = Object.freeze({

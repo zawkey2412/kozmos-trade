@@ -15,6 +15,7 @@ import { buyQuote, sellQuote } from "../services/offer.mjs";
 import { ledgerOf, revertEntry } from "../services/receipts.mjs";
 import { snapshot as shelfSnapshot } from "../services/session.mjs";
 import { saveShop } from "../services/shop.mjs";
+import { importStock, restock } from "../services/stock.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
 import { getTables } from "../settings.mjs";
 import ConfigureShop from "./configure-shop.mjs";
@@ -56,6 +57,7 @@ export default class BarterWindow extends HandlebarsApplication {
       toggleMode: BarterWindow.#onToggleMode,
       revertLast: BarterWindow.#onRevertLast,
       merchantTab: BarterWindow.#onTab,
+      restock: BarterWindow.#onRestock,
     },
   };
 
@@ -721,6 +723,12 @@ export default class BarterWindow extends HandlebarsApplication {
       if (data.from === "tray" && zone.matches(".kt-inventory") && sideOf(data.side) === (zoneSide === "merchant" && data.side === "buyback" ? "buyback" : zoneSide)) return this.unstage(data.side, data.id);
       return;
     }
+    if (game.user.isGM && zoneSide === "merchant" && ["Item", "Folder", "RollTable"].includes(data?.type)) {
+      const actor = foundry.utils.fromUuidSync(this.snapshot.merchant.uuid);
+      const count = await importStock(actor, data).catch((error) => warn(error));
+      if (count) ui.notifications.info(game.i18n.localize("KT.Stock.Imported", { count }));
+      return;
+    }
     if (data?.type === "Item" && zoneSide === "give") {
       const item = /** @type {any} */ (await foundry.utils.fromUuid(data.uuid));
       if (item?.parent === this.customer) return this.stage("customer", item.id);
@@ -880,6 +888,20 @@ export default class BarterWindow extends HandlebarsApplication {
       if (close) this.close();
       else if (this.rendered) this.refresh();
     }
+  }
+
+  /** @this {BarterWindow} */
+  static async #onRestock() {
+    const actor = /** @type {any} */ (foundry.utils.fromUuidSync(this.snapshot.merchant.uuid));
+    if (!actor || !game.user.isGM) return;
+    const ok = await foundry.applications.api.DialogV2.confirm(/** @type {any} */ ({
+      window: { title: "KT.Stock.Restock" },
+      content: `<p>${game.i18n.localize("KT.Stock.RestockConfirm")}</p>`,
+      rejectClose: false,
+    }));
+    if (!ok) return;
+    await restock(actor).catch((error) => warn(error));
+    ui.notifications.info(game.i18n.localize("KT.Stock.Restocked", { name: actor.name }));
   }
 
   /** @this {BarterWindow} */

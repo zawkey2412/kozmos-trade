@@ -8,7 +8,7 @@ import { coinLabels, locale } from "../adapter/dnd5e.mjs";
 import { warn } from "../services/errors.mjs";
 import { ledgerOf, revertEntry } from "../services/receipts.mjs";
 import { postShopCard } from "../services/shop-card.mjs";
-import { generateStock } from "../services/stock.mjs";
+import { generateStock, importStock } from "../services/stock.mjs";
 import { removeShop, saveShop, shelf } from "../services/shop.mjs";
 
 import { HandlebarsDocumentSheet } from "./base.mjs";
@@ -36,6 +36,18 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     const existing = foundry.applications.instances.get(`ConfigureShop-${actor.uuid.replaceAll(".", "-")}`);
     if (existing) return existing.render({ force: true });
     return new ConfigureShop({ document: actor }).render({ force: true });
+  }
+
+  async _onRender(context, options) {
+    await super._onRender(context, options);
+    const zone = this.element.querySelector(".kt-configure-stock");
+    zone?.addEventListener("dragover", (event) => event.preventDefault());
+    zone?.addEventListener("drop", async (event) => {
+      event.preventDefault();
+      const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
+      const count = await importStock(this.document, /** @type {any} */ (data)).catch((error) => warn(error));
+      if (count) ui.notifications.info(game.i18n.localize("KT.Stock.Imported", { count }));
+    });
   }
 
   get title() {

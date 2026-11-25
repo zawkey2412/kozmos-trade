@@ -44,6 +44,14 @@ export function registerSettings() {
     ),
   });
 
+  register(SETTINGS.RESTOCK_DAYS, {
+    name: "KT.Settings.RestockDays.Name",
+    hint: "KT.Settings.RestockDays.Hint",
+    scope: "world",
+    config: true,
+    type: new foundry.data.fields.NumberField({ required: true, nullable: false, integer: true, min: 0, initial: 0 }),
+  });
+
   // The GM's archetypes and changes to the defaults.
   register(SETTINGS.ARCHETYPES, {
     name: "KT.Archetypes.Title",

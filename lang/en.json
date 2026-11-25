@@ -19,6 +19,10 @@
       "Compendiums": {
         "Name": "Stock compendiums",
         "Hint": "Item compendiums the stock generator draws from. Leave empty to use dnd5e's own equipment for the world's rules."
+      },
+      "RestockDays": {
+        "Name": "Restock every",
+        "Hint": "In-game days between automatic restocks of every shop. 0 turns automatic restocks off."
       }
     },
     "Error": {
@@ -69,7 +73,7 @@
       },
       "Stock": {
         "Label": "Shelf",
-        "Hint": "Items on this actor are its stock. Equipped and natural items stay with the merchant. Leave a price empty to use the item's value.",
+        "Hint": "Items on this actor are its stock. Equipped and natural items stay with the merchant. Leave a price empty to use the item's value. Drop items, an item folder or a roll table here to add stock.",
         "Item": "Item",
         "Value": "Value",
         "Price": "Price",
@@ -258,6 +262,12 @@
       "Saved": "Archetypes saved.",
       "Invalid": "{name}: {error}",
       "BadJson": "{field} is not valid JSON."
+    },
+    "Stock": {
+      "Restock": "Restock",
+      "RestockConfirm": "Roll a new shelf, keeping pinned items, and refill the purse?",
+      "Restocked": "{name} restocked.",
+      "Imported": "{count} items added to the shelf."
     }
   }
 }

@@ -1,7 +1,7 @@
 // Generating stock on the GM's client: a shelf rolled from compendiums replaces the unpinned stock.
 // Documents and CONFIG.Dice are typed any here because their fields have no generated types.
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
-import { itemFacts, rulesVersion } from "../adapter/dnd5e.mjs";
+import { clock, itemFacts, rulesVersion } from "../adapter/dnd5e.mjs";
 import { DEFAULT_ARCHETYPE } from "../data/archetypes.mjs";
 import { cleanFlags, ItemFlags, merchantFlags } from "../data/flags.mjs";
 import { splitCopper } from "../engine/money.mjs";
@@ -12,7 +12,9 @@ import { rollShelf } from "../engine/stock.mjs";
 import { getTables } from "../settings.mjs";
 import { getArchetypes } from "./archetypes.mjs";
 import { TradeError } from "./errors.mjs";
+import { isAnsweringWindow } from "./sessions.mjs";
 import { saveShop, shelf } from "./shop.mjs";
+import { broadcast, MESSAGES } from "./socket.mjs";
 
 /** @import { Candidate } from "../engine/stock.mjs"; */
 /** @import { MerchantFlagData } from "../data/flags.mjs"; */
@@ -103,4 +105,74 @@ export async function candidates(tables, rules) {
     }
   }
   return list;
+}
+
+// A new shelf with the shop's own archetype and wealth.
+/** @param {any} merchant */
+export function restock(merchant) {
+  return generateStock(merchant);
+}
+
+// Every shop in the world: world actors and the actors of unlinked tokens.
+export function allShops() {
+  const shops = /** @type {any[]} */ (game.actors.contents).filter((actor) => merchantFlags(actor).enabled);
+  for (const scene of /** @type {any[]} */ (game.scenes.contents)) {
+    for (const token of scene.tokens) {
+      if (!token.actorLink && token.actor && merchantFlags(token.actor).enabled) shops.push(token.actor);
+    }
+  }
+  return shops;
+}
+
+// Restocks shops whose last restock is at least the set number of in-game days ago.
+export async function autoRestock() {
+  const days = Number(game.settings.get(MODULE_ID, SETTINGS.RESTOCK_DAYS)) || 0;
+  if (!days || !game.users.activeGM?.isSelf || !(await isAnsweringWindow())) return [];
+  const { now, day } = clock();
+  const restocked = [];
+  for (const shop of allShops()) {
+    const last = merchantFlags(shop).lastRestock;
+    if (last === null || now - last < days * day) continue;
+    await restock(shop).catch((error) => console.error(`Kozmos Trade | Restock of ${shop.name} failed`, error));
+    restocked.push(shop.name);
+  }
+  return restocked;
+}
+
+export function registerAutoRestock() {
+  const check = foundry.utils.debounce(() => autoRestock(), 1000);
+  Hooks.on("updateWorldTime", () => check());
+}
+
+// Items, every item in an Item folder, or the items a roll table can give, added to the shelf.
+/**
+ * @param {any} merchant
+ * @param {{ type?: string, uuid?: string }} data
+ */
+export async function importStock(merchant, data) {
+  if (!game.user.isGM) throw new TradeError("KT.Error.GMOnly");
+  const source = /** @type {any} */ (data?.uuid ? await foundry.utils.fromUuid(data.uuid) : null);
+  /** @type {any[]} */
+  let items = [];
+  if (data?.type === "Item" && source) items = [source];
+  else if (data?.type === "Folder" && source?.type === "Item") {
+    const folders = [source, ...(source.getSubfolders?.(true) ?? [])];
+    for (const folder of folders) for (const entry of folder.contents) items.push(entry.uuid ? await foundry.utils.fromUuid(entry.uuid) : entry);
+  } else if (data?.type === "RollTable" && source) {
+    for (const result of source.results) if (result.documentUuid) items.push(await foundry.utils.fromUuid(result.documentUuid));
+  }
+  const copies = items
+    .filter((item) => item && item.parent !== merchant && TRADE_TYPES.includes(itemFacts(item).type))
+    .map((item) => {
+      const copy = item.pack ? game.items.fromCompendium(item) : item.toObject();
+      delete copy._id;
+      if (copy.flags) delete copy.flags[MODULE_ID];
+      if ("equipped" in copy.system) copy.system.equipped = false;
+      if ("container" in copy.system) copy.system.container = null;
+      return copy;
+    });
+  if (!copies.length) return 0;
+  await merchant.createEmbeddedDocuments("Item", copies);
+  broadcast(MESSAGES.SHOP_CHANGED, { merchant: merchant.uuid });
+  return copies.length;
 }
