@@ -97,7 +97,18 @@
       "TrayHint": "Drag items here, or click them.",
       "Accept": "Accept",
       "Damage": "Damage {value}, yours {own}",
-      "ArmorClass": "AC {value}, yours {own}"
+      "ArmorClass": "AC {value}, yours {own}",
+      "Less": "One less",
+      "More": "One more",
+      "Remove": "Take out",
+      "AutoBalance": "Auto-balance",
+      "KeepChange": "Keep the change",
+      "Empty": "Empty into inventory",
+      "CannotCover": "You don't have enough coins to cover it.",
+      "ConfirmWorn": {
+        "Title": "Trade worn gear?",
+        "Body": "{name} is equipped or attuned. Put it on offer anyway?"
+      }
     },
     "Attitude": {
       "hostile": "Hostile",
@@ -126,7 +137,7 @@
       "full": "Has items inside",
       "unidentified": "Unidentified",
       "scrap": "Scrap",
-      "favored": "Wanted here",
+      "favored": "Favored",
       "limited": "Limited Stock",
       "pinned": "Pinned"
     }

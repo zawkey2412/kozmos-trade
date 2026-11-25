@@ -97,3 +97,19 @@
   font-size: var(--kt-font-small);
   color: var(--kt-text-muted);
 }
+
+.kozmos-trade .kt-card.staged {
+  border-color: var(--kt-highlight);
+}
+
+.kozmos-trade .kt-card.disabled .kt-empty-button {
+  opacity: 1;
+  cursor: pointer;
+}
+
+.kozmos-trade .kt-empty-button {
+  width: auto;
+  height: auto;
+  padding: var(--kt-space-tight) var(--kt-space-small);
+  font-size: var(--kt-font-tiny);
+}

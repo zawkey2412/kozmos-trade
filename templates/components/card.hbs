@@ -1,4 +1,4 @@
-<li class="kt-card{{#if dim}} dim{{/if}}{{#if disabled}} disabled{{/if}}" data-item-id="{{id}}" data-side="{{side}}"
+<li class="kt-card{{#if dim}} dim{{/if}}{{#if disabled}} disabled{{/if}}{{#if staged}} staged{{/if}}" data-item-id="{{id}}" data-side="{{side}}"
     {{#unless disabled}}draggable="true" data-action="stage" tabindex="0" role="button"{{/unless}} aria-label="{{name}}">
   <img src="{{img}}" alt="">
   <div class="kt-card-text">
@@ -10,7 +10,13 @@
     {{/if}}
   </div>
   <div class="kt-card-side">
+    {{#if canEmpty}}
+    <button type="button" class="kt-empty-button" data-action="empty">
+      <i class="fa-solid fa-box-open" inert></i> <span>{{localize "KT.Barter.Empty"}}</span>
+    </button>
+    {{else}}
     <span class="kt-card-price">{{priceLabel}}</span>
-    {{#if (gt available 1)}}<span class="kt-card-quantity">{{available}}</span>{{/if}}
+    {{#if (gt quantity 1)}}<span class="kt-card-quantity">{{available}}</span>{{/if}}
+    {{/if}}
   </div>
 </li>

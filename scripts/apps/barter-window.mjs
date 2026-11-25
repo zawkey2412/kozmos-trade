@@ -2,17 +2,18 @@
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID } from "../constants.mjs";
 import { coinLabels, combatStats, holdingFacts, itemFacts, locale, purse, rarityLabel } from "../adapter/dnd5e.mjs";
-import { merchantFlags } from "../data/flags.mjs";
 import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
-import { coinsToCopper, formatCopper } from "../engine/money.mjs";
+import { COPPER, coinsToCopper, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
+import { addCoins, clampCoins, emptyOffer, setLine, stageAmount } from "../engine/tray.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
 import ConfigureShop from "./configure-shop.mjs";
 import { HandlebarsApplication } from "./base.mjs";
 
-/** @import { Snapshot, ShelfItem } from "../services/session.mjs"; */
+/** @import { Snapshot } from "../services/session.mjs"; */
 /** @import { PriceContext } from "../services/offer.mjs"; */
+/** @import { Offer } from "../engine/tray.mjs"; */
 
 const ATTITUDE_ICONS = {
   hostile: "fa-regular fa-face-angry",
@@ -21,6 +22,10 @@ const ATTITUDE_ICONS = {
   warm: "fa-regular fa-face-smile",
   friendly: "fa-regular fa-face-grin-beam",
 };
+
+const COINS = Object.keys(COPPER);
+const DRAG_TYPE = "kozmos-trade";
+const OFFER_PARTS = ["customer", "give", "balance", "take", "merchant", "footer"];
 
 const template = (name) => `modules/${MODULE_ID}/templates/barter/${name}.hbs`;
 
@@ -32,6 +37,11 @@ export default class BarterWindow extends HandlebarsApplication {
     actions: {
       category: BarterWindow.#onCategory,
       configure: BarterWindow.#onConfigure,
+      stage: BarterWindow.#onStage,
+      step: BarterWindow.#onStep,
+      unstage: BarterWindow.#onUnstage,
+      autoBalance: BarterWindow.#onAutoBalance,
+      empty: BarterWindow.#onEmpty,
     },
   };
 
@@ -57,13 +67,14 @@ export default class BarterWindow extends HandlebarsApplication {
       .loadTemplates({
         "kt-card": `modules/${MODULE_ID}/templates/components/card.hbs`,
         "kt-inventory": `modules/${MODULE_ID}/templates/components/inventory.hbs`,
+        "kt-tray": `modules/${MODULE_ID}/templates/components/tray.hbs`,
       })
       .then(() => {});
     await BarterWindow.#partials;
     const id = windowId(snapshot.merchant.uuid, customer.uuid);
     const existing = /** @type {any} */ (foundry.applications.instances.get(id));
     if (existing) {
-      existing.snapshot = snapshot;
+      existing.updateSnapshot(snapshot);
       return existing.render({ force: true });
     }
     return new BarterWindow({ id, snapshot, customer }).render({ force: true });
@@ -75,12 +86,18 @@ export default class BarterWindow extends HandlebarsApplication {
     /** @type {Snapshot} */
     this.snapshot = snapshot;
     this.customer = customer;
+    /** @type {Offer} */
+    this.offer = emptyOffer();
     this.view = {
       customer: { category: null, sort: "name", search: "" },
       merchant: { category: null, sort: "name", search: "" },
     };
     /** @type {Map<string, string>} */
     this.tooltips = new Map();
+    /** @type {Set<string>} */
+    this.confirmed = new Set();
+    /** @type {[string, number][]} */
+    this.hooks = [];
   }
 
   get title() {
@@ -101,22 +118,50 @@ export default class BarterWindow extends HandlebarsApplication {
     return { locale: locale(), labels: coinLabels() };
   }
 
+  /** @param {Snapshot} snapshot */
+  updateSnapshot(snapshot) {
+    this.snapshot = snapshot;
+    this.tooltips.clear();
+    for (const [id, quantity] of this.offer.take) {
+      const entry = snapshot.shelf.find((e) => e.id === id);
+      setLine(this.offer.take, id, quantity, entry?.quantity ?? 0);
+    }
+  }
+
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const budget = coinsToCopper(purse(this.customer));
+    const held = purse(this.customer);
+    const budget = coinsToCopper(held);
+    const customerCards = this.#customerCards();
+    const merchantCards = this.#merchantCards(budget);
+    const values = this.#trayValues();
     return Object.assign(context, {
+      balance: { customer: formatCopper(values.customer, this.money), merchant: formatCopper(values.merchant, this.money) },
       gm: game.user.isGM,
       header: this.#header(budget),
-      customerColumn: this.#column("customer", this.#customerCards(), budget),
-      merchantColumn: this.#column("merchant", this.#merchantCards(budget), budget),
+      customerColumn: this.#column("customer", customerCards, budget),
+      merchantColumn: this.#column("merchant", merchantCards, budget),
+      giveTray: this.#tray("give", customerCards, this.offer.coinsGive, held),
+      takeTray: this.#tray("take", merchantCards, this.offer.coinsTake, null),
     });
   }
 
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
-    this.element.addEventListener("input", (event) => this.#onInput(event));
-    this.element.addEventListener("change", (event) => this.#onChange(event));
-    this.element.addEventListener("pointerover", (event) => this.#onHover(event));
+    const element = this.element;
+    element.addEventListener("input", (event) => this.#onInput(event));
+    element.addEventListener("change", (event) => this.#onChange(event));
+    element.addEventListener("pointerover", (event) => this.#onHover(event));
+    element.addEventListener("contextmenu", (event) => this.#onContextMenu(event));
+    element.addEventListener("keydown", (event) => this.#onKeyDown(event));
+    element.addEventListener("dragstart", (event) => this.#onDragStart(event));
+    element.addEventListener("dragover", (event) => this.#onDragOver(event));
+    element.addEventListener("drop", (event) => this.#onDrop(event));
+    const refresh = (document) => {
+      const actor = document.parent ?? document;
+      if (actor === this.customer) this.#refreshCustomer();
+    };
+    for (const hook of ["updateActor", "createItem", "updateItem", "deleteItem"]) this.hooks.push([hook, Hooks.on(hook, refresh)]);
   }
 
   async _onRender(context, options) {
@@ -126,7 +171,13 @@ export default class BarterWindow extends HandlebarsApplication {
 
   async _onClose(options) {
     await super._onClose(options);
+    for (const [hook, id] of this.hooks) Hooks.off(hook, id);
     closeTrade(this.customer, { uuid: this.snapshot.merchant.uuid });
+  }
+
+  /** @param {string[]} [parts] */
+  refresh(parts = OFFER_PARTS) {
+    return this.render({ parts });
   }
 
   /** @param {number} budget */
@@ -167,6 +218,34 @@ export default class BarterWindow extends HandlebarsApplication {
     };
   }
 
+  /**
+   * @param {"give" | "take"} side
+   * @param {any[]} cards
+   * @param {Record<string, number>} coins
+   * @param {Record<string, number> | null} held
+   */
+  #tray(side, cards, coins, held) {
+    const lines = side === "give" ? this.offer.give : this.offer.take;
+    const rows = [];
+    let total = 0;
+    for (const [id, quantity] of lines) {
+      const card = cards.find((c) => c.id === id);
+      if (!card) continue;
+      const lineTotal = card.price * quantity;
+      total += lineTotal;
+      rows.push({ id, side, name: card.name, img: card.img, quantity, max: card.quantity, unitLabel: card.priceLabel, totalLabel: formatCopper(lineTotal, this.money) });
+    }
+    total += coinsToCopper(coins);
+    return {
+      side,
+      title: game.i18n.localize(side === "give" ? "KT.Barter.YouOffer" : "KT.Barter.YouGet"),
+      rows,
+      coins: COINS.map((coin) => ({ coin, name: `coins.${side}.${coin}`, value: coins[coin] || "", label: coinLabels()[coin] ?? coin, max: held?.[coin] ?? null })),
+      total: formatCopper(total, this.money),
+      keepChange: side === "give" ? { checked: this.offer.keepChange } : null,
+    };
+  }
+
   #customerCards() {
     const context = this.priceContext;
     const cards = [];
@@ -183,12 +262,15 @@ export default class BarterWindow extends HandlebarsApplication {
       if (facts.identified === false) tags.push(tag("unidentified", "fa-solid fa-question"));
       if (quote.scrap) tags.push(tag("scrap", "fa-solid fa-recycle"));
       if (quote.favored) tags.push(tag("favored", "fa-solid fa-thumbs-up"));
+      const staged = this.offer.give.get(item.id) ?? 0;
       cards.push({
-        ...card(item.id, "customer", item.name, item.img, facts, holding.quantity),
+        ...card(item.id, "customer", item.name, item.img, facts, holding.quantity, staged),
         price: quote.unit,
         priceLabel: quote.forSale ? formatCopper(quote.unit, this.money) : game.i18n.localize("KT.Configure.NotForSale"),
         tags: [rarityTag(facts.rarity), ...tags].filter(Boolean),
         disabled: !quote.forSale || full,
+        canEmpty: full,
+        warn: holding.equipped || holding.attuned,
       });
     }
     return cards;
@@ -204,14 +286,122 @@ export default class BarterWindow extends HandlebarsApplication {
       if (entry.limited) tags.push(tag("limited", "fa-solid fa-hourglass-half"));
       if (actor?.items.get(entry.id)?.flags?.[MODULE_ID]?.pinned) tags.push(tag("pinned", "fa-solid fa-thumbtack"));
       if (!entry.identified) tags.push(tag("unidentified", "fa-solid fa-question"));
+      const staged = this.offer.take.get(entry.id) ?? 0;
       return {
-        ...card(entry.id, "merchant", entry.name, entry.img, entry, entry.quantity),
+        ...card(entry.id, "merchant", entry.name, entry.img, entry, entry.quantity, staged),
         price: unit,
         priceLabel: formatCopper(unit, this.money),
         tags: tags.filter(Boolean),
         dim: unit > budget,
       };
     });
+  }
+
+  // Stage an item from either inventory into its tray.
+  /**
+   * @param {"customer" | "merchant"} side
+   * @param {string} id
+   * @param {{ half?: boolean, all?: boolean, amount?: number }} [how]
+   */
+  async stage(side, id, how = {}) {
+    const lines = side === "customer" ? this.offer.give : this.offer.take;
+    const available = this.#available(side, id);
+    if (available === null) return;
+    const staged = lines.get(id) ?? 0;
+    const amount = how.amount ?? stageAmount(available - staged, how);
+    if (!amount) return;
+    if (side === "customer" && !staged && !(await this.#confirmWorn(id))) return;
+    setLine(lines, id, staged + amount, available);
+    this.refresh();
+  }
+
+  /**
+   * @param {"give" | "take"} tray
+   * @param {string} id
+   * @param {number} delta
+   */
+  step(tray, id, delta) {
+    const lines = tray === "give" ? this.offer.give : this.offer.take;
+    const max = this.#available(tray === "give" ? "customer" : "merchant", id) ?? 0;
+    setLine(lines, id, (lines.get(id) ?? 0) + delta, max);
+    this.refresh();
+  }
+
+  /**
+   * @param {"give" | "take"} tray
+   * @param {string} id
+   */
+  unstage(tray, id) {
+    (tray === "give" ? this.offer.give : this.offer.take).delete(id);
+    this.refresh();
+  }
+
+  // Coins that fill the gap: from the customer's own coins, or asked of the merchant.
+  /** @param {"give" | "take"} tray */
+  autoBalance(tray) {
+    const values = this.#trayValues();
+    const gap = tray === "give" ? values.merchant - values.customer : values.customer - values.merchant;
+    if (gap <= 0) return;
+    if (tray === "give") {
+      const left = addCoins(purse(this.customer), this.offer.coinsGive, -1);
+      const coins = payFrom(left, gap);
+      if (!coins) return ui.notifications.warn("KT.Barter.CannotCover", { localize: true });
+      this.offer.coinsGive = addCoins(this.offer.coinsGive, coins);
+    } else {
+      this.offer.coinsTake = addCoins(this.offer.coinsTake, splitCopper(gap));
+    }
+    this.refresh(["give", "balance", "take", "footer"]);
+  }
+
+  // Copper each side has put up so far.
+  #trayValues() {
+    const context = this.priceContext;
+    let customer = coinsToCopper(this.offer.coinsGive);
+    for (const [id, quantity] of this.offer.give) {
+      const item = this.customer.items.get(id);
+      if (item) customer += sellQuote(item, context).unit * quantity;
+    }
+    let merchant = coinsToCopper(this.offer.coinsTake);
+    for (const [id, quantity] of this.offer.take) {
+      const entry = this.snapshot.shelf.find((e) => e.id === id);
+      if (entry) merchant += buyQuote(entry.price, context).copper * quantity;
+    }
+    return { customer, merchant };
+  }
+
+  /**
+   * @param {"customer" | "merchant"} side
+   * @param {string} id
+   */
+  #available(side, id) {
+    if (side === "merchant") return this.snapshot.shelf.find((e) => e.id === id)?.quantity ?? null;
+    const item = this.customer.items.get(id);
+    if (!item) return null;
+    const facts = itemFacts(item);
+    const holding = holdingFacts(item);
+    if (!tradeable(facts, holding) || (facts.type === "container" && holding.contents > 0)) return null;
+    return holding.quantity;
+  }
+
+  /** @param {string} id */
+  async #confirmWorn(id) {
+    const item = this.customer.items.get(id);
+    const holding = holdingFacts(item);
+    if (!(holding.equipped || holding.attuned) || this.confirmed.has(id)) return true;
+    const ok = await foundry.applications.api.DialogV2.confirm(/** @type {any} */ ({
+      window: { title: "KT.Barter.ConfirmWorn.Title" },
+      content: `<p>${game.i18n.localize("KT.Barter.ConfirmWorn.Body", { name: foundry.utils.escapeHTML(item.name) })}</p>`,
+      rejectClose: false,
+    }));
+    if (ok) this.confirmed.add(id);
+    return Boolean(ok);
+  }
+
+  #refreshCustomer() {
+    for (const [id, quantity] of this.offer.give) setLine(this.offer.give, id, quantity, this.#available("customer", id) ?? 0);
+    this.offer.coinsGive = clampCoins(this.offer.coinsGive, purse(this.customer));
+    this.tooltips.clear();
+    this.render({ parts: ["header", ...OFFER_PARTS] });
   }
 
   /** @param {string} side */
@@ -233,10 +423,81 @@ export default class BarterWindow extends HandlebarsApplication {
 
   /** @param {Event} event */
   #onChange(event) {
-    const target = /** @type {HTMLSelectElement} */ (event.target);
-    if (!target.matches(".kt-sort")) return;
-    this.view[target.dataset.side].sort = target.value;
-    this.render({ parts: [target.dataset.side] });
+    const target = /** @type {HTMLInputElement} */ (event.target);
+    if (target.matches(".kt-sort")) {
+      this.view[target.dataset.side].sort = target.value;
+      return this.render({ parts: [target.dataset.side] });
+    }
+    if (target.matches(".kt-keep-change")) {
+      this.offer.keepChange = target.checked;
+      return this.refresh(["balance", "footer"]);
+    }
+    if (target.matches(".kt-coin")) {
+      const side = target.dataset.side;
+      const key = side === "give" ? "coinsGive" : "coinsTake";
+      const coins = { ...this.offer[key], [target.dataset.coin]: Number(target.value) };
+      this.offer[key] = clampCoins(coins, side === "give" ? purse(this.customer) : null);
+      target.value = String(this.offer[key][target.dataset.coin] || "");
+      return this.refresh(["balance", "footer"]);
+    }
+  }
+
+  /** @param {MouseEvent} event */
+  #onContextMenu(event) {
+    const line = /** @type {HTMLElement | null} */ (/** @type {HTMLElement} */ (event.target).closest?.(".kt-line"));
+    if (!line) return;
+    event.preventDefault();
+    this.unstage(/** @type {any} */ (line.dataset.side), line.dataset.itemId);
+  }
+
+  /** @param {KeyboardEvent} event */
+  #onKeyDown(event) {
+    const target = /** @type {HTMLElement} */ (event.target);
+    const cardRow = /** @type {HTMLElement | null} */ (target.closest?.(".kt-card"));
+    if (cardRow && target === cardRow && ["Enter", " "].includes(event.key)) {
+      event.preventDefault();
+      return this.stage(/** @type {any} */ (cardRow.dataset.side), cardRow.dataset.itemId, { half: event.shiftKey, all: event.ctrlKey || event.metaKey });
+    }
+    const line = /** @type {HTMLElement | null} */ (target.closest?.(".kt-line"));
+    if (!line || target !== line) return;
+    const tray = /** @type {any} */ (line.dataset.side);
+    if (["Delete", "Backspace"].includes(event.key)) this.unstage(tray, line.dataset.itemId);
+    else if (["+", "="].includes(event.key)) this.step(tray, line.dataset.itemId, 1);
+    else if (event.key === "-") this.step(tray, line.dataset.itemId, -1);
+    else return;
+    event.preventDefault();
+  }
+
+  /** @param {DragEvent} event */
+  #onDragStart(event) {
+    const row = /** @type {HTMLElement | null} */ (/** @type {HTMLElement} */ (event.target).closest?.(".kt-card, .kt-line"));
+    if (!row) return;
+    const from = row.classList.contains("kt-line") ? "tray" : "inventory";
+    event.dataTransfer.setData("text/plain", JSON.stringify({ type: DRAG_TYPE, from, side: row.dataset.side, id: row.dataset.itemId }));
+  }
+
+  /** @param {DragEvent} event */
+  #onDragOver(event) {
+    if (/** @type {HTMLElement} */ (event.target).closest?.(".kt-tray, .kt-inventory")) event.preventDefault();
+  }
+
+  /** @param {DragEvent} event */
+  async #onDrop(event) {
+    const zone = /** @type {HTMLElement | null} */ (/** @type {HTMLElement} */ (event.target).closest?.(".kt-tray, .kt-inventory"));
+    if (!zone) return;
+    event.preventDefault();
+    // Drag data has no static shape.
+    const data = /** @type {any} */ (foundry.applications.ux.TextEditor.implementation.getDragEventData(event));
+    const zoneSide = zone.dataset.side;
+    if (data?.type === DRAG_TYPE) {
+      if (data.from === "inventory" && zone.matches(".kt-tray") && trayOf(data.side) === zoneSide) return this.stage(data.side, data.id);
+      if (data.from === "tray" && zone.matches(".kt-inventory") && trayOf(zoneSide) === data.side) return this.unstage(data.side, data.id);
+      return;
+    }
+    if (data?.type === "Item" && zoneSide === "give") {
+      const item = /** @type {any} */ (await foundry.utils.fromUuid(data.uuid));
+      if (item?.parent === this.customer) return this.stage("customer", item.id);
+    }
   }
 
   /** @param {PointerEvent} event */
@@ -298,6 +559,57 @@ export default class BarterWindow extends HandlebarsApplication {
     const actor = foundry.utils.fromUuidSync(this.snapshot.merchant.uuid);
     if (actor) ConfigureShop.open(actor);
   }
+
+  /**
+   * @this {BarterWindow}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static #onStage(event, target) {
+    if (/** @type {HTMLElement} */ (event.target).closest("[data-action='empty']")) return;
+    this.stage(/** @type {any} */ (target.dataset.side), target.dataset.itemId, { half: event.shiftKey, all: event.ctrlKey || event.metaKey });
+  }
+
+  /**
+   * @this {BarterWindow}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static #onStep(event, target) {
+    const line = /** @type {HTMLElement} */ (target.closest(".kt-line"));
+    this.step(/** @type {any} */ (line.dataset.side), line.dataset.itemId, Number(target.dataset.delta));
+  }
+
+  /**
+   * @this {BarterWindow}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static #onUnstage(event, target) {
+    const line = /** @type {HTMLElement} */ (target.closest(".kt-line"));
+    this.unstage(/** @type {any} */ (line.dataset.side), line.dataset.itemId);
+  }
+
+  /**
+   * @this {BarterWindow}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static #onAutoBalance(event, target) {
+    this.autoBalance(/** @type {any} */ (target.dataset.side));
+  }
+
+  /**
+   * @this {BarterWindow}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static async #onEmpty(event, target) {
+    event.stopPropagation();
+    const id = /** @type {HTMLElement} */ (target.closest(".kt-card")).dataset.itemId;
+    const contents = this.customer.items.filter((item) => item.system?.container === id);
+    await this.customer.updateEmbeddedDocuments("Item", contents.map((item) => ({ _id: item.id, "system.container": null })));
+  }
 }
 
 /**
@@ -308,6 +620,11 @@ export function windowId(merchant, customer) {
   return `kt-barter-${merchant}-${customer}`.replace(/[^A-Za-z0-9-]/g, "-");
 }
 
+/** @param {string} side */
+function trayOf(side) {
+  return side === "customer" ? "give" : side === "merchant" ? "take" : side;
+}
+
 /**
  * @param {string} id
  * @param {string} side
@@ -315,8 +632,9 @@ export function windowId(merchant, customer) {
  * @param {string} img
  * @param {{ type: string, subtype?: string, rarity?: string, magical?: boolean }} facts
  * @param {number} quantity
+ * @param {number} staged
  */
-function card(id, side, name, img, facts, quantity) {
+function card(id, side, name, img, facts, quantity, staged) {
   return {
     id,
     side,
@@ -327,7 +645,8 @@ function card(id, side, name, img, facts, quantity) {
     rarity: facts.rarity ?? "",
     magical: Boolean(facts.magical || facts.rarity),
     quantity,
-    available: quantity,
+    available: quantity - staged,
+    staged: staged > 0,
     disabled: false,
     dim: false,
   };

@@ -1,0 +1,45 @@
+<section class="kt-tray" data-side="{{side}}">
+  <h3>{{title}}</h3>
+  {{#if rows.length}}
+  <ol class="kt-tray-list plain">
+    {{#each rows as |row|}}
+    <li class="kt-line" data-item-id="{{row.id}}" data-side="{{row.side}}" draggable="true" tabindex="0" aria-label="{{row.name}}">
+      <img src="{{row.img}}" alt="">
+      <span class="kt-line-name">{{row.name}}</span>
+      <span class="kt-line-stepper">
+        <button type="button" class="inline-control icon fa-solid fa-minus" data-action="step" data-delta="-1"
+                data-tooltip aria-label="{{localize "KT.Barter.Less"}}"></button>
+        <span class="kt-line-quantity">{{row.quantity}}</span>
+        <button type="button" class="inline-control icon fa-solid fa-plus" data-action="step" data-delta="1"
+                data-tooltip aria-label="{{localize "KT.Barter.More"}}" {{disabled (gte row.quantity row.max)}}></button>
+      </span>
+      <span class="kt-line-total">{{row.totalLabel}}</span>
+      <button type="button" class="inline-control icon fa-solid fa-xmark" data-action="unstage"
+              data-tooltip aria-label="{{localize "KT.Barter.Remove"}}"></button>
+    </li>
+    {{/each}}
+  </ol>
+  {{else}}
+  <p class="kt-empty kt-tray-hint">{{localize "KT.Barter.TrayHint"}}</p>
+  {{/if}}
+  <div class="kt-coins">
+    {{#each coins as |c|}}
+    <label class="kt-coin-field">
+      <input type="number" class="kt-coin" data-side="{{../side}}" data-coin="{{c.coin}}" value="{{c.value}}" min="0" step="1"
+             placeholder="0" {{#if (ne c.max null)}}max="{{c.max}}"{{/if}} aria-label="{{c.label}}">
+      <span>{{c.label}}</span>
+    </label>
+    {{/each}}
+  </div>
+  <div class="kt-tray-tools">
+    <button type="button" data-action="autoBalance" data-side="{{side}}">
+      <i class="fa-solid fa-scale-unbalanced" inert></i> <span>{{localize "KT.Barter.AutoBalance"}}</span>
+    </button>
+    {{#if keepChange}}
+    <label class="kt-keep">
+      <input type="checkbox" class="kt-keep-change" {{checked keepChange.checked}}>
+      <span>{{localize "KT.Barter.KeepChange"}}</span>
+    </label>
+    {{/if}}
+  </div>
+</section>
