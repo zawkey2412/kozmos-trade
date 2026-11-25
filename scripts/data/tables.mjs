@@ -79,10 +79,11 @@ export const TABLES = {
       named: 1.5,
     },
   },
+  // maxMundane caps the base value of items with no rarity. null is no cap.
   tiers: {
-    poor: { shelf: [10, 12], maxRarity: "uncommon", purse: [50 * GP, 150 * GP] },
-    modest: { shelf: [12, 14], maxRarity: "rare", purse: [300 * GP, 1_000 * GP] },
-    wealthy: { shelf: [14, 16], maxRarity: "veryRare", purse: [2_000 * GP, 10_000 * GP] },
+    poor: { shelf: [10, 12], maxRarity: "uncommon", maxMundane: /** @type {number | null} */ (100 * GP), purse: [50 * GP, 150 * GP] },
+    modest: { shelf: [12, 14], maxRarity: "rare", maxMundane: /** @type {number | null} */ (1_000 * GP), purse: [300 * GP, 1_000 * GP] },
+    wealthy: { shelf: [14, 16], maxRarity: "veryRare", maxMundane: /** @type {number | null} */ (null), purse: [2_000 * GP, 10_000 * GP] },
   },
   stock: {
     // Chance weight for each rarity by tier. Missing or 0 never rolls.

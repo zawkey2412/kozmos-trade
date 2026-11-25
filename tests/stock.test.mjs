@@ -41,6 +41,13 @@ describe("what may roll", () => {
     assert.equal(rollable(pool[6], "uncommon"), false);
   });
 
+  it("caps the price of mundane items, but not of magic items", () => {
+    assert.equal(rollable(pool[2], "uncommon", TABLES.tiers.poor.maxMundane), false);
+    assert.equal(rollable(pool[4], "uncommon", TABLES.tiers.poor.maxMundane), true);
+    assert.equal(rollable(pool[5], "uncommon", TABLES.tiers.poor.maxMundane), true);
+    assert.equal(rollable(pool[2], "veryRare", TABLES.tiers.wealthy.maxMundane), true);
+  });
+
   it("skips filler, but not standard weapons and armor", () => {
     assert.equal(rollable(pool[10], "rare"), false);
     assert.equal(rollable(pool[11], "rare"), true);
@@ -109,6 +116,10 @@ describe("a whole shelf", () => {
     assert.ok(!names.includes("Vorpal Sword"));
     assert.ok(!names.includes("Odd Junk"));
     assert.equal(new Set(names).size, names.length);
+  });
+
+  it("keeps expensive mundane goods off poor shelves", () => {
+    for (let seed = 1; seed < 30; seed++) assert.ok(!roll(seed, "poor").picks.some((p) => p.name === "Plate"), `seed ${seed}`);
   });
 
   it("prices every pick on a shelf step", () => {

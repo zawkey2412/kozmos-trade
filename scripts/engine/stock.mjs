@@ -55,16 +55,18 @@ export function isStandardArms(facts) {
   return Boolean(facts.baseItem) && (ARMS[facts.type] ?? []).includes(facts.subtype ?? "");
 }
 
-// Items a shop of this tier may ever roll: for sale, not above the tier's rarity, and not filler.
+// Items a shop of this tier may ever roll: for sale, not above the tier's rarity or mundane price cap, and not filler.
 /**
  * @param {Candidate} candidate
  * @param {string} maxRarity
+ * @param {number | null} [maxMundane]
  */
-export function rollable(candidate, maxRarity) {
+export function rollable(candidate, maxRarity, maxMundane = null) {
   const { facts, value } = candidate;
   if (!value.forSale || value.copper <= 0) return false;
   if (NEVER.includes(facts.rarity ?? "")) return false;
   if (rarityRank(facts.rarity) > rarityRank(maxRarity)) return false;
+  if (!facts.rarity && maxMundane != null && value.copper > maxMundane) return false;
   return value.source !== "floor" || isStandardArms(facts);
 }
 
@@ -109,7 +111,7 @@ export function stackSize(facts, tier, stock, random) {
 export function rollShelf(candidates, { archetype, tier, tables, random, value }) {
   const tierTable = tables.tiers[tier] ?? tables.tiers.modest;
   const weights = tables.stock.weights[tier] ?? tables.stock.weights.modest;
-  const eligible = candidates.filter((candidate) => rollable(candidate, tierTable.maxRarity));
+  const eligible = candidates.filter((candidate) => rollable(candidate, tierTable.maxRarity, tierTable.maxMundane));
   const inArchetype = eligible.filter((candidate) => matchesAny(candidate.facts, archetype.stocks));
   const outside = eligible.filter((candidate) => !matchesAny(candidate.facts, archetype.stocks));
 
