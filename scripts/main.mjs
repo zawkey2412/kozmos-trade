@@ -4,6 +4,7 @@ import { MODULE_ID } from "./constants.mjs";
 import { registerApprovalHandlers, registerProposalCards, setCounterWindow } from "./services/approval.mjs";
 import { setTradeWindow } from "./services/open-trade.mjs";
 import { registerReceiptCards, registerReceiptHandlers } from "./services/receipts.mjs";
+import { registerShopCards } from "./services/shop-card.mjs";
 import { registerSessionHandlers } from "./services/session.mjs";
 import { listen, MESSAGES, onBroadcast } from "./services/socket.mjs";
 import { registerTradeHandlers } from "./services/trade.mjs";
@@ -17,6 +18,7 @@ Hooks.once("init", () => {
   setCounterWindow((message) => BarterWindow.openCounter(message));
   registerProposalCards();
   registerReceiptCards();
+  registerShopCards();
   // Module has no api property in the generated types.
   /** @type {any} */ (game.modules.get(MODULE_ID)).api = createApi();
 });

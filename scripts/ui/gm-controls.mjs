@@ -1,6 +1,7 @@
 // The scales button for GMs on NPC token HUDs and actor sheet headers.
 import ConfigureShop from "../apps/configure-shop.mjs";
-import { canBeShop } from "../services/shop.mjs";
+import { openTrade, pickCustomer } from "../services/open-trade.mjs";
+import { canBeShop, isShop } from "../services/shop.mjs";
 
 const ICON = "fa-solid fa-scale-balanced";
 
@@ -9,9 +10,17 @@ export function registerGmControls() {
   Hooks.on("getHeaderControlsActorSheetV2", addHeaderControl);
 }
 
+// The barter window for a shop that is set up, Configure Shop for anything else.
 /** @param {any} actor */
-export function openShopFor(actor) {
-  return ConfigureShop.open(actor);
+export async function openShopFor(actor) {
+  if (!isShop(actor)) return ConfigureShop.open(actor);
+  let customer;
+  try {
+    customer = await pickCustomer();
+  } catch {
+    return ConfigureShop.open(actor);
+  }
+  if (customer) return openTrade(customer, actor);
 }
 
 /**

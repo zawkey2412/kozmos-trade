@@ -73,7 +73,8 @@
       "NotForSale": "Not for sale",
       "OpenShop": "Open shop",
       "Save": "Save",
-      "Remove": "Stop being a shop"
+      "Remove": "Stop being a shop",
+      "PostCard": "Post Open Shop card"
     },
     "Archetype": {
       "blacksmith": "Blacksmith",
@@ -221,6 +222,10 @@
       "Empty": "No trades yet.",
       "Summary": "Got {gets} for {gives}",
       "Item": "{quantity} {name}"
+    },
+    "ShopCard": {
+      "Body": "{name} is open for business.",
+      "Browse": "Browse wares"
     }
   }
 }

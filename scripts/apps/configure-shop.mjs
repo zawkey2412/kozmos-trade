@@ -5,6 +5,7 @@ import { EXECUTION_MODES, merchantFlags, TIERS } from "../data/flags.mjs";
 import { coinsToCopper, COPPER, formatCopper, toCopper } from "../engine/money.mjs";
 import { coinLabels, locale } from "../adapter/dnd5e.mjs";
 import { ledgerOf, revertEntry } from "../services/receipts.mjs";
+import { postShopCard } from "../services/shop-card.mjs";
 import { removeShop, saveShop, shelf } from "../services/shop.mjs";
 
 import { HandlebarsDocumentSheet } from "./base.mjs";
@@ -15,7 +16,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     position: { width: 560 },
     window: { icon: "fa-solid fa-scale-balanced", contentClasses: ["standard-form"] },
     form: { handler: ConfigureShop.#onSubmit, closeOnSubmit: true },
-    actions: { removeShop: ConfigureShop.#onRemoveShop, revert: ConfigureShop.#onRevert },
+    actions: { removeShop: ConfigureShop.#onRemoveShop, revert: ConfigureShop.#onRevert, postCard: ConfigureShop.#onPostCard },
     sheetConfig: false,
     ownershipConfig: false,
   };
@@ -70,6 +71,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
       buttons: flags.enabled
         ? [
             { type: "button", action: "removeShop", icon: "fa-solid fa-store-slash", label: "KT.Configure.Remove" },
+            { type: "button", action: "postCard", icon: "fa-solid fa-bullhorn", label: "KT.Configure.PostCard" },
             { type: "submit", icon: "fa-solid fa-floppy-disk", label: "KT.Configure.Save" },
           ]
         : [{ type: "submit", icon: "fa-solid fa-store", label: "KT.Configure.OpenShop" }],
@@ -109,6 +111,11 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
    */
   static async #onRevert(event, target) {
     await revertEntry(this.document.uuid, target.dataset.entry);
+  }
+
+  /** @this {ConfigureShop} */
+  static async #onPostCard() {
+    await postShopCard(this.document);
   }
 
   /** @this {ConfigureShop} */
