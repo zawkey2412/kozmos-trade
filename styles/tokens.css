@@ -1,13 +1,18 @@
 /* Tokens: every color, size, space and duration the module uses, mapped to core variables. */
-.kozmos-trade {
+.kozmos-trade,
+.kt-tooltip {
   --kt-space: var(--spacing, 8px);
   --kt-space-small: calc(var(--kt-space) / 2);
   --kt-space-large: calc(var(--kt-space) * 2);
+  --kt-space-tight: 2px;
   --kt-radius: 4px;
   --kt-border: 1px solid var(--color-border);
+  --kt-border-clear: 1px solid transparent;
+  --kt-highlight: var(--color-border-highlight);
   --kt-text: var(--color-text-primary);
   --kt-text-muted: var(--color-text-secondary);
   --kt-text-subtle: var(--color-text-subtle);
+  --kt-font-tiny: var(--font-size-10);
   --kt-font-small: var(--font-size-12);
   --kt-font-body: var(--font-size-14);
   --kt-font-large: var(--font-size-16);
@@ -18,6 +23,13 @@
   --kt-value-width: 6rem;
   --kt-pin-width: 2rem;
   --kt-list-height: 24rem;
+  --kt-balance-width: 11rem;
+  --kt-tooltip-width: 22rem;
+  --kt-tooltip-height: 26rem;
+  --kt-chip-height: 1.5rem;
+  --kt-meter-height: 0.5rem;
+  --kt-meter-width: 9rem;
+  --kt-scale-size: 3rem;
   --kt-short: var(--color-level-error);
   --kt-even: var(--color-level-success);
   --kt-generous: var(--color-warm-2);
@@ -26,4 +38,5 @@
   --kt-surface-strong: color-mix(in srgb, var(--color-text-primary) 9%, transparent);
   --kt-dim: 0.45;
   --kt-transition: 150ms ease;
+  --kt-ring: 0 0 0 1px var(--kt-highlight) inset;
 }

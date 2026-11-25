@@ -83,6 +83,52 @@
       "Title": "Trade as",
       "Label": "Character",
       "Ok": "Trade"
+    },
+    "Barter": {
+      "Title": "{merchant} and {customer}",
+      "Configure": "Configure shop",
+      "Purse": "Merchant's purse",
+      "Search": "Search",
+      "Sort": "Sort",
+      "EmptyCustomer": "Nothing to trade.",
+      "EmptyShelf": "The shelf is empty.",
+      "YouOffer": "You offer",
+      "YouGet": "You get",
+      "TrayHint": "Drag items here, or click them.",
+      "Accept": "Accept",
+      "Damage": "Damage {value}, yours {own}",
+      "ArmorClass": "AC {value}, yours {own}"
+    },
+    "Attitude": {
+      "hostile": "Hostile",
+      "cold": "Cold",
+      "neutral": "Neutral",
+      "warm": "Warm",
+      "friendly": "Friendly"
+    },
+    "Category": {
+      "weapons": "Weapons",
+      "armor": "Armor",
+      "consumables": "Consumables",
+      "gear": "Gear",
+      "magic": "Magic",
+      "loot": "Loot"
+    },
+    "Sort": {
+      "name": "Name",
+      "price": "Price",
+      "rarity": "Rarity",
+      "affordable": "I can afford"
+    },
+    "Tag": {
+      "equipped": "Equipped",
+      "attuned": "Attuned",
+      "full": "Has items inside",
+      "unidentified": "Unidentified",
+      "scrap": "Scrap",
+      "favored": "Wanted here",
+      "limited": "Limited Stock",
+      "pinned": "Pinned"
     }
   }
 }

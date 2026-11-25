@@ -1,0 +1,22 @@
+<section class="kt-inventory" data-side="{{side}}">
+  <div class="kt-inventory-tools">
+    <input type="search" class="kt-search" data-side="{{side}}" value="{{search}}"
+           placeholder="{{localize "KT.Barter.Search"}}" aria-label="{{localize "KT.Barter.Search"}}">
+    <select class="kt-sort" data-side="{{side}}" aria-label="{{localize "KT.Barter.Sort"}}">
+      {{selectOptions sorts selected=sort localize=true}}
+    </select>
+  </div>
+  <div class="kt-chips" role="toolbar">
+    {{#each chips as |chip|}}
+    <button type="button" class="kt-chip{{#if chip.active}} active{{/if}}" data-action="category" data-side="{{../side}}"
+            data-category="{{chip.id}}" aria-pressed="{{chip.active}}">{{chip.label}}</button>
+    {{/each}}
+  </div>
+  {{#if items.length}}
+  <ol class="kt-inventory-list plain">
+    {{#each items as |item|}}{{> kt-card item}}{{/each}}
+  </ol>
+  {{else}}
+  <p class="kt-empty">{{empty}}</p>
+  {{/if}}
+</section>

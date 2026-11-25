@@ -120,6 +120,25 @@ export function tokensOf(actor) {
   }));
 }
 
+// Weapon damage and armor class, to compare with what a character has equipped.
+/**
+ * @param {any} item
+ * @returns {{ damage: string | null, ac: number | null }}
+ */
+export function combatStats(item) {
+  const system = item.system ?? {};
+  const armor = item.type === "equipment" && ["light", "medium", "heavy", "shield"].includes(system.type?.value);
+  return {
+    damage: item.type === "weapon" ? (system.damage?.base?.formula || null) : null,
+    ac: armor && Number.isFinite(system.armor?.value) ? system.armor.value : null,
+  };
+}
+
+/** @param {string} rarity */
+export function rarityLabel(rarity) {
+  return rarity ? game.i18n.localize(/** @type {any} */ (CONFIG).DND5E.itemRarity?.[rarity] ?? rarity) : "";
+}
+
 // Coin abbreviations in the reader's language.
 /** @returns {Record<string, string>} */
 export function coinLabels() {

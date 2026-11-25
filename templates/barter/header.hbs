@@ -1,0 +1,36 @@
+<header class="kt-barter-header">
+  <div class="kt-party kt-party-customer">
+    <img class="kt-portrait" src="{{header.customer.img}}" alt="">
+    <div class="kt-party-text">
+      <h2>{{header.customer.name}}</h2>
+      <span class="kt-muted"><i class="fa-solid fa-coins" inert></i> {{header.customer.coins}}</span>
+    </div>
+  </div>
+
+  <div class="kt-header-middle">
+    {{#if gm}}
+    <span class="kt-mode kt-muted">{{header.mode}}</span>
+    <button type="button" class="inline-control icon fa-solid fa-sliders" data-action="configure"
+            data-tooltip aria-label="{{localize "KT.Barter.Configure"}}"></button>
+    {{/if}}
+  </div>
+
+  <div class="kt-party kt-party-merchant">
+    <div class="kt-party-text">
+      <h2>{{header.merchant.name}}</h2>
+      <span class="kt-muted">
+        {{header.merchant.archetype}}
+        {{#if header.attitude}}
+        <span class="kt-attitude {{header.attitude.band}}" data-tooltip aria-label="{{header.attitude.label}}">
+          <i class="{{header.attitude.icon}}" inert></i> {{header.attitude.label}}
+        </span>
+        {{/if}}
+      </span>
+      {{#if (ne header.merchant.purse null)}}
+      <meter class="kt-purse" min="0" max="1" low="0.25" optimum="1" value="{{header.merchant.purse}}"
+             data-tooltip aria-label="{{#if header.merchant.exactPurse}}{{header.merchant.exactPurse}}{{else}}{{localize "KT.Barter.Purse"}}{{/if}}"></meter>
+      {{/if}}
+    </div>
+    <img class="kt-portrait" src="{{header.merchant.img}}" alt="">
+  </div>
+</header>

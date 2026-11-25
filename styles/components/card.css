@@ -1,0 +1,99 @@
+/* Item card. */
+.kozmos-trade .kt-card {
+  display: grid;
+  grid-template-columns: var(--kt-icon) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--kt-space);
+  padding: var(--kt-space-small);
+  border: var(--kt-border-clear);
+  border-radius: var(--kt-radius);
+  background: var(--kt-surface);
+  cursor: pointer;
+  transition: background var(--kt-transition), border-color var(--kt-transition);
+}
+
+.kozmos-trade .kt-card:hover,
+.kozmos-trade .kt-card:focus-visible {
+  background: var(--kt-surface-strong);
+  border-color: var(--kt-highlight);
+  outline: none;
+}
+
+.kozmos-trade .kt-card.dim {
+  opacity: var(--kt-dim);
+}
+
+.kozmos-trade .kt-card.disabled {
+  opacity: var(--kt-dim);
+  cursor: not-allowed;
+}
+
+.kozmos-trade .kt-card.hidden {
+  display: none;
+}
+
+.kozmos-trade .kt-card img {
+  width: var(--kt-icon);
+  height: var(--kt-icon);
+  border: none;
+  border-radius: var(--kt-radius);
+}
+
+.kozmos-trade .kt-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-tight);
+  min-width: 0;
+}
+
+.kozmos-trade .kt-card-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kozmos-trade .kt-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kt-space-small);
+}
+
+.kozmos-trade .kt-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kt-space-tight);
+  font-size: var(--kt-font-tiny);
+  color: var(--kt-text-muted);
+  white-space: nowrap;
+}
+
+.kozmos-trade .kt-tag.rarity {
+  color: var(--kt-text);
+}
+
+.kozmos-trade .kt-tag.limited,
+.kozmos-trade .kt-tag.full,
+.kozmos-trade .kt-tag.scrap {
+  color: var(--kt-generous);
+}
+
+.kozmos-trade .kt-tag.favored {
+  color: var(--kt-even);
+}
+
+.kozmos-trade .kt-card-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--kt-space-tight);
+}
+
+.kozmos-trade .kt-card-price {
+  font-size: var(--kt-font-small);
+  white-space: nowrap;
+}
+
+.kozmos-trade .kt-card-quantity {
+  font-size: var(--kt-font-small);
+  color: var(--kt-text-muted);
+}

@@ -1,7 +1,7 @@
 // Trade sessions: who is at which merchant, the access checks, and the shelf a customer sees.
 // Documents are typed any here because their system data has no generated types.
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
-import { itemDescription, purse, tokensOf } from "../adapter/dnd5e.mjs";
+import { combatStats, itemDescription, purse, tokensOf } from "../adapter/dnd5e.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { accessProblem, squaresBetween } from "../engine/access.mjs";
 import { attitudeAdjustment, attitudeBand } from "../engine/attitude.mjs";
@@ -33,6 +33,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {boolean} limited
  * @property {boolean} magical
  * @property {string} description
+ * @property {{ damage: string | null, ac: number | null }} stats
  */
 
 /**
@@ -172,6 +173,7 @@ export function snapshot(merchant, customer) {
         limited: itemFlagData.limited,
         magical: Boolean(facts.magical || facts.rarity || facts.magicalBonus),
         description: itemDescription(item),
+        stats: combatStats(item),
       })),
   };
 }
