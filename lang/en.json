@@ -28,7 +28,16 @@
       "Busy": "Busy with {name}. Try again when they are done.",
       "Missing": "That actor no longer exists.",
       "NotYours": "You can only trade as a character you own.",
-      "NoCharacter": "You have no character to trade with."
+      "NoCharacter": "You have no character to trade with.",
+      "Short": "Your offer is short.",
+      "ExactCoins": "{name} can't make change. Pay with exact coins.",
+      "NotInSession": "Open the trade window again.",
+      "ItemGone": "{name} is no longer available.",
+      "NotForSale": "{name} is not for sale.",
+      "NotEnoughCoins": "You don't have those coins.",
+      "TradeFailed": "The trade could not be completed. Nothing changed.",
+      "Cancelled": "The trade was stopped.",
+      "Empty": "There is nothing to trade."
     },
     "Shop": {
       "Control": "Shop"
@@ -109,7 +118,8 @@
         "Title": "Trade worn gear?",
         "Body": "{name} is equipped or attuned. Put it on offer anyway?"
       },
-      "Propose": "Propose Trade"
+      "Propose": "Propose Trade",
+      "Done": "Trade done."
     },
     "Attitude": {
       "hostile": "Hostile",
@@ -153,7 +163,8 @@
     "Footer": {
       "Empty": "Put something on offer.",
       "Short": "Your offer is short.",
-      "CannotCover": "The merchant can't pay that much in coins."
+      "CannotCover": "The merchant can't pay that much in coins.",
+      "Working": "Waiting for the GM."
     }
   }
 }

@@ -7,6 +7,7 @@ import { COPPER, coinsToCopper, formatCopper, payFrom, splitCopper } from "../en
 import { tradeable } from "../engine/shelf.mjs";
 import { settle } from "../engine/quote.mjs";
 import { addCoins, clampCoins, emptyOffer, isEmpty, setLine, stageAmount } from "../engine/tray.mjs";
+import { warn } from "../services/errors.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
@@ -46,6 +47,7 @@ export default class BarterWindow extends HandlebarsApplication {
       unstage: BarterWindow.#onUnstage,
       autoBalance: BarterWindow.#onAutoBalance,
       empty: BarterWindow.#onEmpty,
+      accept: BarterWindow.#onAccept,
     },
   };
 
@@ -184,6 +186,37 @@ export default class BarterWindow extends HandlebarsApplication {
   /** @param {string[]} [parts] */
   refresh(parts = OFFER_PARTS) {
     return this.render({ parts });
+  }
+
+  // Every open window at this merchant asks for a fresh shelf.
+  /** @param {string} merchant */
+  static refreshFor(merchant) {
+    for (const app of foundry.applications.instances.values()) {
+      if (app instanceof BarterWindow && app.snapshot.merchant.uuid === merchant) app.refreshSnapshot();
+    }
+  }
+
+  async refreshSnapshot() {
+    try {
+      const snapshot = await request(MESSAGES.SESSION_OPEN, { merchant: this.snapshot.merchant.uuid, customer: this.customer.uuid });
+      this.updateSnapshot(snapshot);
+      this.purseCheck = null;
+      if (this.rendered) this.render({ parts: ["header", ...OFFER_PARTS] });
+    } catch (error) {
+      warn(error);
+    }
+  }
+
+  #payload() {
+    return {
+      merchant: this.snapshot.merchant.uuid,
+      customer: this.customer.uuid,
+      give: [...this.offer.give],
+      take: [...this.offer.take],
+      coinsGive: this.offer.coinsGive,
+      coinsTake: this.offer.coinsTake,
+      keepChange: this.offer.keepChange,
+    };
   }
 
   /** @param {number} budget */
@@ -439,7 +472,8 @@ export default class BarterWindow extends HandlebarsApplication {
   #footer(result) {
     const approval = this.snapshot.merchant.executionMode === "approval";
     let reason = null;
-    if (!game.users.activeGM) reason = "KT.Error.NoGM";
+    if (this.busy) reason = "KT.Footer.Working";
+    else if (!game.users.activeGM) reason = "KT.Error.NoGM";
     else if (isEmpty(this.offer)) reason = "KT.Footer.Empty";
     else if (!approval && result.state === "short") reason = "KT.Footer.Short";
     else if (this.#balance(result).cannotCover) reason = "KT.Footer.CannotCover";
@@ -691,6 +725,24 @@ export default class BarterWindow extends HandlebarsApplication {
     const id = /** @type {HTMLElement} */ (target.closest(".kt-card")).dataset.itemId;
     const contents = this.customer.items.filter((item) => item.system?.container === id);
     await this.customer.updateEmbeddedDocuments("Item", contents.map((item) => ({ _id: item.id, "system.container": null })));
+  }
+
+  /** @this {BarterWindow} */
+  static async #onAccept() {
+    if (this.busy) return;
+    this.busy = true;
+    this.render({ parts: ["footer"] });
+    try {
+      await request(MESSAGES.TRADE_REQUEST, this.#payload());
+      this.offer = emptyOffer();
+      this.confirmed.clear();
+      ui.notifications.info("KT.Barter.Done", { localize: true });
+    } catch (error) {
+      warn(error);
+    } finally {
+      this.busy = false;
+      if (this.rendered) this.refresh();
+    }
   }
 }
 

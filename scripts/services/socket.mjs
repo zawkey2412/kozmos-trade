@@ -19,6 +19,8 @@ export const MESSAGES = Object.freeze({
   SESSION_OPEN: "session.open",
   SESSION_CLOSE: "session.close",
   PURSE_CHECK: "purse.check",
+  TRADE_REQUEST: "trade.request",
+  TRADE_DONE: "trade.done",
 });
 
 /** @type {Map<string, RequestHandler>} */
