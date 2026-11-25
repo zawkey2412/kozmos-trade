@@ -32,6 +32,18 @@ export function registerSettings() {
     type: new foundry.data.fields.BooleanField({ initial: false }),
   });
 
+  register(SETTINGS.COMPENDIUMS, {
+    name: "KT.Settings.Compendiums.Name",
+    hint: "KT.Settings.Compendiums.Hint",
+    scope: "world",
+    config: true,
+    type: new foundry.data.fields.SetField(
+      new foundry.data.fields.StringField({
+        choices: () => Object.fromEntries(game.packs.filter((pack) => pack.documentName === "Item").map((pack) => [pack.collection, pack.title])),
+      }),
+    ),
+  });
+
   // The GM's archetypes and changes to the defaults.
   register(SETTINGS.ARCHETYPES, {
     name: "KT.Archetypes.Title",

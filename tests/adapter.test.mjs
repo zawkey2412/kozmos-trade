@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { clock, coinLabels, holdingFacts, itemFacts, levelFromName, passiveScore, purse, rulesVersion } from "../scripts/adapter/dnd5e.mjs";
+import { clock, coinLabels, holdingFacts, itemFacts, levelFromName, passiveScore, purse, rarityKey, rulesVersion } from "../scripts/adapter/dnd5e.mjs";
 
 const item = (type, system = {}, name = "Thing") => ({ type, name, system });
 const cast = (spell) => [{ type: "cast", spell }];
@@ -65,6 +65,17 @@ describe("item facts", () => {
 
   it("copes with an item that has no system data", () => {
     assert.deepEqual(itemFacts({ type: "loot", name: "Bone" }).price, { value: 0, denomination: "gp" });
+  });
+});
+
+describe("rarity keys", () => {
+  it("reads current keys and older written forms", () => {
+    assert.equal(rarityKey("veryRare"), "veryRare");
+    assert.equal(rarityKey("Very Rare"), "veryRare");
+    assert.equal(rarityKey("Rare"), "rare");
+    assert.equal(rarityKey(""), "");
+    assert.equal(rarityKey("mundane"), "");
+    assert.equal(itemFacts({ type: "weapon", system: { rarity: "Uncommon" } }).rarity, "uncommon");
   });
 });
 

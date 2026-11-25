@@ -17,6 +17,7 @@ export const SETTINGS = Object.freeze({
   TABLES: "tables",
   PROXIMITY: "proximity",
   ARCHETYPES: "archetypes",
+  COMPENDIUMS: "compendiums",
 });
 
 export const MODES = Object.freeze({

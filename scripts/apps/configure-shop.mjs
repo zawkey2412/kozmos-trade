@@ -5,8 +5,10 @@ import { archetypeLabel, getArchetypes } from "../services/archetypes.mjs";
 import { EXECUTION_MODES, merchantFlags, TIERS } from "../data/flags.mjs";
 import { coinsToCopper, COPPER, formatCopper, toCopper } from "../engine/money.mjs";
 import { coinLabels, locale } from "../adapter/dnd5e.mjs";
+import { warn } from "../services/errors.mjs";
 import { ledgerOf, revertEntry } from "../services/receipts.mjs";
 import { postShopCard } from "../services/shop-card.mjs";
+import { generateStock } from "../services/stock.mjs";
 import { removeShop, saveShop, shelf } from "../services/shop.mjs";
 
 import { HandlebarsDocumentSheet } from "./base.mjs";
@@ -17,7 +19,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     position: { width: 560 },
     window: { icon: "fa-solid fa-scale-balanced", contentClasses: ["standard-form"] },
     form: { handler: ConfigureShop.#onSubmit, closeOnSubmit: true },
-    actions: { removeShop: ConfigureShop.#onRemoveShop, revert: ConfigureShop.#onRevert, postCard: ConfigureShop.#onPostCard },
+    actions: { removeShop: ConfigureShop.#onRemoveShop, revert: ConfigureShop.#onRevert, postCard: ConfigureShop.#onPostCard, generate: ConfigureShop.#onGenerate },
     sheetConfig: false,
     ownershipConfig: false,
   };
@@ -112,6 +114,29 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
    */
   static async #onRevert(event, target) {
     await revertEntry(this.document.uuid, target.dataset.entry);
+  }
+
+  // Rolls a new shelf with the archetype and wealth on screen, opening the shop if it is new.
+  /** @this {ConfigureShop} */
+  static async #onGenerate() {
+    // Form data has no static shape.
+    const data = /** @type {any} */ (new foundry.applications.ux.FormDataExtended(this.element)).object;
+    const unpinned = shelf(this.document).filter((entry) => !entry.flags.pinned).length;
+    if (unpinned) {
+      const ok = await foundry.applications.api.DialogV2.confirm(/** @type {any} */ ({
+        window: { title: "KT.Configure.Generate" },
+        content: `<p>${game.i18n.localize("KT.Configure.GenerateConfirm", { count: unpinned })}</p>`,
+        rejectClose: false,
+      }));
+      if (!ok) return;
+    }
+    if (!merchantFlags(this.document).enabled) {
+      await saveShop(this.document, { shop: { open: true, archetype: data.archetype, tier: data.tier, executionMode: data.executionMode } });
+    }
+    const result = await generateStock(this.document, { archetype: data.archetype, tier: data.tier }).catch((error) => warn(error));
+    if (!result) return;
+    const purse = formatCopper(result.purse, { locale: locale(), labels: coinLabels() });
+    ui.notifications.info(game.i18n.localize("KT.Configure.Generated", { count: result.items.length, purse }));
   }
 
   /** @this {ConfigureShop} */

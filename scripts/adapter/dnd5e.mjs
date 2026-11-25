@@ -52,7 +52,7 @@ export function itemFacts(item) {
     subtype,
     baseItem: system.type?.baseItem ?? "",
     price: { value: Number(system.price?.value) || 0, denomination: system.price?.denomination || "gp" },
-    rarity: system.rarity || undefined,
+    rarity: rarityKey(system.rarity) || undefined,
     scroll,
     spellLevel: scroll ? scrollLevel(item) : null,
     magicalBonus: Number(system.magicalBonus) || 0,
@@ -156,6 +156,13 @@ export function clock() {
   const { days } = /** @type {any} */ (game.time.calendar);
   const day = days.secondsPerMinute * days.minutesPerHour * days.hoursPerDay;
   return { now: game.time.worldTime, day, week: day * Math.max(1, days.values.length) };
+}
+
+// The rarity key, also from older data written as "Very Rare".
+/** @param {unknown} rarity */
+export function rarityKey(rarity) {
+  const plain = String(rarity ?? "").replace(/[\s_-]+/g, "").toLowerCase();
+  return { common: "common", uncommon: "uncommon", rare: "rare", veryrare: "veryRare", legendary: "legendary", artifact: "artifact" }[plain] ?? "";
 }
 
 // Spell level in a scroll's name, such as "Spell Scroll (3rd Level)", "Spell Scroll, Level 1" or "Spell Scroll (Cantrip)".

@@ -1,6 +1,9 @@
 <fieldset class="kt-configure-stock">
   <legend>{{localize "KT.Configure.Stock.Label"}}</legend>
-  <p class="hint">{{localize "KT.Configure.Stock.Hint"}}</p>
+  <div class="kt-stock-tools">
+    <p class="hint">{{localize "KT.Configure.Stock.Hint"}}</p>
+    <button type="button" data-action="generate"><i class="fa-solid fa-dice" inert></i> {{localize "KT.Configure.Generate"}}</button>
+  </div>
 
   {{#if rows.length}}
   <div class="kt-stock-head">

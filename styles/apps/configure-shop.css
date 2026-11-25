@@ -126,3 +126,19 @@
 .kt-configure-shop .kt-ledger-who {
   font-weight: bold;
 }
+
+.kt-configure-shop .kt-stock-tools {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--kt-space);
+}
+
+.kt-configure-shop .kt-stock-tools .hint {
+  flex: 1;
+  margin: 0;
+}
+
+.kt-configure-shop .kt-stock-tools button {
+  flex: none;
+  width: auto;
+}

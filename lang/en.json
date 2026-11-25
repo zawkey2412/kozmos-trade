@@ -15,6 +15,10 @@
       "Proximity": {
         "Name": "Trade only up close",
         "Hint": "Players must have their own token within 2 squares of the merchant's token to trade. The GM can always trade."
+      },
+      "Compendiums": {
+        "Name": "Stock compendiums",
+        "Hint": "Item compendiums the stock generator draws from. Leave empty to use dnd5e's own equipment for the world's rules."
       }
     },
     "Error": {
@@ -44,7 +48,8 @@
       "RevertGone": "That trade is not in the ledger, or was already reverted.",
       "RevertMoved": "{name} has changed hands since the trade, so it can't be reverted.",
       "RevertCoins": "The coins from that trade have been spent, so it can't be reverted.",
-      "SoldOut": "That item is no longer available."
+      "SoldOut": "That item is no longer available.",
+      "NoArchetype": "There is no archetype called {name}."
     },
     "Shop": {
       "Control": "Shop"
@@ -75,7 +80,10 @@
       "OpenShop": "Open shop",
       "Save": "Save",
       "Remove": "Stop being a shop",
-      "PostCard": "Post Open Shop card"
+      "PostCard": "Post Open Shop card",
+      "Generate": "Generate stock",
+      "GenerateConfirm": "This replaces {count} unpinned items on the shelf. Pinned items stay.",
+      "Generated": "{count} items stocked. The purse holds {purse}."
     },
     "Archetype": {
       "blacksmith": "Blacksmith",

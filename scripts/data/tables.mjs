@@ -84,6 +84,18 @@ export const TABLES = {
     modest: { shelf: [12, 14], maxRarity: "rare", purse: [300 * GP, 1_000 * GP] },
     wealthy: { shelf: [14, 16], maxRarity: "veryRare", purse: [2_000 * GP, 10_000 * GP] },
   },
+  stock: {
+    // Chance weight for each rarity by tier. Missing or 0 never rolls.
+    weights: {
+      poor: { mundane: 1, common: 0.5, uncommon: 0.12 },
+      modest: { mundane: 1, common: 0.7, uncommon: 0.35, rare: 0.08 },
+      wealthy: { mundane: 0.8, common: 0.7, uncommon: 0.5, rare: 0.2, veryRare: 0.05 },
+    },
+    // Stack size dice for consumables and ammunition by tier, and for mundane weapons and armor.
+    consumableDice: { poor: [1, 4], modest: [1, 6], wealthy: [2, 6] },
+    armsDice: [1, 2],
+    curios: [1, 2],
+  },
   access: {
     // Grid squares between the customer's and the merchant's tokens.
     proximity: 2,
