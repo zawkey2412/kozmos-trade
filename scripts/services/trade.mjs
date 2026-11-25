@@ -11,7 +11,7 @@ import { planCoins } from "../engine/trade.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
 import { buyQuote, sellQuote } from "./offer.mjs";
-import { checkAccess, resolvePair, sessionAt } from "./session.mjs";
+import { checkAccess, resolvePair, sessionAt, soldToday, updateSold } from "./session.mjs";
 import { recordTrade } from "./receipts.mjs";
 import { shelf } from "./shop.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
@@ -26,6 +26,7 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  * @property {string} customer
  * @property {[string, number][]} give
  * @property {[string, number][]} take
+ * @property {[string, number][]} [buyback]
  * @property {Record<string, number>} coinsGive
  * @property {Record<string, number>} coinsTake
  * @property {boolean} keepChange
@@ -47,6 +48,7 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  * @property {any} customer
  * @property {TradeLine[]} give
  * @property {TradeLine[]} take
+ * @property {[string, number][]} boughtBack
  * @property {Record<string, number>} coinsGive
  * @property {Record<string, number>} coinsTake
  * @property {Settlement} result
@@ -99,6 +101,8 @@ export async function runTrade(payload, sender, { requireBalance = true } = {}) 
     console.error("Kozmos Trade | Receipt failed", error);
     return null;
   });
+  const sold = trade.give.map((line, index) => ({ id: record.merchantCreated[index], from: line.item.id, price: line.unit, quantity: line.quantity }));
+  updateSold(trade.merchant.uuid, trade.customer.uuid, sold, trade.boughtBack);
   Hooks.callAll("kozmosTrade.trade", trade, record);
   broadcast(MESSAGES.TRADE_DONE, { merchant: trade.merchant.uuid, customer: trade.customer.uuid });
   return { paid: trade.coins.paid, change: trade.result.change, receipt: entry?.id ?? null };
@@ -132,6 +136,7 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
   });
 
   const stock = shelf(merchant);
+  /** @type {TradeLine[]} */
   const take = cleanLines(payload.take).map(([id, quantity]) => {
     const entry = stock.find((e) => e.item.id === id);
     if (!entry || entry.price === null || quantity > entry.holding.quantity) {
@@ -139,6 +144,20 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
     }
     return { item: entry.item, quantity, unit: buyQuote(entry.price, context).copper, held: entry.holding.quantity };
   });
+
+  const sold = soldToday(merchant.uuid, customer.uuid);
+  const boughtBack = cleanLines(payload.buyback ?? []);
+  for (const [id, quantity] of boughtBack) {
+    const record = sold.find((e) => e.id === id);
+    const entry = stock.find((e) => e.item.id === id);
+    if (!record || !entry || quantity > record.quantity) throw new TradeError("KT.Error.ItemGone", { name: entry?.item.name ?? "?" });
+    const mergeInto = record.from && customer.items.get(record.from) ? record.from : undefined;
+    take.push({ item: entry.item, quantity, unit: record.price, held: entry.holding.quantity, mergeInto });
+  }
+  for (const line of take) {
+    const total = take.filter((other) => other.item.id === line.item.id).reduce((sum, other) => sum + other.quantity, 0);
+    if (total > line.held) throw new TradeError("KT.Error.ItemGone", { name: line.item.name });
+  }
 
   const coinsGive = wholeCoins(payload.coinsGive);
   const coinsTake = wholeCoins(payload.coinsTake);
@@ -165,7 +184,7 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
     purseLimit: feature("purseLimit"),
   });
   if (!coins) throw new TradeError("KT.Error.ExactCoins", { name: merchant.name });
-  return { merchant, customer, give, take, coinsGive, coinsTake, result, coins, context };
+  return { merchant, customer, give, take, boughtBack, coinsGive, coinsTake, result, coins, context };
 }
 
 // Moves coins and items in steps, and undoes the finished steps if one fails.
@@ -221,8 +240,15 @@ async function setCurrency(actor, coins, undo) {
  * @param {(() => Promise<unknown>)[]} undo
  */
 async function removeLines(actor, lines, undo) {
-  const whole = lines.filter((line) => line.quantity >= line.held);
-  const part = lines.filter((line) => line.quantity < line.held);
+  /** @type {Map<string, TradeLine>} */
+  const byItem = new Map();
+  for (const line of lines) {
+    const known = byItem.get(line.item.id);
+    byItem.set(line.item.id, known ? { ...known, quantity: known.quantity + line.quantity } : { ...line });
+  }
+  const grouped = [...byItem.values()];
+  const whole = grouped.filter((line) => line.quantity >= line.held);
+  const part = grouped.filter((line) => line.quantity < line.held);
   if (part.length) {
     await actor.updateEmbeddedDocuments("Item", part.map((line) => ({ _id: line.item.id, "system.quantity": line.held - line.quantity })));
     undo.push(() => actor.updateEmbeddedDocuments("Item", part.map((line) => ({ _id: line.item.id, "system.quantity": line.held }))));

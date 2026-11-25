@@ -1,7 +1,7 @@
 // Trade sessions: who is at which merchant, the access checks, and the shelf a customer sees.
 // Documents are typed any here because their system data has no generated types.
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
-import { combatStats, itemDescription, purse, tokensOf } from "../adapter/dnd5e.mjs";
+import { clock, combatStats, itemDescription, purse, tokensOf } from "../adapter/dnd5e.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { accessProblem, squaresBetween } from "../engine/access.mjs";
 import { attitudeAdjustment, attitudeBand } from "../engine/attitude.mjs";
@@ -16,7 +16,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {string} customer
  * @property {string} customerName
  * @property {string} userId
- * @property {{ id: string, price: number, day: number }[]} sold
+ * @property {{ id: string, from?: string, price: number, quantity: number, day: number }[]} sold
  */
 
 /**
@@ -42,6 +42,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {string} customer
  * @property {{ on: boolean, band: string, adjustment: number }} attitude
  * @property {ShelfItem[]} shelf
+ * @property {{ id: string, price: number, quantity: number }[]} buyback
  */
 
 /** @type {Map<string, Session>} */
@@ -104,6 +105,40 @@ async function checkPurse({ merchant, amount }) {
   if (!actor || !Number.isInteger(amount) || amount < 0) return false;
   if (!feature("purseLimit")) return true;
   return payFrom(purse(actor), amount, { maxOver: getTables().money.changeTolerance }) !== null;
+}
+
+export function currentDay() {
+  const now = clock();
+  return Math.floor(now.now / now.day);
+}
+
+// Items this customer sold to the merchant earlier today, while the visit lasts.
+/**
+ * @param {string} merchant
+ * @param {string} customer
+ */
+export function soldToday(merchant, customer) {
+  const session = sessions.get(merchant);
+  if (session?.customer !== customer) return [];
+  const today = currentDay();
+  return session.sold.filter((entry) => entry.day === today && entry.quantity > 0);
+}
+
+/**
+ * @param {string} merchant
+ * @param {string} customer
+ * @param {{ id: string, from?: string, price: number, quantity: number }[]} sold
+ * @param {[string, number][]} boughtBack
+ */
+export function updateSold(merchant, customer, sold, boughtBack) {
+  const session = sessions.get(merchant);
+  if (session?.customer !== customer) return;
+  for (const [id, quantity] of boughtBack) {
+    const entry = session.sold.find((e) => e.id === id && e.quantity > 0);
+    if (entry) entry.quantity -= quantity;
+  }
+  const day = currentDay();
+  for (const entry of sold) session.sold.push({ ...entry, day });
 }
 
 // Both actors of a session, checked against the sender.
@@ -170,6 +205,11 @@ export function snapshot(merchant, customer) {
       band: attitudeBand(attitudeValue, tables.attitude),
       adjustment: attitudeAdjustment(attitudeValue, tables.attitude),
     },
+    buyback: soldToday(merchant.uuid, customer.uuid).flatMap((entry) => {
+      const item = merchant.items.get(entry.id);
+      const held = Number(item?.system?.quantity) || 0;
+      return held > 0 ? [{ id: entry.id, price: entry.price, quantity: Math.min(entry.quantity, held) }] : [];
+    }),
     shelf: shelf(merchant)
       .filter((entry) => entry.price !== null)
       .map(({ item, facts, holding, flags: itemFlagData, price }) => ({

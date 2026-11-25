@@ -1,4 +1,11 @@
 <section class="kt-inventory" data-side="{{side}}">
+  {{#if tabs}}
+  <nav class="kt-tabs" role="tablist">
+    {{#each tabs as |tab|}}
+    <button type="button" class="kt-tab{{#if tab.active}} active{{/if}}" data-action="merchantTab" data-tab="{{tab.id}}" role="tab" aria-selected="{{tab.active}}">{{tab.label}}</button>
+    {{/each}}
+  </nav>
+  {{/if}}
   <div class="kt-inventory-tools">
     <input type="search" class="kt-search" data-side="{{side}}" value="{{search}}"
            placeholder="{{localize "KT.Barter.Search"}}" aria-label="{{localize "KT.Barter.Search"}}">

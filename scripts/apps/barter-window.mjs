@@ -54,6 +54,7 @@ export default class BarterWindow extends HandlebarsApplication {
       accept: BarterWindow.#onAccept,
       toggleMode: BarterWindow.#onToggleMode,
       revertLast: BarterWindow.#onRevertLast,
+      merchantTab: BarterWindow.#onTab,
     },
   };
 
@@ -147,6 +148,7 @@ export default class BarterWindow extends HandlebarsApplication {
     this.view = {
       customer: { category: null, sort: "name", search: "" },
       merchant: { category: null, sort: "name", search: "" },
+      merchantTab: "shelf",
     };
     /** @type {Map<string, string>} */
     this.tooltips = new Map();
@@ -182,6 +184,8 @@ export default class BarterWindow extends HandlebarsApplication {
       const entry = snapshot.shelf.find((e) => e.id === id);
       setLine(this.offer.take, id, quantity, entry?.quantity ?? 0);
     }
+    for (const [id, quantity] of this.offer.buyback) setLine(this.offer.buyback, id, quantity, this.#available("buyback", id) ?? 0);
+    if (!snapshot.buyback.length) this.view.merchantTab = "shelf";
   }
 
   async _prepareContext(options) {
@@ -190,6 +194,7 @@ export default class BarterWindow extends HandlebarsApplication {
     const budget = coinsToCopper(held);
     const customerCards = this.#customerCards();
     const merchantCards = this.#merchantCards(budget);
+    const buybackCards = this.#buybackCards();
     const result = this.#settlement();
     this.#checkPurse(result);
     return Object.assign(context, {
@@ -198,9 +203,9 @@ export default class BarterWindow extends HandlebarsApplication {
       gm: game.user.isGM,
       header: this.#header(budget),
       customerColumn: this.#column("customer", customerCards, budget),
-      merchantColumn: this.#column("merchant", merchantCards, budget),
+      merchantColumn: this.#column("merchant", this.view.merchantTab === "buyback" ? buybackCards : merchantCards, budget),
       giveTray: this.#tray("give", customerCards, this.offer.coinsGive, held),
-      takeTray: this.#tray("take", merchantCards, this.offer.coinsTake, null),
+      takeTray: this.#tray("take", merchantCards, this.offer.coinsTake, null, buybackCards),
     });
   }
 
@@ -264,6 +269,7 @@ export default class BarterWindow extends HandlebarsApplication {
       customer: this.customer.uuid,
       give: [...this.offer.give],
       take: [...this.offer.take],
+      buyback: [...this.offer.buyback],
       coinsGive: this.offer.coinsGive,
       coinsTake: this.offer.coinsTake,
       keepChange: this.offer.keepChange,
@@ -307,6 +313,10 @@ export default class BarterWindow extends HandlebarsApplication {
       sort: view.sort,
       items: arrange(cards, { category: view.category, sort: view.sort, budget, locale: locale() }),
       empty: game.i18n.localize(side === "customer" ? "KT.Barter.EmptyCustomer" : "KT.Barter.EmptyShelf"),
+      tabs:
+        side === "merchant" && this.snapshot.buyback.length
+          ? ["shelf", "buyback"].map((id) => ({ id, label: game.i18n.localize(`KT.Barter.Tab.${id}`), active: this.view.merchantTab === id }))
+          : null,
     };
   }
 
@@ -315,17 +325,22 @@ export default class BarterWindow extends HandlebarsApplication {
    * @param {any[]} cards
    * @param {Record<string, number>} coins
    * @param {Record<string, number> | null} held
+   * @param {any[]} [buybackCards]
    */
-  #tray(side, cards, coins, held) {
-    const lines = side === "give" ? this.offer.give : this.offer.take;
+  #tray(side, cards, coins, held, buybackCards = []) {
     const rows = [];
     let total = 0;
-    for (const [id, quantity] of lines) {
-      const card = cards.find((c) => c.id === id);
-      if (!card) continue;
-      const lineTotal = card.price * quantity;
-      total += lineTotal;
-      rows.push({ id, side, name: card.name, img: card.img, quantity, max: card.quantity, unitLabel: card.priceLabel, totalLabel: formatCopper(lineTotal, this.money) });
+    /** @type {[string, any[]][]} */
+    const sources = side === "give" ? [["give", cards]] : [["take", cards], ["buyback", buybackCards]];
+    for (const [tray, list] of sources) {
+      for (const [id, quantity] of this.#linesOf(tray)) {
+        const card = list.find((c) => c.id === id);
+        if (!card) continue;
+        const lineTotal = card.price * quantity;
+        total += lineTotal;
+        const max = this.#available(sideOf(tray), id) ?? quantity;
+        rows.push({ id, side: tray, name: card.name, img: card.img, quantity, max, unitLabel: card.priceLabel, totalLabel: formatCopper(lineTotal, this.money), buyback: tray === "buyback" });
+      }
     }
     total += coinsToCopper(coins);
     return {
@@ -389,15 +404,36 @@ export default class BarterWindow extends HandlebarsApplication {
     });
   }
 
+  // Items the customer sold this visit, at the price they were paid.
+  #buybackCards() {
+    return this.snapshot.buyback.flatMap((record) => {
+      const entry = this.snapshot.shelf.find((e) => e.id === record.id);
+      if (!entry) return [];
+      const staged = this.offer.buyback.get(record.id) ?? 0;
+      return [{
+        ...card(record.id, "buyback", entry.name, entry.img, entry, record.quantity, staged),
+        price: record.price,
+        priceLabel: formatCopper(record.price, this.money),
+        tags: [tag("buyback", "fa-solid fa-rotate-left")],
+      }];
+    });
+  }
+
+  /** @param {string} tray */
+  #linesOf(tray) {
+    if (tray === "give") return this.offer.give;
+    return tray === "buyback" ? this.offer.buyback : this.offer.take;
+  }
+
   // Stage an item from either inventory into its tray.
   /**
-   * @param {"customer" | "merchant"} side
+   * @param {string} side
    * @param {string} id
    * @param {{ half?: boolean, all?: boolean, amount?: number }} [how]
    */
   async stage(side, id, how = {}) {
     if (this.counter && side === "customer") return;
-    const lines = side === "customer" ? this.offer.give : this.offer.take;
+    const lines = this.#linesOf(trayOf(side));
     const available = this.#available(side, id);
     if (available === null) return;
     const staged = lines.get(id) ?? 0;
@@ -417,8 +453,8 @@ export default class BarterWindow extends HandlebarsApplication {
   step(tray, id, delta) {
     if (this.counter && tray === "give") return;
     this.pending = false;
-    const lines = tray === "give" ? this.offer.give : this.offer.take;
-    const max = this.#available(tray === "give" ? "customer" : "merchant", id) ?? 0;
+    const lines = this.#linesOf(tray);
+    const max = this.#available(sideOf(tray), id) ?? 0;
     setLine(lines, id, (lines.get(id) ?? 0) + delta, max);
     this.refresh();
   }
@@ -430,7 +466,7 @@ export default class BarterWindow extends HandlebarsApplication {
   unstage(tray, id) {
     if (this.counter && tray === "give") return;
     this.pending = false;
-    (tray === "give" ? this.offer.give : this.offer.take).delete(id);
+    this.#linesOf(tray).delete(id);
     this.refresh();
   }
 
@@ -465,6 +501,10 @@ export default class BarterWindow extends HandlebarsApplication {
     for (const [id, quantity] of this.offer.take) {
       const entry = this.snapshot.shelf.find((e) => e.id === id);
       if (entry) merchantItems += buyQuote(entry.price, context).copper * quantity;
+    }
+    for (const [id, quantity] of this.offer.buyback) {
+      const record = this.snapshot.buyback.find((b) => b.id === id);
+      if (record) merchantItems += record.price * quantity;
     }
     const coinsGive = coinsToCopper(this.offer.coinsGive);
     const coinsTake = coinsToCopper(this.offer.coinsTake);
@@ -546,11 +586,17 @@ export default class BarterWindow extends HandlebarsApplication {
   }
 
   /**
-   * @param {"customer" | "merchant"} side
+   * @param {string} side
    * @param {string} id
    */
   #available(side, id) {
-    if (side === "merchant") return this.snapshot.shelf.find((e) => e.id === id)?.quantity ?? null;
+    if (side === "merchant" || side === "buyback") {
+      const onShelf = this.snapshot.shelf.find((e) => e.id === id)?.quantity ?? null;
+      if (onShelf === null) return null;
+      if (side === "merchant") return onShelf - (this.offer.buyback.get(id) ?? 0);
+      const record = this.snapshot.buyback.find((b) => b.id === id);
+      return record ? Math.min(record.quantity, onShelf - (this.offer.take.get(id) ?? 0)) : null;
+    }
     const item = this.customer.items.get(id);
     if (!item) return null;
     const facts = itemFacts(item);
@@ -671,7 +717,7 @@ export default class BarterWindow extends HandlebarsApplication {
     const zoneSide = zone.dataset.side;
     if (data?.type === DRAG_TYPE) {
       if (data.from === "inventory" && zone.matches(".kt-tray") && trayOf(data.side) === zoneSide) return this.stage(data.side, data.id);
-      if (data.from === "tray" && zone.matches(".kt-inventory") && trayOf(zoneSide) === data.side) return this.unstage(data.side, data.id);
+      if (data.from === "tray" && zone.matches(".kt-inventory") && sideOf(data.side) === (zoneSide === "merchant" && data.side === "buyback" ? "buyback" : zoneSide)) return this.unstage(data.side, data.id);
       return;
     }
     if (data?.type === "Item" && zoneSide === "give") {
@@ -721,6 +767,16 @@ export default class BarterWindow extends HandlebarsApplication {
       return `<p class="kt-tooltip-compare">${game.i18n.localize("KT.Barter.ArmorClass", { value: stats.ac, own: own ?? "-" })}</p>`;
     }
     return "";
+  }
+
+  /**
+   * @this {BarterWindow}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static #onTab(event, target) {
+    this.view.merchantTab = target.dataset.tab;
+    this.render({ parts: ["merchant"] });
   }
 
   /**
@@ -852,6 +908,11 @@ export function windowId(merchant, customer) {
 /** @param {string} side */
 function trayOf(side) {
   return side === "customer" ? "give" : side === "merchant" ? "take" : side;
+}
+
+/** @param {string} tray */
+function sideOf(tray) {
+  return tray === "give" ? "customer" : tray === "take" ? "merchant" : tray;
 }
 
 /**

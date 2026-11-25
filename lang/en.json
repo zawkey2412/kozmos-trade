@@ -130,7 +130,11 @@
       "CounterSent": "Counter offer sent.",
       "Proposed": "Proposal sent to the GM.",
       "CounterTitle": "Counter offer",
-      "ToggleMode": "Switch between Instant Trade and GM Approval"
+      "ToggleMode": "Switch between Instant Trade and GM Approval",
+      "Tab": {
+        "shelf": "Shelf",
+        "buyback": "Buy back"
+      }
     },
     "Attitude": {
       "hostile": "Hostile",
@@ -161,7 +165,8 @@
       "scrap": "Scrap",
       "favored": "Favored",
       "limited": "Limited Stock",
-      "pinned": "Pinned"
+      "pinned": "Pinned",
+      "buyback": "Buy back at the price you sold it for"
     },
     "Balance": {
       "short": "Short",

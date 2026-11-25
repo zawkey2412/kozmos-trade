@@ -145,6 +145,20 @@
   width: auto;
 }
 
+.kt-barter .kt-tabs {
+  display: flex;
+  gap: var(--kt-space-small);
+}
+
+.kt-barter .kt-tab {
+  flex: 1;
+}
+
+.kt-barter .kt-tab.active {
+  border-color: var(--kt-highlight);
+  box-shadow: var(--kt-ring);
+}
+
 .kt-barter .kt-chips {
   display: flex;
   flex-wrap: wrap;
