@@ -15,6 +15,7 @@ export const SESSIONS = Object.freeze({
 export const SETTINGS = Object.freeze({
   MODE: "mode",
   TABLES: "tables",
+  PROXIMITY: "proximity",
 });
 
 export const MODES = Object.freeze({

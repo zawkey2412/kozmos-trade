@@ -1,7 +1,9 @@
 import { MODES, MODULE_ID, SETTINGS } from "./constants.mjs";
+import { MODE_FEATURES } from "./data/modes.mjs";
 import { TABLES } from "./data/tables.mjs";
 
 /** @import { SettingConfig } from "@client/_types.mjs"; */
+/** @import { Feature } from "./data/modes.mjs"; */
 
 export function registerSettings() {
   register(SETTINGS.MODE, {
@@ -21,6 +23,14 @@ export function registerSettings() {
     }),
   });
 
+  register(SETTINGS.PROXIMITY, {
+    name: "KT.Settings.Proximity.Name",
+    hint: "KT.Settings.Proximity.Hint",
+    scope: "world",
+    config: true,
+    type: new foundry.data.fields.BooleanField({ initial: false }),
+  });
+
   // The GM's changes to the default tables.
   register(SETTINGS.TABLES, {
     name: "KT.Settings.Tables.Name",
@@ -36,6 +46,13 @@ export function registerSettings() {
 export function getTables() {
   const changes = game.settings.get(MODULE_ID, SETTINGS.TABLES);
   return /** @type {typeof TABLES} */ (foundry.utils.mergeObject(TABLES, changes, { inplace: false }));
+}
+
+// Whether a feature is on in the world's complexity mode.
+/** @param {Feature} name */
+export function feature(name) {
+  const mode = game.settings.get(MODULE_ID, SETTINGS.MODE);
+  return Boolean(MODE_FEATURES[mode]?.[name]);
 }
 
 /**

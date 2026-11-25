@@ -13,6 +13,7 @@ import { TABLES } from "./tables.mjs";
  * @property {"poor" | "modest" | "wealthy"} tier
  * @property {Record<string, AttitudeState>} attitude
  * @property {Record<string, number>} haggleLock
+ * @property {Record<string, number>} banned
  * @property {{ category: string, uuid: string, multiplier: number }[]} wanted
  * @property {number | null} lastRestock
  * @property {object[]} ledger
@@ -65,6 +66,7 @@ export class MerchantFlags extends foundry.abstract.DataModel {
         }),
       ),
       haggleLock: new TypedObjectField(new NumberField({ required: true, nullable: false })),
+      banned: new TypedObjectField(new NumberField({ required: true, nullable: false })),
       wanted: new ArrayField(
         new SchemaField({
           category: new StringField({ required: true, blank: true }),

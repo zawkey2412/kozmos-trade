@@ -79,6 +79,15 @@ export const TABLES = {
       named: 1.5,
     },
   },
+  tiers: {
+    poor: { shelf: [10, 12], maxRarity: "uncommon", purse: [50 * GP, 150 * GP] },
+    modest: { shelf: [12, 14], maxRarity: "rare", purse: [300 * GP, 1_000 * GP] },
+    wealthy: { shelf: [14, 16], maxRarity: "veryRare", purse: [2_000 * GP, 10_000 * GP] },
+  },
+  access: {
+    // Grid squares between the customer's and the merchant's tokens.
+    proximity: 2,
+  },
   haggle: {
     asks: [0.05, 0.1, 0.15, 0.2, 0.25],
     limitedMaxAsk: 0.1,

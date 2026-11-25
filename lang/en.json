@@ -11,11 +11,24 @@
       "Tables": {
         "Name": "Price tables",
         "Hint": "Prices, rates and rounding steps that differ from the defaults."
+      },
+      "Proximity": {
+        "Name": "Trade only up close",
+        "Hint": "Players must have their own token within 2 squares of the merchant's token to trade. The GM can always trade."
       }
     },
     "Error": {
       "NoGM": "A GM must be online to trade.",
-      "NoAnswer": "The GM did not answer. Try again."
+      "NoAnswer": "The GM did not answer. Try again.",
+      "NotShop": "{name} is not a shop.",
+      "Closed": "{name} is closed right now.",
+      "Banned": "{name} won't trade with you today.",
+      "Refuses": "{name} refuses to trade with you.",
+      "TooFar": "Move closer to {name} to trade.",
+      "Busy": "Busy with {name}. Try again when they are done.",
+      "Missing": "That actor no longer exists.",
+      "NotYours": "You can only trade as a character you own.",
+      "NoCharacter": "You have no character to trade with."
     },
     "Shop": {
       "Control": "Shop"
@@ -65,6 +78,11 @@
     "ExecutionMode": {
       "instant": "Instant Trade",
       "approval": "GM Approval"
+    },
+    "Picker": {
+      "Title": "Trade as",
+      "Label": "Character",
+      "Ok": "Trade"
     }
   }
 }

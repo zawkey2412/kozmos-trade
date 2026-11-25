@@ -1,6 +1,7 @@
 // Messages between clients: requests the active GM answers, and broadcasts from a GM.
 import { REQUEST_TIMEOUT, SOCKET } from "../constants.mjs";
 import { KeyedQueue } from "./queue.mjs";
+import { TradeError } from "./errors.mjs";
 import { isAnsweringWindow, onSession, startSessions } from "./sessions.mjs";
 
 /** @import User from "@client/documents/user.mjs"; */
@@ -15,6 +16,8 @@ import { isAnsweringWindow, onSession, startSessions } from "./sessions.mjs";
 
 export const MESSAGES = Object.freeze({
   PING: "ping",
+  SESSION_OPEN: "session.open",
+  SESSION_CLOSE: "session.close",
 });
 
 /** @type {Map<string, RequestHandler>} */
@@ -59,14 +62,14 @@ export function onBroadcast(type, handle) {
  */
 export function request(type, payload = null) {
   const gm = game.users.activeGM;
-  if (!gm) return Promise.reject(new Error("KT.Error.NoGM"));
+  if (!gm) return Promise.reject(new TradeError("KT.Error.NoGM"));
   if (gm.isSelf) return answerLocally(type, payload);
 
   const id = foundry.utils.randomID();
   return new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => {
       pending.delete(id);
-      reject(new Error("KT.Error.NoAnswer"));
+      reject(new TradeError("KT.Error.NoAnswer"));
     }, REQUEST_TIMEOUT);
     pending.set(id, { resolve, reject, timer });
     emit({ kind: "request", type, id, payload }, [gm.id]);
@@ -120,21 +123,21 @@ async function answer({ type, id, payload }, sender) {
     const result = await process(type, payload, sender);
     emit({ kind: "reply", type, id, ok: true, result }, [sender.id]);
   } catch (error) {
-    emit({ kind: "reply", type, id, ok: false, error: error.message }, [sender.id]);
+    emit({ kind: "reply", type, id, ok: false, error: error.message, data: error.data ?? null }, [sender.id]);
   }
 }
 
 /**
- * @param {{ id: string, ok: boolean, result?: any, error?: string }} message
+ * @param {{ id: string, ok: boolean, result?: any, error?: string, data?: object }} message
  * @param {User} sender
  */
-function settle({ id, ok, result, error }, sender) {
+function settle({ id, ok, result, error, data }, sender) {
   const entry = pending.get(id);
   if (!entry || !sender.isGM) return;
   pending.delete(id);
   window.clearTimeout(entry.timer);
   if (ok) entry.resolve(result);
-  else entry.reject(new Error(error));
+  else entry.reject(new TradeError(error, data ?? undefined));
 }
 
 /**

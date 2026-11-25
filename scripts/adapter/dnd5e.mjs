@@ -4,6 +4,7 @@ import { COPPER } from "../engine/money.mjs";
 
 /** @import { ItemFacts } from "../engine/pricing.mjs"; */
 /** @import { Clock } from "../engine/attitude.mjs"; */
+/** @import { TokenBox } from "../engine/access.mjs"; */
 
 /**
  * @typedef {object} HoldingFacts
@@ -93,6 +94,30 @@ export function purse(actor) {
 export function passiveScore(actor, skill) {
   const passive = actor.system?.skills?.[skill]?.passive;
   return Number.isFinite(passive) ? passive : 10;
+}
+
+// The description a customer may read: the unidentified one until the item is identified.
+/** @param {any} item */
+export function itemDescription(item) {
+  const system = item.system ?? {};
+  if (system.identified === false) return system.unidentified?.description ?? "";
+  return system.description?.value ?? "";
+}
+
+// Where an actor stands: its own token when unlinked, every linked token otherwise.
+/**
+ * @param {any} actor
+ * @returns {{ scene: string, gridSize: number, box: TokenBox }[]}
+ */
+export function tokensOf(actor) {
+  const tokens = actor.isToken
+    ? [actor.token]
+    : /** @type {any[]} */ (game.scenes.contents).flatMap((scene) => scene.tokens.filter((token) => token.actorLink && token.actorId === actor.id));
+  return tokens.filter(Boolean).map((token) => ({
+    scene: token.parent.id,
+    gridSize: token.parent.grid.size,
+    box: { x: token.x, y: token.y, width: token.width, height: token.height },
+  }));
 }
 
 // Coin abbreviations in the reader's language.
