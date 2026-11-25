@@ -8,6 +8,7 @@ import { COPPER, toCopper } from "./money.mjs";
 /**
  * @typedef {object} ItemFacts
  * @property {string} type
+ * @property {string} [subtype]
  * @property {{ value: number, denomination: string }} [price]
  * @property {string} [rarity]
  * @property {boolean} [scroll]

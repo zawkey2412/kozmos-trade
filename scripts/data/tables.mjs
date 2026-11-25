@@ -33,6 +33,10 @@ export const TABLES = {
       3: 300 * GP,
       4: 2_000 * GP,
       5: 3_000 * GP,
+      6: 20_000 * GP,
+      7: 25_000 * GP,
+      8: 30_000 * GP,
+      9: 100_000 * GP,
     },
     magicalBonus: {
       1: "uncommon",

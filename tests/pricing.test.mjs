@@ -49,8 +49,13 @@ describe("base value waterfall", () => {
     assert.equal(baseValue({ type: "consumable", scroll: true, spellLevel: 5 }, tables).copper, 3_000 * GP);
   });
 
-  it("falls to the type floor for scroll levels with no price yet", () => {
-    assert.equal(baseValue({ type: "consumable", scroll: true, spellLevel: 7 }, tables).source, "floor");
+  it("prices 6th to 9th level scrolls as dnd5e's 2024 equipment does", () => {
+    const scroll = (spellLevel) => baseValue({ type: "consumable", scroll: true, spellLevel }, tables).copper;
+    assert.deepEqual([6, 7, 8, 9].map(scroll), [20_000 * GP, 25_000 * GP, 30_000 * GP, 100_000 * GP]);
+  });
+
+  it("falls to the type floor for a scroll with no known level", () => {
+    assert.equal(baseValue({ type: "consumable", scroll: true, spellLevel: null }, tables).source, "floor");
   });
 
   it("reads a magical bonus as a rarity", () => {
