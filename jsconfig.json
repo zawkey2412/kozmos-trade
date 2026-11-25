@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "checkJs": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "paths": {
+      "@common/*": ["../../foundry-types/common/*"],
+      "@client/*": ["../../foundry-types/client/*"],
+      "@dnd5e/*": ["../../dnd5e-types/*"]
+    }
+  },
+  "include": [
+    "scripts/**/*.mjs",
+    "../../foundry-types/**/*.d.mts"
+  ],
+  "exclude": ["node_modules", "tests"]
+}

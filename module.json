@@ -1,0 +1,36 @@
+{
+  "id": "kozmos-trade",
+  "title": "Kozmos Trade",
+  "description": "Turns any NPC token into a merchant in two clicks, with a barter scale where skills, attitude and the merchant's own stat block move the numbers.",
+  "version": "0.0.1",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14.370"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "dnd5e",
+        "type": "system",
+        "compatibility": {
+          "minimum": "6.0.0",
+          "verified": "6.1.1"
+        }
+      }
+    ]
+  },
+  "esmodules": ["scripts/main.mjs"],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "socket": true,
+  "authors": [
+    {
+      "name": "Kozmos"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "KT": {
+    "Settings": {
+      "Mode": {
+        "Name": "Complexity",
+        "Hint": "How much rules weight a trade carries. Each feature can still be turned on or off on its own.",
+        "Simple": "Simple",
+        "Standard": "Standard",
+        "Crunchy": "Crunchy"
+      }
+    }
+  }
+}
