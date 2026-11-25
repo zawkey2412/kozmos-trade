@@ -1,7 +1,7 @@
 // The barter window: both inventories, both offer trays and the balance between them.
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID } from "../constants.mjs";
-import { coinLabels, combatStats, holdingFacts, itemDescription, itemFacts, locale, purse, rarityLabel } from "../adapter/dnd5e.mjs";
+import { coinLabels, combatStats, holdingFacts, itemDescription, itemFacts, locale, purse, rarityLabel, rollCheck } from "../adapter/dnd5e.mjs";
 import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
 import { COPPER, coinsToCopper, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
@@ -11,6 +11,7 @@ import { proposalOf } from "../services/approval.mjs";
 import { archetypeLabel } from "../services/archetypes.mjs";
 import { ATTITUDE_ICONS } from "../services/attitude.mjs";
 import { TradeError, warn } from "../services/errors.mjs";
+import { haggleChoices } from "../services/haggle.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
 import { ledgerOf, revertEntry } from "../services/receipts.mjs";
@@ -52,6 +53,7 @@ export default class BarterWindow extends HandlebarsApplication {
       revertLast: BarterWindow.#onRevertLast,
       merchantTab: BarterWindow.#onTab,
       restock: BarterWindow.#onRestock,
+      haggle: BarterWindow.#onHaggle,
     },
   };
 
@@ -164,7 +166,7 @@ export default class BarterWindow extends HandlebarsApplication {
     return {
       archetype: this.snapshot.merchant.archetype,
       attitudeAdjustment: this.snapshot.attitude.adjustment,
-      haggle: 0,
+      haggle: this.snapshot.haggle?.discount ?? 0,
       market: 1,
     };
   }
@@ -385,7 +387,7 @@ export default class BarterWindow extends HandlebarsApplication {
     const context = this.priceContext;
     const actor = game.user.isGM ? /** @type {any} */ (foundry.utils.fromUuidSync(this.snapshot.merchant.uuid)) : null;
     return this.snapshot.shelf.map((entry) => {
-      const unit = buyQuote(entry.price, context).copper;
+      const unit = buyQuote(entry.price, context, entry.limited).copper;
       const tags = [entry.identified ? rarityTag(entry.rarity) : null];
       if (entry.limited) tags.push(tag("limited", "fa-solid fa-hourglass-half"));
       if (entry.underCounter) tags.push(tag("underCounter", "fa-solid fa-box-open"));
@@ -498,7 +500,7 @@ export default class BarterWindow extends HandlebarsApplication {
     let merchantItems = 0;
     for (const [id, quantity] of this.offer.take) {
       const entry = this.snapshot.shelf.find((e) => e.id === id);
-      if (entry) merchantItems += buyQuote(entry.price, context).copper * quantity;
+      if (entry) merchantItems += buyQuote(entry.price, context, entry.limited).copper * quantity;
     }
     for (const [id, quantity] of this.offer.buyback) {
       const record = this.snapshot.buyback.find((b) => b.id === id);
@@ -535,8 +537,13 @@ export default class BarterWindow extends HandlebarsApplication {
         tone: attitude.adjustment > 0 ? "good" : "bad",
       });
     }
+    const haggle = this.snapshot.haggle;
+    if (haggle?.on && haggle.discount) {
+      modifiers.push({ label: game.i18n.localize("KT.Balance.Haggle"), value: `-${Math.round(haggle.discount * 100)}%`, tone: "good" });
+    }
     const needed = this.#coinsNeeded(result);
     return {
+      haggle: this.#haggleState(),
       state: result.state,
       icon: { short: "fa-scale-unbalanced-flip", even: "fa-scale-balanced", generous: "fa-scale-unbalanced" }[result.state],
       word: game.i18n.localize(`KT.Balance.${result.state}`),
@@ -547,6 +554,68 @@ export default class BarterWindow extends HandlebarsApplication {
       modifiers,
       cannotCover: needed > 0 && this.purseCheck?.amount === needed && !this.purseCheck.covers,
     };
+  }
+
+  // The Haggle button, or why haggling is closed.
+  #haggleState() {
+    const haggle = this.snapshot.haggle;
+    if (!haggle?.on || this.counter || haggle.discount) return null;
+    if (haggle.locked) return { locked: true, text: game.i18n.localize("KT.Haggle.LockedShort") };
+    const buying = this.offer.take.size > 0;
+    return { locked: false, disabled: !buying || Boolean(this.busy), reason: buying ? null : game.i18n.localize("KT.Haggle.NeedPurchase") };
+  }
+
+  // Asks for a discount: the ask and check first, then the customer's roll, settled by the GM.
+  /** @param {PointerEvent} event */
+  async haggle(event) {
+    const haggle = this.snapshot.haggle;
+    const merchant = this.snapshot.merchant.uuid;
+    const limited = [...this.offer.take.keys()].some((id) => this.snapshot.shelf.find((entry) => entry.id === id)?.limited);
+    const asks = haggle.asks.filter((ask) => !limited || ask <= haggle.limitedMaxAsk + 1e-9);
+    const askOptions = asks.map((ask) => {
+      const percent = Math.round(ask * 100);
+      const dc = haggle.dcs?.[String(ask)];
+      return { value: String(ask), label: game.i18n.localize(dc === undefined ? "KT.Haggle.AskOpposed" : "KT.Haggle.AskOption", { percent, dc }) };
+    });
+    const checkOptions = haggleChoices(this.customer, this.snapshot.merchant.archetype).map((choice) => ({
+      value: choice.value,
+      label: choice.specialty ? game.i18n.localize("KT.Haggle.Advantage", { label: choice.label }) : choice.label,
+    }));
+    const { createFormGroup, createSelectInput, createCheckboxInput } = foundry.applications.fields;
+    const groups = [
+      createFormGroup({ label: game.i18n.localize("KT.Haggle.Ask"), input: createSelectInput({ name: "ask", options: askOptions, value: askOptions[0]?.value }) }),
+      createFormGroup({ label: game.i18n.localize("KT.Haggle.Check"), input: createSelectInput({ name: "check", options: checkOptions, value: checkOptions[0]?.value }) }),
+      createFormGroup({ label: game.i18n.localize("KT.Haggle.Helped"), input: createCheckboxInput({ name: "helped", value: false }) }),
+    ];
+    const hints = [haggle.opposed ? "KT.Haggle.OpposedHint" : "KT.Haggle.DcHint", ...(limited ? ["KT.Haggle.LimitedHint"] : [])];
+    const content = `${hints.map((key) => `<p class="hint">${game.i18n.localize(key)}</p>`).join("")}${groups.map((group) => group.outerHTML).join("")}`;
+    const data = /** @type {any} */ (await foundry.applications.api.DialogV2.input(/** @type {any} */ ({
+      window: { title: game.i18n.localize("KT.Haggle.Title", { name: this.snapshot.merchant.name }), icon: "fa-solid fa-comments-dollar" },
+      content,
+      ok: { label: "KT.Haggle.Roll", icon: "fa-solid fa-dice-d20" },
+      rejectClose: false,
+    })));
+    if (!data) return;
+    this.busy = true;
+    this.refresh(["balance", "footer"]);
+    try {
+      const payload = { merchant, customer: this.customer.uuid };
+      const start = await request(MESSAGES.HAGGLE_START, { ...payload, ask: Number(data.ask), check: data.check, helped: Boolean(data.helped) });
+      const flags = { [MODULE_ID]: { haggle: { nonce: start.nonce, merchant } } };
+      const message = await rollCheck(this.customer, { skill: start.skill ?? undefined, tool: start.tool ?? undefined, advantage: start.advantage, flags, event });
+      if (!message) return;
+      const outcome = await request(MESSAGES.HAGGLE_ROLL, { ...payload, nonce: start.nonce, messageId: message.id });
+      this.snapshot.haggle = outcome.haggle;
+      const percent = Math.round(outcome.discount * 100);
+      if (outcome.success) ui.notifications.info(game.i18n.localize("KT.Haggle.Result.Success", { percent }));
+      else ui.notifications.warn("KT.Haggle.Result.Failure", { localize: true });
+    } catch (error) {
+      warn(error);
+    } finally {
+      this.busy = false;
+      this.tooltips.clear();
+      this.refresh();
+    }
   }
 
   /** @param {Settlement} result */
@@ -782,6 +851,14 @@ export default class BarterWindow extends HandlebarsApplication {
   static #onTab(event, target) {
     this.view.merchantTab = target.dataset.tab;
     this.render({ parts: ["merchant"] });
+  }
+
+  /**
+   * @this {BarterWindow}
+   * @param {PointerEvent} event
+   */
+  static #onHaggle(event) {
+    return this.haggle(event);
   }
 
   /**

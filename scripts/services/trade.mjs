@@ -12,7 +12,7 @@ import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
 import { buyQuote, sellQuote } from "./offer.mjs";
 import { attitudeTables, attitudeValue, recordAttitude } from "./attitude.mjs";
-import { checkAccess, resolvePair, sessionAt, soldToday, updateSold, visibleShelf } from "./session.mjs";
+import { checkAccess, haggleDiscount, resolvePair, sessionAt, soldToday, updateSold, useHaggle, visibleShelf } from "./session.mjs";
 import { recordTrade } from "./receipts.mjs";
 import { shelf } from "./shop.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
@@ -86,7 +86,12 @@ async function instantTrade(payload, sender) {
  */
 export function priceContextFor(merchant, customer) {
   const flags = merchantFlags(merchant);
-  return { archetype: flags.archetype, attitudeAdjustment: attitudeAdjustment(attitudeValue(merchant, customer), getTables().attitude), haggle: 0, market: 1 };
+  return {
+    archetype: flags.archetype,
+    attitudeAdjustment: attitudeAdjustment(attitudeValue(merchant, customer), getTables().attitude),
+    haggle: haggleDiscount(merchant.uuid, customer.uuid),
+    market: 1,
+  };
 }
 
 /**
@@ -104,6 +109,7 @@ export async function runTrade(payload, sender, { requireBalance = true } = {}) 
   });
   const sold = trade.give.map((line, index) => ({ id: record.merchantCreated[index], from: line.item.id, price: line.unit, quantity: line.quantity }));
   updateSold(trade.merchant.uuid, trade.customer.uuid, sold, trade.boughtBack);
+  if (trade.take.length) useHaggle(trade.merchant.uuid, trade.customer.uuid);
   await recordAttitude(trade.merchant, trade.customer, tradeEvents(trade.result)).catch((error) => console.error("Kozmos Trade | Attitude failed", error));
   Hooks.callAll("kozmosTrade.trade", trade, record);
   broadcast(MESSAGES.TRADE_DONE, { merchant: trade.merchant.uuid, customer: trade.customer.uuid });
@@ -144,7 +150,7 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
     const entry = visible.find((e) => e.item.id === id);
     if (!entry || entry.price === null) throw new TradeError("KT.Error.SoldOut");
     if (quantity > entry.holding.quantity) throw new TradeError("KT.Error.ItemGone", { name: entry.item.name });
-    return { item: entry.item, quantity, unit: buyQuote(entry.price, context).copper, held: entry.holding.quantity };
+    return { item: entry.item, quantity, unit: buyQuote(entry.price, context, entry.flags.limited).copper, held: entry.holding.quantity };
   });
 
   const sold = soldToday(merchant.uuid, customer.uuid);

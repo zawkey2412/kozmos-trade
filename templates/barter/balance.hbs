@@ -20,6 +20,17 @@
     {{/each}}
   </ul>
   {{/if}}
+  {{#if balance.haggle}}
+  <div class="kt-haggle">
+    {{#if balance.haggle.locked}}
+    <p class="kt-haggle-locked"><i class="fa-solid fa-lock" inert></i> {{balance.haggle.text}}</p>
+    {{else}}
+    <button type="button" data-action="haggle" {{disabled balance.haggle.disabled}}{{#if balance.haggle.reason}} data-tooltip-text="{{balance.haggle.reason}}"{{/if}}>
+      <i class="fa-solid fa-comments-dollar" inert></i> {{localize "KT.Haggle.Button"}}
+    </button>
+    {{/if}}
+  </div>
+  {{/if}}
   {{#if balance.cannotCover}}
   <p class="kt-warning"><i class="fa-solid fa-triangle-exclamation" inert></i> {{localize "KT.Balance.CannotCover"}}</p>
   {{/if}}

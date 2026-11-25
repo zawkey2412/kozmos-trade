@@ -42,11 +42,13 @@ export function sellQuote(item, context) {
   return { forSale: true, unit: price.copper, modifiers: price.modifiers, scrap: basis.scrap, favored: fit.favored };
 }
 
-// What the customer pays for one of a shelf item.
+// What the customer pays for one of a shelf item. Limited Stock caps the haggle discount.
 /**
  * @param {number} shelfPrice
  * @param {PriceContext} context
+ * @param {boolean} [limited]
  */
-export function buyQuote(shelfPrice, context) {
-  return buyPrice(shelfPrice, { attitudeAdjustment: context.attitudeAdjustment, haggle: context.haggle, market: context.market });
+export function buyQuote(shelfPrice, context, limited = false) {
+  const haggle = limited ? Math.min(context.haggle, getTables().haggle.limitedMaxAsk) : context.haggle;
+  return buyPrice(shelfPrice, { attitudeAdjustment: context.attitudeAdjustment, haggle, market: context.market });
 }

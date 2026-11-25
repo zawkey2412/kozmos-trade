@@ -26,6 +26,8 @@ export const MESSAGES = Object.freeze({
   PROPOSAL_RESULT: "proposal.result",
   SHOP_CHANGED: "shop.changed",
   TRADE_REVERT: "trade.revert",
+  HAGGLE_START: "haggle.start",
+  HAGGLE_ROLL: "haggle.roll",
 });
 
 /** @type {Map<string, RequestHandler>} */

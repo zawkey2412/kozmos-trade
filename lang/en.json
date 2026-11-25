@@ -203,7 +203,8 @@
       "generous": "Generous",
       "Change": "Change back: {amount}",
       "Attitude": "Attitude: {band}",
-      "CannotCover": "Merchant can't cover this. Add goods to make up the gap."
+      "CannotCover": "Merchant can't cover this. Add goods to make up the gap.",
+      "Haggle": "Haggle"
     },
     "Footer": {
       "Empty": "Put something on offer.",
@@ -330,6 +331,42 @@
       "market": {
         "Name": "Market modifiers",
         "Hint": "Temporary price rules for a scene or the whole world."
+      }
+    },
+    "Haggle": {
+      "Button": "Haggle",
+      "Title": "Haggle with {name}",
+      "Ask": "Ask for",
+      "Check": "Check",
+      "Helped": "Another character helps (Help action)",
+      "AskOption": "{percent}% off, DC {dc}",
+      "AskOpposed": "{percent}% off",
+      "Advantage": "{label}, with advantage",
+      "Roll": "Roll",
+      "DcHint": "Win and the discount applies to this trade. Lose and haggling is locked until tomorrow, and losing by 5 or more offends the merchant.",
+      "OpposedHint": "The merchant rolls Insight against you, so the DC stays hidden until the roll.",
+      "LimitedHint": "Limited Stock items allow at most 10% off.",
+      "Off": "Haggling is turned off in this world.",
+      "Locked": "{name} will not haggle with you again until tomorrow.",
+      "LockedShort": "No more haggling today.",
+      "Already": "You already won a discount for this trade.",
+      "BadAsk": "That discount cannot be asked for.",
+      "BadCheck": "That check cannot be used to haggle here.",
+      "NoRoll": "The roll did not reach the GM. Try again.",
+      "NeedPurchase": "Put something to buy on offer first.",
+      "MerchantInsight": "Insight against a haggle",
+      "Card": {
+        "Ask": "{customer} asks for {percent}% off, using {check}.",
+        "Dc": "DC {dc}, rolled {total}.",
+        "Opposed": "The merchant's Insight sets DC {dc}. Rolled {total}.",
+        "Success": "Deal: {percent}% off this trade.",
+        "Failure": "No deal. Haggling is locked until tomorrow.",
+        "Helped": "Helped by another character.",
+        "Attitude": "Attitude {change}."
+      },
+      "Result": {
+        "Success": "Haggle won: {percent}% off this trade.",
+        "Failure": "Haggle lost. Try again tomorrow."
       }
     }
   }

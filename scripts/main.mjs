@@ -4,6 +4,7 @@ import { registerFeatureMenu } from "./apps/feature-toggles.mjs";
 import BarterWindow from "./apps/barter-window.mjs";
 import { MODULE_ID } from "./constants.mjs";
 import { registerApprovalHandlers, registerProposalCards, setCounterWindow } from "./services/approval.mjs";
+import { registerHaggleHandlers } from "./services/haggle.mjs";
 import { setTradeWindow } from "./services/open-trade.mjs";
 import { registerReceiptCards, registerReceiptHandlers } from "./services/receipts.mjs";
 import { registerShopCards } from "./services/shop-card.mjs";
@@ -36,6 +37,7 @@ Hooks.once("ready", () => {
   registerSessionHandlers();
   registerTradeHandlers();
   registerApprovalHandlers();
+  registerHaggleHandlers();
   registerReceiptHandlers();
   registerAutoRestock();
   registerProximityButton();

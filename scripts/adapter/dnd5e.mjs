@@ -96,6 +96,49 @@ export function passiveScore(actor, skill) {
   return Number.isFinite(passive) ? passive : 10;
 }
 
+// The full skill bonus, for a merchant's rolled Insight.
+/**
+ * @param {any} actor
+ * @param {string} skill
+ */
+export function skillBonus(actor, skill) {
+  const total = actor.system?.skills?.[skill]?.total;
+  return Number.isFinite(total) ? total : 0;
+}
+
+/** @param {string} skill */
+export function skillLabel(skill) {
+  return /** @type {any} */ (CONFIG).DND5E.skills[skill]?.label ?? skill;
+}
+
+/** @param {string} tool */
+export function toolLabel(tool) {
+  // dnd5e's global namespace has no generated types.
+  const label = /** @type {any} */ (globalThis).dnd5e?.documents?.Trait?.keyLabel?.(tool, { trait: "tool" });
+  return label || tool;
+}
+
+// Whether the actor has the tool on its sheet.
+/**
+ * @param {any} actor
+ * @param {string} tool
+ */
+export function hasTool(actor, tool) {
+  return Boolean(actor.system?.tools?.[tool]);
+}
+
+// A skill or tool check through dnd5e, with its chat message carrying the given flags. Answers the message, or null if cancelled.
+/**
+ * @param {any} actor
+ * @param {{ skill?: string, tool?: string, advantage?: boolean, flags?: object, event?: Event }} check
+ */
+export async function rollCheck(actor, { skill, tool, advantage = false, flags = {}, event }) {
+  const config = { advantage, event, ...(tool ? { tool } : { skill }) };
+  const message = { data: { flags } };
+  const rolls = tool ? await actor.rollToolCheck(config, {}, message) : await actor.rollSkill(config, {}, message);
+  return rolls?.[0]?.parent ?? null;
+}
+
 // The description a customer may read: the unidentified one until the item is identified.
 /** @param {any} item */
 export function itemDescription(item) {

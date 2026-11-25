@@ -438,3 +438,21 @@
 #tooltip.kt-tooltip .kt-tooltip-description {
   font-size: var(--kt-font-small);
 }
+
+/* Haggle button and lock note under the modifiers. */
+.kt-barter .kt-haggle {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--kt-space);
+}
+
+.kt-barter .kt-haggle button {
+  width: auto;
+  padding-inline: var(--kt-space);
+}
+
+.kt-barter .kt-haggle-locked {
+  margin: 0;
+  font-size: var(--kt-font-small);
+  color: var(--kt-text-muted);
+}

@@ -1,11 +1,12 @@
 // Trade sessions: who is at which merchant, the access checks, and the shelf a customer sees.
 // Documents are typed any here because their system data has no generated types.
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
-import { clock, combatStats, itemDescription, purse, tokensOf } from "../adapter/dnd5e.mjs";
+import { clock, combatStats, itemDescription, passiveScore, purse, tokensOf } from "../adapter/dnd5e.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { accessProblem, squaresBetween } from "../engine/access.mjs";
 import { attitudeAdjustment, attitudeBand } from "../engine/attitude.mjs";
 import { attitudeTables, attitudeValue } from "./attitude.mjs";
+import { haggleDC, isLocked } from "../engine/haggle.mjs";
 import { coinsToCopper, payFrom } from "../engine/money.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
@@ -18,6 +19,28 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {string} customerName
  * @property {string} userId
  * @property {{ id: string, from?: string, price: number, quantity: number, day: number }[]} sold
+ * @property {{ discount: number, pending: PendingHaggle | null, last: { nonce: string, outcome: object } | null }} haggle
+ */
+
+/**
+ * @typedef {object} PendingHaggle
+ * @property {string} nonce
+ * @property {number} ask
+ * @property {string | null} skill
+ * @property {string | null} tool
+ * @property {boolean} helped
+ * @property {string} userId
+ */
+
+/**
+ * @typedef {object} HaggleView
+ * @property {boolean} on
+ * @property {boolean} locked
+ * @property {number} discount
+ * @property {Record<string, number> | null} dcs
+ * @property {boolean} opposed
+ * @property {number[]} asks
+ * @property {number} limitedMaxAsk
  */
 
 /**
@@ -43,6 +66,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {{ uuid: string, name: string, img: string, archetype: string, tier: string, executionMode: string, purse: number | null }} merchant
  * @property {string} customer
  * @property {{ on: boolean, band: string, adjustment: number }} attitude
+ * @property {HaggleView} haggle
  * @property {ShelfItem[]} shelf
  * @property {{ id: string, price: number, quantity: number }[]} buyback
  */
@@ -83,6 +107,7 @@ async function openSession({ merchant, customer }, sender) {
     customerName: pair.customer.name,
     userId: keepUser ? current.userId : sender.id,
     sold: sameCustomer ? current.sold : [],
+    haggle: sameCustomer ? current.haggle : { discount: 0, pending: null, last: null },
   });
   return snapshot(pair.merchant, pair.customer);
 }
@@ -107,6 +132,49 @@ async function checkPurse({ merchant, amount }) {
   if (!actor || !Number.isInteger(amount) || amount < 0) return false;
   if (!feature("purseLimit")) return true;
   return payFrom(purse(actor), amount, { maxOver: getTables().money.changeTolerance }) !== null;
+}
+
+// The haggle discount won this visit, for the session's own customer only.
+/**
+ * @param {string} merchant
+ * @param {string} customer
+ */
+export function haggleDiscount(merchant, customer) {
+  const session = sessions.get(merchant);
+  return session?.customer === customer ? session.haggle.discount : 0;
+}
+
+// A completed purchase uses the discount up.
+/**
+ * @param {string} merchant
+ * @param {string} customer
+ */
+export function useHaggle(merchant, customer) {
+  const session = sessions.get(merchant);
+  if (session?.customer === customer) session.haggle.discount = 0;
+}
+
+// Haggle state the window needs: whether it is on, the lock, the discount and the DC of each ask.
+/**
+ * @param {any} merchant
+ * @param {any} customer
+ * @returns {HaggleView}
+ */
+export function haggleView(merchant, customer) {
+  const tables = getTables();
+  const base = { asks: [...tables.haggle.asks], limitedMaxAsk: tables.haggle.limitedMaxAsk };
+  if (!feature("haggle")) return { ...base, on: false, locked: false, discount: 0, dcs: null, opposed: false };
+  const opposed = feature("rolledInsight");
+  const attitude = attitudeValue(merchant, customer);
+  const insight = passiveScore(merchant, "ins");
+  return {
+    ...base,
+    on: true,
+    locked: isLocked(merchantFlags(merchant).haggleLock[customer.id], game.time.worldTime),
+    discount: haggleDiscount(merchant.uuid, customer.uuid),
+    dcs: opposed ? null : Object.fromEntries(tables.haggle.asks.map((ask) => [String(ask), haggleDC({ insight, ask, attitude }, tables)])),
+    opposed,
+  };
 }
 
 export function currentDay() {
@@ -203,6 +271,7 @@ export function snapshot(merchant, customer) {
       purse: feature("purseLimit") ? Math.min(1, coinsToCopper(purse(merchant)) / purseTop) : null,
     },
     customer: customer.uuid,
+    haggle: haggleView(merchant, customer),
     attitude: {
       on: attitudeOn,
       band,

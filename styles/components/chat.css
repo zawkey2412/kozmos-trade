@@ -63,3 +63,17 @@
   text-decoration: line-through;
   opacity: var(--kt-dim);
 }
+
+/* Haggle result card: a coloured edge for the outcome. */
+.kt-haggle-card {
+  padding-left: var(--kt-space);
+  border-left: 3px solid var(--kt-short);
+}
+
+.kt-haggle-card.success {
+  border-left-color: var(--kt-even);
+}
+
+.kt-haggle-card p {
+  margin: 0 0 var(--kt-space-tight);
+}
