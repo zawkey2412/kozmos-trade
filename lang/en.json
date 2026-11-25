@@ -40,7 +40,10 @@
       "Empty": "There is nothing to trade.",
       "NeedsApproval": "This shop needs the GM to approve each trade.",
       "GMOnly": "Only a GM can do that.",
-      "ProposalGone": "This proposal has already been answered."
+      "ProposalGone": "This proposal has already been answered.",
+      "RevertGone": "That trade is not in the ledger, or was already reverted.",
+      "RevertMoved": "{name} has changed hands since the trade, so it can't be reverted.",
+      "RevertCoins": "The coins from that trade have been spent, so it can't be reverted."
     },
     "Shop": {
       "Control": "Shop"
@@ -197,6 +200,22 @@
         "declined": "The GM declined your trade.",
         "countered": "The GM changed the offer. Check it and propose again."
       }
+    },
+    "Receipt": {
+      "Title": "Trade receipt",
+      "Revert": "Revert",
+      "RevertLast": "Revert last trade",
+      "RevertTitle": "Revert this trade?",
+      "RevertBody": "Items and coins go back to where they were before the trade.",
+      "Reverted": "Trade reverted.",
+      "RevertedNote": "Reverted.",
+      "Attitude": "Attitude {value}"
+    },
+    "Ledger": {
+      "Label": "Ledger",
+      "Empty": "No trades yet.",
+      "Summary": "Got {gets} for {gives}",
+      "Item": "{quantity} {name}"
     }
   }
 }

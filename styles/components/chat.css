@@ -58,3 +58,8 @@
 .kozmos-trade .kt-muted {
   color: var(--kt-text-muted);
 }
+
+.kozmos-trade.kt-receipt.reverted .kt-chat-sides {
+  text-decoration: line-through;
+  opacity: var(--kt-dim);
+}

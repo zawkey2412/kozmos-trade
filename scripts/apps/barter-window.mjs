@@ -11,6 +11,7 @@ import { proposalOf } from "../services/approval.mjs";
 import { TradeError, warn } from "../services/errors.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
+import { ledgerOf, revertEntry } from "../services/receipts.mjs";
 import { snapshot as shelfSnapshot } from "../services/session.mjs";
 import { saveShop } from "../services/shop.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
@@ -52,6 +53,7 @@ export default class BarterWindow extends HandlebarsApplication {
       empty: BarterWindow.#onEmpty,
       accept: BarterWindow.#onAccept,
       toggleMode: BarterWindow.#onToggleMode,
+      revertLast: BarterWindow.#onRevertLast,
     },
   };
 
@@ -820,6 +822,14 @@ export default class BarterWindow extends HandlebarsApplication {
       if (close) this.close();
       else if (this.rendered) this.refresh();
     }
+  }
+
+  /** @this {BarterWindow} */
+  static async #onRevertLast() {
+    const actor = foundry.utils.fromUuidSync(this.snapshot.merchant.uuid);
+    const last = actor ? ledgerOf(actor).find((entry) => !entry.reverted) : null;
+    if (!last) return ui.notifications.info("KT.Ledger.Empty", { localize: true });
+    await revertEntry(this.snapshot.merchant.uuid, last.id);
   }
 
   /** @this {BarterWindow} */

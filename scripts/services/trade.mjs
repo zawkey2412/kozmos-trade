@@ -12,6 +12,7 @@ import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
 import { buyQuote, sellQuote } from "./offer.mjs";
 import { checkAccess, resolvePair, sessionAt } from "./session.mjs";
+import { recordTrade } from "./receipts.mjs";
 import { shelf } from "./shop.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
 
@@ -36,6 +37,8 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  * @property {number} quantity
  * @property {number} unit
  * @property {number} held
+ * @property {object} [restoreFlags]
+ * @property {string} [mergeInto]
  */
 
 /**
@@ -92,9 +95,13 @@ export async function runTrade(payload, sender, { requireBalance = true } = {}) 
   const trade = await prepareTrade(payload, sender, { requireBalance });
   if (Hooks.call("kozmosTrade.preTrade", trade) === false) throw new TradeError("KT.Error.Cancelled");
   const record = await applyTrade(trade);
+  const entry = await recordTrade(trade, record, sender).catch((error) => {
+    console.error("Kozmos Trade | Receipt failed", error);
+    return null;
+  });
   Hooks.callAll("kozmosTrade.trade", trade, record);
   broadcast(MESSAGES.TRADE_DONE, { merchant: trade.merchant.uuid, customer: trade.customer.uuid });
-  return { paid: trade.coins.paid, change: trade.result.change };
+  return { paid: trade.coins.paid, change: trade.result.change, receipt: entry?.id ?? null };
 }
 
 /**
@@ -163,12 +170,12 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
 
 // Moves coins and items in steps, and undoes the finished steps if one fails.
 /**
- * @param {PreparedTrade} trade
+ * @param {Pick<PreparedTrade, "merchant" | "customer" | "give" | "take"> & { coins: Pick<CoinPlan, "customerAfter" | "merchantAfter"> }} trade
  * @returns {Promise<TradeRecord>}
  */
 export async function applyTrade(trade) {
   const { merchant, customer } = trade;
-  const toMerchant = trade.give.map((line) => transferData(line.item, line.quantity));
+  const toMerchant = trade.give.map((line) => transferData(line.item, line.quantity, line.restoreFlags));
   const toCustomer = trade.take.map((line) => transferData(line.item, line.quantity));
   /** @type {(() => Promise<unknown>)[]} */
   const undo = [];
@@ -179,8 +186,8 @@ export async function applyTrade(trade) {
     await setCurrency(merchant, trade.coins.merchantAfter, undo);
     await removeLines(customer, trade.give, undo);
     await removeLines(merchant, trade.take, undo);
-    record.merchantCreated = await createItems(merchant, toMerchant, undo);
-    record.customerCreated = await createItems(customer, toCustomer, undo);
+    record.merchantCreated = await deliver(merchant, trade.give, toMerchant, undo);
+    record.customerCreated = await deliver(customer, trade.take, toCustomer, undo);
     return record;
   } catch (error) {
     console.error("Kozmos Trade | Trade failed, undoing", error);
@@ -227,17 +234,30 @@ async function removeLines(actor, lines, undo) {
   }
 }
 
+// Adds lines to their target stacks or creates new items, and returns the receiving item ids in line order.
 /**
  * @param {any} actor
+ * @param {TradeLine[]} lines
  * @param {object[]} data
  * @param {(() => Promise<unknown>)[]} undo
  * @returns {Promise<string[]>}
  */
-async function createItems(actor, data, undo) {
-  if (!data.length) return [];
-  const created = await actor.createEmbeddedDocuments("Item", data);
-  const ids = created.map((item) => item.id);
-  undo.push(() => actor.deleteEmbeddedDocuments("Item", ids));
+async function deliver(actor, lines, data, undo) {
+  const ids = lines.map((line) => (line.mergeInto && actor.items.get(line.mergeInto) ? line.mergeInto : null));
+  const merges = lines.filter((line, index) => ids[index]);
+  if (merges.length) {
+    const before = merges.map((line) => ({ _id: line.mergeInto, "system.quantity": actor.items.get(line.mergeInto).system.quantity }));
+    await actor.updateEmbeddedDocuments("Item", before.map((b, i) => ({ _id: b._id, "system.quantity": b["system.quantity"] + merges[i].quantity })));
+    undo.push(() => actor.updateEmbeddedDocuments("Item", before));
+  }
+  const fresh = data.filter((_, index) => !ids[index]);
+  if (fresh.length) {
+    const created = await actor.createEmbeddedDocuments("Item", fresh);
+    const createdIds = created.map((item) => item.id);
+    undo.push(() => actor.deleteEmbeddedDocuments("Item", createdIds));
+    let next = 0;
+    for (let index = 0; index < ids.length; index++) if (!ids[index]) ids[index] = createdIds[next++];
+  }
   return ids;
 }
 
@@ -245,8 +265,9 @@ async function createItems(actor, data, undo) {
 /**
  * @param {any} item
  * @param {number} quantity
+ * @param {object} [restoreFlags]
  */
-export function transferData(item, quantity) {
+export function transferData(item, quantity, restoreFlags) {
   const data = item.toObject();
   delete data._id;
   data.system.quantity = quantity;
@@ -255,7 +276,7 @@ export function transferData(item, quantity) {
   if ("container" in data.system) data.system.container = null;
   const stolen = data.flags?.[MODULE_ID]?.stolen;
   if (data.flags) delete data.flags[MODULE_ID];
-  if (stolen) data.flags[MODULE_ID] = { stolen };
+  if (stolen || restoreFlags) data.flags[MODULE_ID] = { ...(restoreFlags ?? {}), ...(stolen ? { stolen } : {}) };
   return data;
 }
 

@@ -25,6 +25,7 @@ export const MESSAGES = Object.freeze({
   PROPOSAL_ANSWER: "proposal.answer",
   PROPOSAL_RESULT: "proposal.result",
   SHOP_CHANGED: "shop.changed",
+  TRADE_REVERT: "trade.revert",
 });
 
 /** @type {Map<string, RequestHandler>} */

@@ -1,0 +1,26 @@
+<div class="kozmos-trade kt-chat kt-receipt{{#if reverted}} reverted{{/if}}">
+  <header class="kt-chat-title">
+    <i class="fa-solid fa-receipt" inert></i>
+    <strong>{{localize "KT.Receipt.Title"}}</strong>
+  </header>
+  <p>{{localize "KT.Proposal.Who" customer=customer merchant=merchant}}</p>
+  <div class="kt-chat-sides">
+    <div>
+      <h4>{{localize "KT.Proposal.Gives" name=customer}}</h4>
+      <ul class="plain">{{#each gives as |line|}}<li>{{line}}</li>{{else}}<li class="kt-muted">{{localize "KT.Proposal.Nothing"}}</li>{{/each}}</ul>
+    </div>
+    <div>
+      <h4>{{localize "KT.Proposal.Gets" name=customer}}</h4>
+      <ul class="plain">{{#each gets as |line|}}<li>{{line}}</li>{{else}}<li class="kt-muted">{{localize "KT.Proposal.Nothing"}}</li>{{/each}}</ul>
+    </div>
+  </div>
+  {{#if change}}<p class="kt-muted">{{localize "KT.Balance.Change" amount=change}}</p>{{/if}}
+  {{#each modifiers as |modifier|}}<p class="kt-muted">{{modifier}}</p>{{/each}}
+  {{#if reverted}}
+  <p class="kt-chat-status">{{localize "KT.Receipt.RevertedNote"}}</p>
+  {{else}}
+  <div class="kt-chat-buttons">
+    <button type="button" data-kt-action="revert"><i class="fa-solid fa-rotate-left" inert></i> {{localize "KT.Receipt.Revert"}}</button>
+  </div>
+  {{/if}}
+</div>

@@ -97,3 +97,32 @@
   font-style: italic;
   text-align: center;
 }
+
+/* Ledger. */
+.kt-configure-shop .kt-ledger-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-small);
+  max-height: var(--kt-ledger-height);
+  overflow-y: auto;
+  margin: 0;
+}
+
+.kt-configure-shop .kt-ledger-row {
+  display: grid;
+  grid-template-columns: var(--kt-value-width) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--kt-space);
+  padding: var(--kt-space-small);
+  border-radius: var(--kt-radius);
+  background: var(--kt-surface);
+  font-size: var(--kt-font-small);
+}
+
+.kt-configure-shop .kt-ledger-row.reverted {
+  opacity: var(--kt-dim);
+}
+
+.kt-configure-shop .kt-ledger-who {
+  font-weight: bold;
+}

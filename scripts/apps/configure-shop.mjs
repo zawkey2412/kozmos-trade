@@ -2,8 +2,9 @@
 import { MODULE_ID } from "../constants.mjs";
 import { ARCHETYPES, DEFAULT_ARCHETYPE } from "../data/archetypes.mjs";
 import { EXECUTION_MODES, merchantFlags, TIERS } from "../data/flags.mjs";
-import { COPPER, formatCopper, toCopper } from "../engine/money.mjs";
+import { coinsToCopper, COPPER, formatCopper, toCopper } from "../engine/money.mjs";
 import { coinLabels, locale } from "../adapter/dnd5e.mjs";
+import { ledgerOf, revertEntry } from "../services/receipts.mjs";
 import { removeShop, saveShop, shelf } from "../services/shop.mjs";
 
 import { HandlebarsDocumentSheet } from "./base.mjs";
@@ -14,7 +15,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     position: { width: 560 },
     window: { icon: "fa-solid fa-scale-balanced", contentClasses: ["standard-form"] },
     form: { handler: ConfigureShop.#onSubmit, closeOnSubmit: true },
-    actions: { removeShop: ConfigureShop.#onRemoveShop },
+    actions: { removeShop: ConfigureShop.#onRemoveShop, revert: ConfigureShop.#onRevert },
     sheetConfig: false,
     ownershipConfig: false,
   };
@@ -22,6 +23,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
   static PARTS = {
     settings: { template: `modules/${MODULE_ID}/templates/configure/settings.hbs` },
     stock: { template: `modules/${MODULE_ID}/templates/configure/stock.hbs`, scrollable: [".kt-stock-list"] },
+    ledger: { template: `modules/${MODULE_ID}/templates/configure/ledger.hbs`, scrollable: [".kt-ledger-list"] },
     footer: { template: "templates/generic/form-footer.hbs" },
   };
 
@@ -51,7 +53,15 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
       pinned: itemFlagData.pinned,
       forSale: value.forSale,
     }));
+    const names = (/** @type {{ quantity: number, name: string }[]} */ lines, /** @type {Record<string, number>} */ coins) => [...lines.map((l) => game.i18n.localize("KT.Ledger.Item", { quantity: l.quantity, name: l.name })),...(coinsToCopper(coins) ? [formatCopper(coinsToCopper(coins), money)] : [])].join(", ") || game.i18n.localize("KT.Proposal.Nothing");
+    const ledger = ledgerOf(this.document).map((entry) => ({
+      id: entry.id,
+      customer: entry.customerName,
+      reverted: entry.reverted,
+      summary: game.i18n.localize("KT.Ledger.Summary", { gets: names(entry.received, entry.paid), gives: names(entry.given, entry.coinsGive) }),
+    }));
     return Object.assign(context, {
+      ledger,
       shop: { ...flags, archetype: flags.archetype || DEFAULT_ARCHETYPE },
       archetypes: Object.fromEntries(Object.keys(ARCHETYPES).map((id) => [id, `KT.Archetype.${id}`])),
       tiers: Object.fromEntries(TIERS.map((id) => [id, `KT.Tier.${id}`])),
@@ -90,6 +100,15 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
       ]),
     );
     await saveShop(this.document, { shop, items });
+  }
+
+  /**
+   * @this {ConfigureShop}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static async #onRevert(event, target) {
+    await revertEntry(this.document.uuid, target.dataset.entry);
   }
 
   /** @this {ConfigureShop} */
