@@ -16,6 +16,55 @@
     "Error": {
       "NoGM": "A GM must be online to trade.",
       "NoAnswer": "The GM did not answer. Try again."
+    },
+    "Shop": {
+      "Control": "Shop"
+    },
+    "Configure": {
+      "Title": "Configure Shop: {name}",
+      "Shop": "Shop",
+      "Open": {
+        "Label": "Open",
+        "Hint": "Players can trade here only while the shop is open."
+      },
+      "Archetype": "Archetype",
+      "Tier": "Wealth",
+      "ExecutionMode": {
+        "Label": "Trades",
+        "Hint": "Instant trades go through as soon as the offer balances. With GM approval, you approve, counter or decline each one."
+      },
+      "Stock": {
+        "Label": "Shelf",
+        "Hint": "Items on this actor are its stock. Equipped and natural items stay with the merchant. Leave a price empty to use the item's value.",
+        "Item": "Item",
+        "Value": "Value",
+        "Price": "Price",
+        "Pin": "Pinned: kept through restocks",
+        "Empty": "This actor has no items to sell. Drop items onto its sheet to stock the shelf."
+      },
+      "NotForSale": "Not for sale",
+      "OpenShop": "Open shop",
+      "Save": "Save",
+      "Remove": "Stop being a shop"
+    },
+    "Archetype": {
+      "blacksmith": "Blacksmith",
+      "arcane": "Arcane Shop",
+      "apothecary": "Apothecary",
+      "general": "General Store",
+      "fletcher": "Fletcher",
+      "temple": "Temple",
+      "fence": "Fence",
+      "jeweler": "Jeweler"
+    },
+    "Tier": {
+      "poor": "Poor",
+      "modest": "Modest",
+      "wealthy": "Wealthy"
+    },
+    "ExecutionMode": {
+      "instant": "Instant Trade",
+      "approval": "GM Approval"
     }
   }
 }

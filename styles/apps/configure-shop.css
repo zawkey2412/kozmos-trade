@@ -1,0 +1,99 @@
+/* Configure Shop. */
+.kt-configure-shop .kt-configure-stock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-small);
+  min-height: 0;
+}
+
+.kt-configure-shop .kt-stock-head,
+.kt-configure-shop .kt-stock-row {
+  display: grid;
+  grid-template-columns: 1fr var(--kt-value-width) var(--kt-price-width) var(--kt-pin-width);
+  align-items: center;
+  gap: var(--kt-space);
+}
+
+.kt-configure-shop .kt-stock-head {
+  font-size: var(--kt-font-small);
+  color: var(--kt-text-muted);
+  padding: 0 var(--kt-space-small);
+}
+
+.kt-configure-shop .kt-stock-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-small);
+  max-height: var(--kt-list-height);
+  overflow-y: auto;
+  margin: 0;
+}
+
+.kt-configure-shop .kt-stock-row {
+  padding: var(--kt-space-small);
+  border-radius: var(--kt-radius);
+  background: var(--kt-surface);
+}
+
+.kt-configure-shop .kt-stock-row.disabled {
+  opacity: var(--kt-dim);
+}
+
+.kt-configure-shop .kt-stock-name {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space);
+  min-width: 0;
+}
+
+.kt-configure-shop .kt-stock-name img {
+  width: var(--kt-icon);
+  height: var(--kt-icon);
+  flex: none;
+  border: none;
+  border-radius: var(--kt-radius);
+}
+
+.kt-configure-shop .kt-stock-name > span:not(.kt-quantity) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-configure-shop .kt-quantity {
+  flex: none;
+  font-size: var(--kt-font-small);
+  color: var(--kt-text-muted);
+}
+
+.kt-configure-shop .kt-stock-value {
+  font-size: var(--kt-font-small);
+  color: var(--kt-text-muted);
+  text-align: right;
+}
+
+.kt-configure-shop .kt-stock-price {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-small);
+}
+
+.kt-configure-shop .kt-stock-price input {
+  text-align: right;
+}
+
+.kt-configure-shop .kt-unit {
+  font-size: var(--kt-font-small);
+  color: var(--kt-text-muted);
+}
+
+.kt-configure-shop .kt-stock-pin {
+  display: flex;
+  justify-content: center;
+}
+
+.kt-configure-shop .kt-empty {
+  color: var(--kt-text-muted);
+  font-style: italic;
+  text-align: center;
+}

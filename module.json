@@ -20,6 +20,7 @@
     ]
   },
   "esmodules": ["scripts/main.mjs"],
+  "styles": ["styles/kozmos-trade.css"],
   "languages": [
     {
       "lang": "en",

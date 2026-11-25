@@ -49,6 +49,7 @@ export function itemFacts(item) {
   return {
     type,
     subtype,
+    baseItem: system.type?.baseItem ?? "",
     price: { value: Number(system.price?.value) || 0, denomination: system.price?.denomination || "gp" },
     rarity: system.rarity || undefined,
     scroll,

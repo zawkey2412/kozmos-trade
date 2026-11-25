@@ -1,0 +1,29 @@
+/* Tokens: every color, size, space and duration the module uses, mapped to core variables. */
+.kozmos-trade {
+  --kt-space: var(--spacing, 8px);
+  --kt-space-small: calc(var(--kt-space) / 2);
+  --kt-space-large: calc(var(--kt-space) * 2);
+  --kt-radius: 4px;
+  --kt-border: 1px solid var(--color-border);
+  --kt-text: var(--color-text-primary);
+  --kt-text-muted: var(--color-text-secondary);
+  --kt-text-subtle: var(--color-text-subtle);
+  --kt-font-small: var(--font-size-12);
+  --kt-font-body: var(--font-size-14);
+  --kt-font-large: var(--font-size-16);
+  --kt-icon: 32px;
+  --kt-icon-small: 24px;
+  --kt-portrait: 64px;
+  --kt-price-width: 7rem;
+  --kt-value-width: 6rem;
+  --kt-pin-width: 2rem;
+  --kt-list-height: 24rem;
+  --kt-short: var(--color-level-error);
+  --kt-even: var(--color-level-success);
+  --kt-generous: var(--color-warm-2);
+  --kt-info: var(--color-level-info);
+  --kt-surface: color-mix(in srgb, var(--color-text-primary) 4%, transparent);
+  --kt-surface-strong: color-mix(in srgb, var(--color-text-primary) 9%, transparent);
+  --kt-dim: 0.45;
+  --kt-transition: 150ms ease;
+}

@@ -1,0 +1,36 @@
+<fieldset class="kt-configure-stock">
+  <legend>{{localize "KT.Configure.Stock.Label"}}</legend>
+  <p class="hint">{{localize "KT.Configure.Stock.Hint"}}</p>
+
+  {{#if rows.length}}
+  <div class="kt-stock-head">
+    <span class="kt-stock-name">{{localize "KT.Configure.Stock.Item"}}</span>
+    <span class="kt-stock-value">{{localize "KT.Configure.Stock.Value"}}</span>
+    <span>{{localize "KT.Configure.Stock.Price"}}</span>
+    <span class="kt-stock-pin"><i class="fa-solid fa-thumbtack" inert></i></span>
+  </div>
+  <ol class="kt-stock-list plain">
+    {{#each rows as |row|}}
+    <li class="kt-stock-row{{#unless row.forSale}} disabled{{/unless}}">
+      <span class="kt-stock-name">
+        <img src="{{row.img}}" alt="">
+        <span>{{row.name}}</span>
+        {{#if (gt row.quantity 1)}}<span class="kt-quantity">{{row.quantity}}</span>{{/if}}
+      </span>
+      <span class="kt-stock-value">{{row.value}}</span>
+      <span class="kt-stock-price">
+        <input type="number" name="items.{{row.id}}.price" value="{{row.price}}" placeholder="{{row.placeholder}}"
+               min="0" step="0.01" aria-label="{{localize "KT.Configure.Stock.Price"}}" {{disabled (not row.forSale)}}>
+        <span class="kt-unit">{{localize "DND5E.CurrencyAbbrGP"}}</span>
+      </span>
+      <span class="kt-stock-pin">
+        <input type="checkbox" name="items.{{row.id}}.pinned" {{checked row.pinned}}
+               data-tooltip aria-label="{{localize "KT.Configure.Stock.Pin"}}">
+      </span>
+    </li>
+    {{/each}}
+  </ol>
+  {{else}}
+  <p class="kt-empty">{{localize "KT.Configure.Stock.Empty"}}</p>
+  {{/if}}
+</fieldset>
