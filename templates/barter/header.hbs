@@ -8,8 +8,12 @@
   </div>
 
   <div class="kt-header-middle">
-    {{#if gm}}
-    <span class="kt-mode kt-muted">{{header.mode}}</span>
+    {{#if header.counter}}
+    <span class="kt-counter-label"><i class="fa-solid fa-pen" inert></i> {{localize "KT.Barter.CounterTitle"}}</span>
+    {{else if gm}}
+    <button type="button" class="kt-mode-toggle" data-action="toggleMode" data-tooltip aria-label="{{localize "KT.Barter.ToggleMode"}}">
+      <i class="{{header.modeIcon}}" inert></i> <span>{{header.mode}}</span>
+    </button>
     <button type="button" class="inline-control icon fa-solid fa-sliders" data-action="configure"
             data-tooltip aria-label="{{localize "KT.Barter.Configure"}}"></button>
     {{/if}}

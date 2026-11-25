@@ -21,6 +21,10 @@ export const MESSAGES = Object.freeze({
   PURSE_CHECK: "purse.check",
   TRADE_REQUEST: "trade.request",
   TRADE_DONE: "trade.done",
+  TRADE_PROPOSE: "trade.propose",
+  PROPOSAL_ANSWER: "proposal.answer",
+  PROPOSAL_RESULT: "proposal.result",
+  SHOP_CHANGED: "shop.changed",
 });
 
 /** @type {Map<string, RequestHandler>} */

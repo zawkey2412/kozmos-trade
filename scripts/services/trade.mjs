@@ -58,7 +58,18 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  */
 
 export function registerTradeHandlers() {
-  onRequest(MESSAGES.TRADE_REQUEST, (payload, sender) => runTrade(payload, sender), { queueKey: (payload) => payload?.merchant });
+  onRequest(MESSAGES.TRADE_REQUEST, instantTrade, { queueKey: (payload) => payload?.merchant });
+}
+
+// A trade the customer accepts on their own, where the shop allows it.
+/**
+ * @param {TradeRequest} payload
+ * @param {any} sender
+ */
+async function instantTrade(payload, sender) {
+  const merchant = /** @type {any} */ (await foundry.utils.fromUuid(payload?.merchant));
+  if (!sender.isGM && merchant && merchantFlags(merchant).executionMode === "approval") throw new TradeError("KT.Error.NeedsApproval");
+  return runTrade(payload, sender);
 }
 
 /**

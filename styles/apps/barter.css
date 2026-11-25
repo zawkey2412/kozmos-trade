@@ -72,6 +72,16 @@
   gap: var(--kt-space);
 }
 
+.kt-barter .kt-mode-toggle {
+  flex: none;
+  width: auto;
+}
+
+.kt-barter .kt-counter-label {
+  color: var(--kt-generous);
+  font-weight: bold;
+}
+
 .kt-barter .kt-attitude {
   margin-left: var(--kt-space);
   white-space: nowrap;

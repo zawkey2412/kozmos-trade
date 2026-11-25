@@ -37,7 +37,10 @@
       "NotEnoughCoins": "You don't have those coins.",
       "TradeFailed": "The trade could not be completed. Nothing changed.",
       "Cancelled": "The trade was stopped.",
-      "Empty": "There is nothing to trade."
+      "Empty": "There is nothing to trade.",
+      "NeedsApproval": "This shop needs the GM to approve each trade.",
+      "GMOnly": "Only a GM can do that.",
+      "ProposalGone": "This proposal has already been answered."
     },
     "Shop": {
       "Control": "Shop"
@@ -119,7 +122,12 @@
         "Body": "{name} is equipped or attuned. Put it on offer anyway?"
       },
       "Propose": "Propose Trade",
-      "Done": "Trade done."
+      "Done": "Trade done.",
+      "SendCounter": "Send counter",
+      "CounterSent": "Counter offer sent.",
+      "Proposed": "Proposal sent to the GM.",
+      "CounterTitle": "Counter offer",
+      "ToggleMode": "Switch between Instant Trade and GM Approval"
     },
     "Attitude": {
       "hostile": "Hostile",
@@ -164,7 +172,31 @@
       "Empty": "Put something on offer.",
       "Short": "Your offer is short.",
       "CannotCover": "The merchant can't pay that much in coins.",
-      "Working": "Waiting for the GM."
+      "Working": "Waiting for the GM.",
+      "Pending": "Waiting for the GM's answer."
+    },
+    "Proposal": {
+      "Title": "Trade proposal",
+      "Who": "{customer} at {merchant}",
+      "Gives": "{name} gives",
+      "Gets": "{name} gets",
+      "Nothing": "Nothing",
+      "Line": "{quantity} {name}, {price}",
+      "Approve": "Approve",
+      "Counter": "Counter",
+      "Decline": "Decline",
+      "Status": {
+        "pending": "Waiting",
+        "approved": "Approved and done.",
+        "declined": "Declined.",
+        "countered": "Countered. Sent back to the player.",
+        "replaced": "Replaced by a newer proposal."
+      },
+      "Result": {
+        "approved": "The GM approved your trade.",
+        "declined": "The GM declined your trade.",
+        "countered": "The GM changed the offer. Check it and propose again."
+      }
     }
   }
 }

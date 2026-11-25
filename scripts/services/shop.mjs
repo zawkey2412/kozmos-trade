@@ -6,6 +6,7 @@ import { cleanFlags, ItemFlags, itemFlags, MerchantFlags, merchantFlags } from "
 import { baseValue } from "../engine/pricing.mjs";
 import { onShelf, shelfPriceOf } from "../engine/shelf.mjs";
 import { getTables } from "../settings.mjs";
+import { broadcast, MESSAGES } from "./socket.mjs";
 
 /** @import { BaseValue, ItemFacts } from "../engine/pricing.mjs"; */
 /** @import { HoldingFacts } from "../adapter/dnd5e.mjs"; */
@@ -71,6 +72,7 @@ export async function saveShop(actor, { shop, items = {} }) {
     updates.push({ _id: id, [`flags.${MODULE_ID}`]: after });
   }
   if (updates.length) await actor.updateEmbeddedDocuments("Item", updates);
+  broadcast(MESSAGES.SHOP_CHANGED, { merchant: actor.uuid });
 }
 
 /** @param {any} actor */

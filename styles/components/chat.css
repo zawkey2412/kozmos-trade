@@ -1,0 +1,60 @@
+/* Chat cards. */
+.kozmos-trade.kt-chat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-small);
+}
+
+.kozmos-trade.kt-chat p,
+.kozmos-trade.kt-chat h4 {
+  margin: 0;
+}
+
+.kozmos-trade.kt-chat h4 {
+  font-size: var(--kt-font-small);
+  color: var(--kt-text-muted);
+  border: none;
+}
+
+.kozmos-trade .kt-chat-title {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-small);
+}
+
+.kozmos-trade .kt-chat-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--kt-space);
+}
+
+.kozmos-trade .kt-chat-sides ul {
+  margin: 0;
+  font-size: var(--kt-font-small);
+}
+
+.kozmos-trade.kt-chat.short .kt-chat-balance {
+  color: var(--kt-short);
+}
+
+.kozmos-trade.kt-chat.even .kt-chat-balance {
+  color: var(--kt-even);
+}
+
+.kozmos-trade.kt-chat.generous .kt-chat-balance {
+  color: var(--kt-generous);
+}
+
+.kozmos-trade .kt-chat-buttons {
+  display: flex;
+  gap: var(--kt-space-small);
+}
+
+.kozmos-trade .kt-chat-status {
+  font-style: italic;
+  color: var(--kt-text-muted);
+}
+
+.kozmos-trade .kt-muted {
+  color: var(--kt-text-muted);
+}

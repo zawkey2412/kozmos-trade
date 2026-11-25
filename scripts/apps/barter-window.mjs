@@ -7,9 +7,12 @@ import { COPPER, coinsToCopper, formatCopper, payFrom, splitCopper } from "../en
 import { tradeable } from "../engine/shelf.mjs";
 import { settle } from "../engine/quote.mjs";
 import { addCoins, clampCoins, emptyOffer, isEmpty, setLine, stageAmount } from "../engine/tray.mjs";
-import { warn } from "../services/errors.mjs";
+import { proposalOf } from "../services/approval.mjs";
+import { TradeError, warn } from "../services/errors.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
+import { snapshot as shelfSnapshot } from "../services/session.mjs";
+import { saveShop } from "../services/shop.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
 import { getTables } from "../settings.mjs";
 import ConfigureShop from "./configure-shop.mjs";
@@ -48,6 +51,7 @@ export default class BarterWindow extends HandlebarsApplication {
       autoBalance: BarterWindow.#onAutoBalance,
       empty: BarterWindow.#onEmpty,
       accept: BarterWindow.#onAccept,
+      toggleMode: BarterWindow.#onToggleMode,
     },
   };
 
@@ -69,14 +73,7 @@ export default class BarterWindow extends HandlebarsApplication {
    * @param {any} customer
    */
   static async show(snapshot, customer) {
-    BarterWindow.#partials ??= foundry.applications.handlebars
-      .loadTemplates({
-        "kt-card": `modules/${MODULE_ID}/templates/components/card.hbs`,
-        "kt-inventory": `modules/${MODULE_ID}/templates/components/inventory.hbs`,
-        "kt-tray": `modules/${MODULE_ID}/templates/components/tray.hbs`,
-      })
-      .then(() => {});
-    await BarterWindow.#partials;
+    await BarterWindow.#loadPartials();
     const id = windowId(snapshot.merchant.uuid, customer.uuid);
     const existing = /** @type {any} */ (foundry.applications.instances.get(id));
     if (existing) {
@@ -86,12 +83,63 @@ export default class BarterWindow extends HandlebarsApplication {
     return new BarterWindow({ id, snapshot, customer }).render({ force: true });
   }
 
-  /** @param {{ id: string, snapshot: Snapshot, customer: any }} options */
-  constructor({ snapshot, customer, ...options }) {
+  static #loadPartials() {
+    BarterWindow.#partials ??= foundry.applications.handlebars
+      .loadTemplates({
+        "kt-card": `modules/${MODULE_ID}/templates/components/card.hbs`,
+        "kt-inventory": `modules/${MODULE_ID}/templates/components/inventory.hbs`,
+        "kt-tray": `modules/${MODULE_ID}/templates/components/tray.hbs`,
+      })
+      .then(() => {});
+    return BarterWindow.#partials;
+  }
+
+  // The GM's copy of a proposal, where only the merchant's side can change.
+  /** @param {any} message */
+  static async openCounter(message) {
+    const proposal = proposalOf(message);
+    if (!proposal) return;
+    const { payload } = proposal;
+    const merchant = /** @type {any} */ (await foundry.utils.fromUuid(payload.merchant));
+    const customer = /** @type {any} */ (await foundry.utils.fromUuid(payload.customer));
+    if (!merchant || !customer) return warn(new TradeError("KT.Error.Missing"));
+    await BarterWindow.#loadPartials();
+    const id = `${windowId(payload.merchant, payload.customer)}-counter`;
+    foundry.applications.instances.get(id)?.close();
+    const app = new BarterWindow({ id, snapshot: shelfSnapshot(merchant, customer), customer, counter: { messageId: message.id } });
+    app.offer.give = new Map(payload.give);
+    app.offer.take = new Map(payload.take);
+    app.offer.coinsGive = clampCoins(payload.coinsGive, null);
+    app.offer.coinsTake = clampCoins(payload.coinsTake, null);
+    app.offer.keepChange = Boolean(payload.keepChange);
+    return app.render({ force: true });
+  }
+
+  // A GM's answer to this client's proposal.
+  /** @param {{ merchant: string, customer: string, status: string, counter: { take: [string, number][], coinsTake: Record<string, number> } | null }} result */
+  static onProposalResult({ merchant, customer, status, counter }) {
+    const app = /** @type {any} */ (foundry.applications.instances.get(windowId(merchant, customer)));
+    if (status === "approved") ui.notifications.info("KT.Proposal.Result.approved", { localize: true });
+    else if (status === "declined") ui.notifications.warn("KT.Proposal.Result.declined", { localize: true });
+    else if (status === "countered") ui.notifications.info("KT.Proposal.Result.countered", { localize: true });
+    if (!app) return;
+    app.pending = false;
+    if (status === "approved") app.offer = emptyOffer();
+    if (status === "countered" && counter) {
+      app.offer.take = new Map(counter.take);
+      app.offer.coinsTake = clampCoins(counter.coinsTake, null);
+    }
+    app.refresh();
+  }
+
+  /** @param {{ id: string, snapshot: Snapshot, customer: any, counter?: { messageId: string } }} options */
+  constructor({ snapshot, customer, counter, ...options }) {
     super(options);
     /** @type {Snapshot} */
     this.snapshot = snapshot;
     this.customer = customer;
+    this.counter = counter ?? null;
+    this.pending = false;
     /** @type {Offer} */
     this.offer = emptyOffer();
     this.view = {
@@ -170,6 +218,7 @@ export default class BarterWindow extends HandlebarsApplication {
       if (actor === this.customer) this.#refreshCustomer();
     };
     for (const hook of ["updateActor", "createItem", "updateItem", "deleteItem"]) this.hooks.push([hook, Hooks.on(hook, refresh)]);
+    this.hooks.push(["userConnected", Hooks.on("userConnected", () => this.rendered && this.render({ parts: ["footer"] }))]);
   }
 
   async _onRender(context, options) {
@@ -180,7 +229,7 @@ export default class BarterWindow extends HandlebarsApplication {
   async _onClose(options) {
     await super._onClose(options);
     for (const [hook, id] of this.hooks) Hooks.off(hook, id);
-    closeTrade(this.customer, { uuid: this.snapshot.merchant.uuid });
+    if (!this.counter) closeTrade(this.customer, { uuid: this.snapshot.merchant.uuid });
   }
 
   /** @param {string[]} [parts] */
@@ -236,6 +285,8 @@ export default class BarterWindow extends HandlebarsApplication {
         ? { label: game.i18n.localize(`KT.Attitude.${attitude.band}`), icon: ATTITUDE_ICONS[attitude.band], band: attitude.band }
         : null,
       mode: game.i18n.localize(`KT.ExecutionMode.${merchant.executionMode}`),
+      modeIcon: merchant.executionMode === "approval" ? "fa-solid fa-user-check" : "fa-solid fa-bolt",
+      counter: Boolean(this.counter),
     };
   }
 
@@ -343,6 +394,7 @@ export default class BarterWindow extends HandlebarsApplication {
    * @param {{ half?: boolean, all?: boolean, amount?: number }} [how]
    */
   async stage(side, id, how = {}) {
+    if (this.counter && side === "customer") return;
     const lines = side === "customer" ? this.offer.give : this.offer.take;
     const available = this.#available(side, id);
     if (available === null) return;
@@ -351,6 +403,7 @@ export default class BarterWindow extends HandlebarsApplication {
     if (!amount) return;
     if (side === "customer" && !staged && !(await this.#confirmWorn(id))) return;
     setLine(lines, id, staged + amount, available);
+    this.pending = false;
     this.refresh();
   }
 
@@ -360,6 +413,8 @@ export default class BarterWindow extends HandlebarsApplication {
    * @param {number} delta
    */
   step(tray, id, delta) {
+    if (this.counter && tray === "give") return;
+    this.pending = false;
     const lines = tray === "give" ? this.offer.give : this.offer.take;
     const max = this.#available(tray === "give" ? "customer" : "merchant", id) ?? 0;
     setLine(lines, id, (lines.get(id) ?? 0) + delta, max);
@@ -371,6 +426,8 @@ export default class BarterWindow extends HandlebarsApplication {
    * @param {string} id
    */
   unstage(tray, id) {
+    if (this.counter && tray === "give") return;
+    this.pending = false;
     (tray === "give" ? this.offer.give : this.offer.take).delete(id);
     this.refresh();
   }
@@ -378,6 +435,8 @@ export default class BarterWindow extends HandlebarsApplication {
   // Coins that fill the gap: from the customer's own coins, or asked of the merchant.
   /** @param {"give" | "take"} tray */
   autoBalance(tray) {
+    if (this.counter && tray === "give") return;
+    this.pending = false;
     const values = this.#trayValues();
     const gap = tray === "give" ? values.merchant - values.customer : values.customer - values.merchant;
     if (gap <= 0) return;
@@ -470,19 +529,18 @@ export default class BarterWindow extends HandlebarsApplication {
 
   /** @param {Settlement} result */
   #footer(result) {
-    const approval = this.snapshot.merchant.executionMode === "approval";
+    const approval = this.snapshot.merchant.executionMode === "approval" && !game.user.isGM;
     let reason = null;
     if (this.busy) reason = "KT.Footer.Working";
     else if (!game.users.activeGM) reason = "KT.Error.NoGM";
+    else if (this.pending) reason = "KT.Footer.Pending";
     else if (isEmpty(this.offer)) reason = "KT.Footer.Empty";
-    else if (!approval && result.state === "short") reason = "KT.Footer.Short";
+    else if (!approval && !this.counter && result.state === "short") reason = "KT.Footer.Short";
     else if (this.#balance(result).cannotCover) reason = "KT.Footer.CannotCover";
-    return {
-      label: approval ? "KT.Barter.Propose" : "KT.Barter.Accept",
-      icon: approval ? "fa-solid fa-paper-plane" : "fa-solid fa-handshake",
-      disabled: Boolean(reason),
-      reason: reason ? game.i18n.localize(reason) : null,
-    };
+    let action = { label: "KT.Barter.Accept", icon: "fa-solid fa-handshake" };
+    if (this.counter) action = { label: "KT.Barter.SendCounter", icon: "fa-solid fa-reply" };
+    else if (approval) action = { label: "KT.Barter.Propose", icon: "fa-solid fa-paper-plane" };
+    return { ...action, disabled: Boolean(reason), reason: reason ? game.i18n.localize(reason) : null };
   }
 
   /**
@@ -545,11 +603,15 @@ export default class BarterWindow extends HandlebarsApplication {
       return this.render({ parts: [target.dataset.side] });
     }
     if (target.matches(".kt-keep-change")) {
+      if (this.counter) return this.refresh(["give"]);
+      this.pending = false;
       this.offer.keepChange = target.checked;
       return this.refresh(["balance", "footer"]);
     }
     if (target.matches(".kt-coin")) {
       const side = target.dataset.side;
+      if (this.counter && side === "give") return this.refresh(["give"]);
+      this.pending = false;
       const key = side === "give" ? "coinsGive" : "coinsTake";
       const coins = { ...this.offer[key], [target.dataset.coin]: Number(target.value) };
       this.offer[key] = clampCoins(coins, side === "give" ? purse(this.customer) : null);
@@ -727,22 +789,45 @@ export default class BarterWindow extends HandlebarsApplication {
     await this.customer.updateEmbeddedDocuments("Item", contents.map((item) => ({ _id: item.id, "system.container": null })));
   }
 
+  // Accept, propose, or send the GM's counter, by the window's mode.
   /** @this {BarterWindow} */
   static async #onAccept() {
     if (this.busy) return;
     this.busy = true;
     this.render({ parts: ["footer"] });
+    let close = false;
     try {
-      await request(MESSAGES.TRADE_REQUEST, this.#payload());
-      this.offer = emptyOffer();
-      this.confirmed.clear();
-      ui.notifications.info("KT.Barter.Done", { localize: true });
+      if (this.counter) {
+        const counter = { take: [...this.offer.take], coinsTake: this.offer.coinsTake };
+        const merchant = this.snapshot.merchant.uuid;
+        await request(MESSAGES.PROPOSAL_ANSWER, { messageId: this.counter.messageId, merchant, answer: "counter", counter });
+        ui.notifications.info("KT.Barter.CounterSent", { localize: true });
+        close = true;
+      } else if (this.snapshot.merchant.executionMode === "approval" && !game.user.isGM) {
+        await request(MESSAGES.TRADE_PROPOSE, this.#payload());
+        this.pending = true;
+        ui.notifications.info("KT.Barter.Proposed", { localize: true });
+      } else {
+        await request(MESSAGES.TRADE_REQUEST, this.#payload());
+        this.offer = emptyOffer();
+        this.confirmed.clear();
+        ui.notifications.info("KT.Barter.Done", { localize: true });
+      }
     } catch (error) {
       warn(error);
     } finally {
       this.busy = false;
-      if (this.rendered) this.refresh();
+      if (close) this.close();
+      else if (this.rendered) this.refresh();
     }
+  }
+
+  /** @this {BarterWindow} */
+  static async #onToggleMode() {
+    const actor = foundry.utils.fromUuidSync(this.snapshot.merchant.uuid);
+    if (!actor || !game.user.isGM) return;
+    const next = this.snapshot.merchant.executionMode === "approval" ? "instant" : "approval";
+    await saveShop(actor, { shop: { executionMode: next } });
   }
 }
 

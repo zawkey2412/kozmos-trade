@@ -1,0 +1,31 @@
+<div class="kozmos-trade kt-chat kt-proposal {{state}}">
+  <header class="kt-chat-title">
+    <i class="fa-solid fa-scale-balanced" inert></i>
+    <strong>{{localize "KT.Proposal.Title"}}</strong>
+  </header>
+  {{#if gone}}
+  <p class="kt-chat-status">{{status}}</p>
+  {{else}}
+  <p>{{localize "KT.Proposal.Who" customer=customer merchant=merchant}}</p>
+  <div class="kt-chat-sides">
+    <div>
+      <h4>{{localize "KT.Proposal.Gives" name=customer}}</h4>
+      <ul class="plain">{{#each gives as |line|}}<li>{{line}}</li>{{else}}<li class="kt-muted">{{localize "KT.Proposal.Nothing"}}</li>{{/each}}</ul>
+    </div>
+    <div>
+      <h4>{{localize "KT.Proposal.Gets" name=customer}}</h4>
+      <ul class="plain">{{#each gets as |line|}}<li>{{line}}</li>{{else}}<li class="kt-muted">{{localize "KT.Proposal.Nothing"}}</li>{{/each}}</ul>
+    </div>
+  </div>
+  <p class="kt-chat-balance"><strong>{{net}}</strong> {{balance}}</p>
+  {{#if pending}}
+  <div class="kt-chat-buttons">
+    <button type="button" data-kt-action="approve"><i class="fa-solid fa-check" inert></i> {{localize "KT.Proposal.Approve"}}</button>
+    <button type="button" data-kt-action="counter"><i class="fa-solid fa-pen" inert></i> {{localize "KT.Proposal.Counter"}}</button>
+    <button type="button" data-kt-action="decline"><i class="fa-solid fa-xmark" inert></i> {{localize "KT.Proposal.Decline"}}</button>
+  </div>
+  {{else}}
+  <p class="kt-chat-status">{{status}}</p>
+  {{/if}}
+  {{/if}}
+</div>

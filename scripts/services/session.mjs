@@ -74,10 +74,11 @@ async function openSession({ merchant, customer }, sender) {
   if (current && !sameCustomer && game.users.get(current.userId)?.active) {
     throw new TradeError("KT.Error.Busy", { name: current.customerName });
   }
+  const keepUser = sameCustomer && sender.isGM && current.userId !== sender.id && game.users.get(current.userId)?.active;
   sessions.set(pair.merchant.uuid, {
     customer: pair.customer.uuid,
     customerName: pair.customer.name,
-    userId: sender.id,
+    userId: keepUser ? current.userId : sender.id,
     sold: sameCustomer ? current.sold : [],
   });
   return snapshot(pair.merchant, pair.customer);
@@ -87,11 +88,10 @@ async function openSession({ merchant, customer }, sender) {
  * @param {{ merchant: string, customer: string }} payload
  * @param {any} sender
  */
-async function closeSession({ merchant, customer }, sender) {
+function closeSession({ merchant, customer }, sender) {
   const current = sessions.get(merchant);
   if (current?.customer !== customer) return true;
-  const actor = /** @type {any} */ (await foundry.utils.fromUuid(customer));
-  if (sender.isGM || current.userId === sender.id || actor?.testUserPermission(sender, "OWNER")) sessions.delete(merchant);
+  if (current.userId === sender.id || !game.users.get(current.userId)?.active) sessions.delete(merchant);
   return true;
 }
 
