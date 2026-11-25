@@ -272,6 +272,9 @@
     "Proximity": {
       "Trade": "Trade",
       "Label": "Trade with {name}"
+    },
+    "Link": {
+      "Tooltip": "Trade with {name}"
     }
   }
 }

@@ -13,6 +13,7 @@ import { registerTradeHandlers } from "./services/trade.mjs";
 import { registerSettings } from "./settings.mjs";
 import { registerGmControls } from "./ui/gm-controls.mjs";
 import { registerDragTrade } from "./ui/drag-trade.mjs";
+import { registerTradeLinks } from "./ui/enricher.mjs";
 import { registerProximityButton } from "./ui/proximity.mjs";
 
 Hooks.once("init", () => {
@@ -24,6 +25,7 @@ Hooks.once("init", () => {
   registerProposalCards();
   registerReceiptCards();
   registerShopCards();
+  registerTradeLinks();
   // Module has no api property in the generated types.
   /** @type {any} */ (game.modules.get(MODULE_ID)).api = createApi();
 });
