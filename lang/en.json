@@ -267,7 +267,7 @@
       "Restock": "Restock",
       "RestockConfirm": "Roll a new shelf, keeping pinned items, and refill the purse?",
       "Restocked": "{name} restocked.",
-      "Imported": "{count} items added to the shelf."
+      "Imported": "Added to the shelf: {count}."
     },
     "Proximity": {
       "Trade": "Trade",

@@ -30,7 +30,7 @@ export const ARCHETYPES = {
     tools: [],
   },
   fletcher: {
-    stocks: [RANGED, { type: "consumable", subtypes: ["ammo"] }, { type: "container" }],
+    stocks: [RANGED, { type: "consumable", subtypes: ["ammo"] }],
     favored: [RANGED, { type: "consumable", subtypes: ["ammo"] }, { type: "loot", subtypes: ["material"] }],
     skills: ["sur"],
     tools: ["woodcarver"],
