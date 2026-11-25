@@ -275,6 +275,47 @@
     },
     "Link": {
       "Tooltip": "Trade with {name}"
+    },
+    "Features": {
+      "Title": "Feature toggles",
+      "Open": "Choose features",
+      "Hint": "Turn single features on or off on top of the complexity preset.",
+      "Intro": "Toggles start from the {mode} preset. Changes are kept for each complexity, so switching back finds them again.",
+      "PresetOn": "{mode}: on",
+      "PresetOff": "{mode}: off",
+      "Reset": "Back to preset",
+      "purseLimit": {
+        "Name": "Merchant purse limit",
+        "Hint": "Merchants can only pay with the coins they hold."
+      },
+      "attitude": {
+        "Name": "Persistent attitude",
+        "Hint": "Merchants remember how each customer treated them, and prices follow."
+      },
+      "haggle": {
+        "Name": "Haggle checks",
+        "Hint": "Customers can roll to push a price."
+      },
+      "rolledInsight": {
+        "Name": "Rolled merchant Insight",
+        "Hint": "Haggles are opposed by a rolled Insight check instead of passive Insight."
+      },
+      "appraisal": {
+        "Name": "Appraisal checks",
+        "Hint": "Unpriced loot is valued with a check. When off, it sells at a fixed scrap rate."
+      },
+      "theft": {
+        "Name": "Theft attempts",
+        "Hint": "Customers can try to steal from a shop."
+      },
+      "wanted": {
+        "Name": "Wanted board",
+        "Hint": "Shops post items they pay extra for."
+      },
+      "market": {
+        "Name": "Market modifiers",
+        "Hint": "Temporary price rules for a scene or the whole world."
+      }
     }
   }
 }

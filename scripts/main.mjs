@@ -1,5 +1,6 @@
 import { createApi } from "./api.mjs";
 import { registerArchetypeMenu } from "./apps/archetype-editor.mjs";
+import { registerFeatureMenu } from "./apps/feature-toggles.mjs";
 import BarterWindow from "./apps/barter-window.mjs";
 import { MODULE_ID } from "./constants.mjs";
 import { registerApprovalHandlers, registerProposalCards, setCounterWindow } from "./services/approval.mjs";
@@ -19,6 +20,7 @@ import { registerProximityButton } from "./ui/proximity.mjs";
 Hooks.once("init", () => {
   registerSettings();
   registerArchetypeMenu();
+  registerFeatureMenu();
   registerGmControls();
   setTradeWindow((snapshot, customer) => BarterWindow.show(snapshot, customer));
   setCounterWindow((message) => BarterWindow.openCounter(message));

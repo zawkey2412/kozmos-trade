@@ -19,6 +19,7 @@ export const SETTINGS = Object.freeze({
   ARCHETYPES: "archetypes",
   COMPENDIUMS: "compendiums",
   RESTOCK_DAYS: "restockDays",
+  FEATURES: "features",
 });
 
 export const MODES = Object.freeze({

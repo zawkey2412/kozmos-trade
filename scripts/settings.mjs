@@ -1,5 +1,5 @@
 import { MODES, MODULE_ID, SETTINGS } from "./constants.mjs";
-import { MODE_FEATURES } from "./data/modes.mjs";
+import { featuresFor } from "./data/modes.mjs";
 import { forgetArchetypes } from "./services/archetypes.mjs";
 import { TABLES } from "./data/tables.mjs";
 
@@ -62,6 +62,15 @@ export function registerSettings() {
     onChange: () => forgetArchetypes(),
   });
 
+  // The GM's feature toggles that differ from each mode's preset.
+  register(SETTINGS.FEATURES, {
+    name: "KT.Features.Title",
+    hint: "KT.Features.Hint",
+    scope: "world",
+    config: false,
+    type: new foundry.data.fields.ObjectField({ initial: {} }),
+  });
+
   // The GM's changes to the default tables.
   register(SETTINGS.TABLES, {
     name: "KT.Settings.Tables.Name",
@@ -79,11 +88,10 @@ export function getTables() {
   return /** @type {typeof TABLES} */ (foundry.utils.mergeObject(TABLES, changes, { inplace: false }));
 }
 
-// Whether a feature is on in the world's complexity mode.
+// Whether a feature is on: the mode's preset, then the GM's own toggle.
 /** @param {Feature} name */
 export function feature(name) {
-  const mode = game.settings.get(MODULE_ID, SETTINGS.MODE);
-  return Boolean(MODE_FEATURES[mode]?.[name]);
+  return featuresFor(game.settings.get(MODULE_ID, SETTINGS.MODE), game.settings.get(MODULE_ID, SETTINGS.FEATURES))[name];
 }
 
 /**

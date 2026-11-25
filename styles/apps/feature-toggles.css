@@ -1,0 +1,10 @@
+/* Feature toggles: the preset value beside each toggle, marked when the GM changed it. */
+.kt-feature-toggles .kt-preset {
+  color: var(--kt-text-subtle);
+  font-size: var(--kt-font-small);
+  white-space: nowrap;
+}
+
+.kt-feature-toggles .kt-preset.kt-changed {
+  color: var(--kt-info);
+}
