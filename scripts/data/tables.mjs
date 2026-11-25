@@ -75,4 +75,48 @@ export const TABLES = {
       named: 1.5,
     },
   },
+  haggle: {
+    asks: [0.05, 0.1, 0.15, 0.2, 0.25],
+    limitedMaxAsk: 0.1,
+    // DC added for each 5% asked.
+    dcPerStep: 2,
+    askStep: 0.05,
+    bigWin: 10,
+    bigLoss: 5,
+  },
+  attitude: {
+    min: -50,
+    max: 50,
+    // Price change at full attitude, both ways.
+    swing: 0.15,
+    // Attitude points per point of haggle DC.
+    dcDivisor: 10,
+    // Highest value in each band, lowest band first.
+    bands: [
+      { id: "hostile", max: -31 },
+      { id: "cold", max: -11 },
+      { id: "neutral", max: 10 },
+      { id: "warm", max: 30 },
+      { id: "friendly", max: 50 },
+    ],
+    refuseAt: -40,
+    events: {
+      fairTrade: 1,
+      wanted: 5,
+      haggleBigWin: 2,
+      intimidate: -5,
+      haggleBigLoss: -10,
+      caughtStealing: -30,
+    },
+    sweeten: {
+      step: 0.05,
+      perStep: 1,
+      maxPerTrade: 5,
+    },
+    dailyGainCap: 10,
+    decay: {
+      enabled: false,
+      perWeek: 1,
+    },
+  },
 };
