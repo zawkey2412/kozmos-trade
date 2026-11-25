@@ -125,7 +125,7 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
 
   const give = cleanLines(payload.give).map(([id, quantity]) => {
     const item = customer.items.get(id);
-    if (!item) throw new TradeError("KT.Error.ItemGone", { name: "?" });
+    if (!item) throw new TradeError("KT.Error.SoldOut");
     const facts = itemFacts(item);
     const holding = holdingFacts(item);
     const full = facts.type === "container" && holding.contents > 0;
@@ -139,9 +139,8 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
   /** @type {TradeLine[]} */
   const take = cleanLines(payload.take).map(([id, quantity]) => {
     const entry = stock.find((e) => e.item.id === id);
-    if (!entry || entry.price === null || quantity > entry.holding.quantity) {
-      throw new TradeError("KT.Error.ItemGone", { name: entry?.item.name ?? "?" });
-    }
+    if (!entry || entry.price === null) throw new TradeError("KT.Error.SoldOut");
+    if (quantity > entry.holding.quantity) throw new TradeError("KT.Error.ItemGone", { name: entry.item.name });
     return { item: entry.item, quantity, unit: buyQuote(entry.price, context).copper, held: entry.holding.quantity };
   });
 
@@ -150,7 +149,7 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
   for (const [id, quantity] of boughtBack) {
     const record = sold.find((e) => e.id === id);
     const entry = stock.find((e) => e.item.id === id);
-    if (!record || !entry || quantity > record.quantity) throw new TradeError("KT.Error.ItemGone", { name: entry?.item.name ?? "?" });
+    if (!record || !entry || quantity > record.quantity) throw new TradeError("KT.Error.SoldOut");
     const mergeInto = record.from && customer.items.get(record.from) ? record.from : undefined;
     take.push({ item: entry.item, quantity, unit: record.price, held: entry.holding.quantity, mergeInto });
   }

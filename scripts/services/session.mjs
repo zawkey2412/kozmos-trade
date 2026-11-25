@@ -220,7 +220,7 @@ export function snapshot(merchant, customer) {
         price,
         type: facts.type,
         subtype: facts.subtype ?? "",
-        rarity: facts.rarity ?? "",
+        rarity: facts.identified === false ? "" : (facts.rarity ?? ""),
         identified: facts.identified !== false,
         limited: itemFlagData.limited,
         magical: Boolean(facts.magical || facts.rarity || facts.magicalBonus),

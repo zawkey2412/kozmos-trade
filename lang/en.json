@@ -43,7 +43,8 @@
       "ProposalGone": "This proposal has already been answered.",
       "RevertGone": "That trade is not in the ledger, or was already reverted.",
       "RevertMoved": "{name} has changed hands since the trade, so it can't be reverted.",
-      "RevertCoins": "The coins from that trade have been spent, so it can't be reverted."
+      "RevertCoins": "The coins from that trade have been spent, so it can't be reverted.",
+      "SoldOut": "That item is no longer available."
     },
     "Shop": {
       "Control": "Shop"

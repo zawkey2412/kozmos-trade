@@ -1,7 +1,7 @@
 // The barter window: both inventories, both offer trays and the balance between them.
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID } from "../constants.mjs";
-import { coinLabels, combatStats, holdingFacts, itemFacts, locale, purse, rarityLabel } from "../adapter/dnd5e.mjs";
+import { coinLabels, combatStats, holdingFacts, itemDescription, itemFacts, locale, purse, rarityLabel } from "../adapter/dnd5e.mjs";
 import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
 import { COPPER, coinsToCopper, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
@@ -374,7 +374,7 @@ export default class BarterWindow extends HandlebarsApplication {
         ...card(item.id, "customer", item.name, item.img, facts, holding.quantity, staged),
         price: quote.unit,
         priceLabel: quote.forSale ? formatCopper(quote.unit, this.money) : game.i18n.localize("KT.Configure.NotForSale"),
-        tags: [rarityTag(facts.rarity), ...tags].filter(Boolean),
+        tags: [facts.identified === false ? null : rarityTag(facts.rarity), ...tags].filter(Boolean),
         disabled: !quote.forSale || full,
         canEmpty: full,
         warn: holding.equipped || holding.attuned,
@@ -389,7 +389,7 @@ export default class BarterWindow extends HandlebarsApplication {
     const actor = game.user.isGM ? /** @type {any} */ (foundry.utils.fromUuidSync(this.snapshot.merchant.uuid)) : null;
     return this.snapshot.shelf.map((entry) => {
       const unit = buyQuote(entry.price, context).copper;
-      const tags = [rarityTag(entry.rarity)];
+      const tags = [entry.identified ? rarityTag(entry.rarity) : null];
       if (entry.limited) tags.push(tag("limited", "fa-solid fa-hourglass-half"));
       if (actor?.items.get(entry.id)?.flags?.[MODULE_ID]?.pinned) tags.push(tag("pinned", "fa-solid fa-thumbtack"));
       if (!entry.identified) tags.push(tag("unidentified", "fa-solid fa-question"));
@@ -726,13 +726,14 @@ export default class BarterWindow extends HandlebarsApplication {
     }
   }
 
+  // Swaps the card's short tooltip for the full one, which core shows and hides like any other tooltip.
   /** @param {PointerEvent} event */
   async #onHover(event) {
     const row = /** @type {HTMLElement | null} */ (/** @type {HTMLElement} */ (event.target).closest?.(".kt-card"));
-    if (!row || row === this.hovered) return;
-    this.hovered = row;
-    const html = await this.#tooltip(row.dataset.side, row.dataset.itemId);
-    if (this.hovered === row && row.matches(":hover")) game.tooltip.activate(row, { html, cssClass: "kt-tooltip", direction: "LEFT" });
+    if (!row || row.dataset.tooltipReady) return;
+    row.dataset.tooltipReady = "true";
+    row.dataset.tooltipHtml = await this.#tooltip(row.dataset.side, row.dataset.itemId);
+    if (game.tooltip.element === row) game.tooltip.activate(row);
   }
 
   /**
@@ -746,7 +747,7 @@ export default class BarterWindow extends HandlebarsApplication {
     const item = side === "customer" ? this.customer.items.get(id) : null;
     const name = foundry.utils.escapeHTML(entry?.name ?? item?.name ?? "");
     const stats = entry?.stats ?? (item ? combatStats(item) : { damage: null, ac: null });
-    const description = entry?.description ?? (item ? item.system?.description?.value ?? "" : "");
+    const description = entry?.description ?? (item ? itemDescription(item) : "");
     const enriched = await foundry.applications.ux.TextEditor.implementation.enrichHTML(description, { secrets: false });
     const compare = side === "merchant" ? this.#compare(stats) : "";
     const html = `<h4>${name}</h4>${compare}<div class="kt-tooltip-description">${enriched}</div>`;
@@ -937,6 +938,7 @@ function card(id, side, name, img, facts, quantity, staged) {
     quantity,
     available: quantity - staged,
     staged: staged > 0,
+    tooltip: `<h4>${foundry.utils.escapeHTML(name)}</h4>`,
     disabled: false,
     dim: false,
   };
