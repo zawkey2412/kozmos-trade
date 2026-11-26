@@ -94,7 +94,9 @@ async function settleHaggle(entry, total) {
   }
   const attitudeChange = await recordAttitude(merchant, customer, result.events);
   await postResult({ merchant, customer, data, dc, total, opposed, success: result.success, attitudeChange });
-  return { success: result.success, discount: result.discount, dc, total, locked: result.locked, attitudeChange, haggle: haggleView(merchant, customer) };
+  const outcome = { success: result.success, discount: result.discount, dc, total, locked: result.locked, attitudeChange, haggle: haggleView(merchant, customer) };
+  Hooks.callAll("kozmosTrade.haggle", merchant, customer, { ...outcome, ask: data.ask, skill: data.skill, tool: data.tool, helped: data.helped, opposed });
+  return outcome;
 }
 
 /**

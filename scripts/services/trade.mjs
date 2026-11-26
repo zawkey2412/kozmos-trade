@@ -11,7 +11,7 @@ import { planCoins } from "../engine/trade.mjs";
 import { addCoins, noCoins } from "../engine/tray.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
-import { buyQuote, sellLine } from "./offer.mjs";
+import { buyQuote, sellLine, shelfView } from "./offer.mjs";
 import { attitudeTables, recordAttitude } from "./attitude.mjs";
 import { checkVisit, clearPool, poolOf, priceContextFor, resolvePair, sessionAt, soldToday, updateSold, useHaggle, visibleShelf } from "./session.mjs";
 import { recordTrade } from "./receipts.mjs";
@@ -167,7 +167,7 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
     const entry = visible.find((e) => e.item.id === id);
     if (!entry || entry.price === null) throw new TradeError("KT.Error.SoldOut");
     if (quantity > entry.holding.quantity) throw new TradeError("KT.Error.ItemGone", { name: entry.item.name });
-    return { item: entry.item, quantity, unit: buyQuote(entry.price, context, entry.flags.limited, entry.facts).copper, held: entry.holding.quantity };
+    return { item: entry.item, quantity, unit: buyQuote(entry.price, context, entry.flags.limited, shelfView(entry)).copper, held: entry.holding.quantity };
   });
 
   const sold = soldToday(merchant.uuid, customer.uuid);

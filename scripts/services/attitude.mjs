@@ -70,6 +70,7 @@ export async function recordAttitude(merchant, customer, events) {
   const key = attitudeKey(customer);
   const { state, change } = changeAttitude(merchantFlags(merchant).attitude[key], events, clock(), attitudeTables());
   await merchant.update({ [`flags.${MODULE_ID}.attitude.${key}`]: state });
+  if (change) Hooks.callAll("kozmosTrade.attitudeChange", merchant, customer, { key, value: state.value, change, events });
   return change;
 }
 
@@ -102,8 +103,11 @@ export async function setAttitude(merchant, customer, value) {
   if (!game.user.isGM) throw new TradeError("KT.Error.GMOnly");
   if (!merchantFlags(merchant).enabled) throw new TradeError("KT.Error.NotShop", { name: merchant.name });
   const key = typeof customer === "string" ? customer : attitudeKey(customer);
+  const before = attitudeStateOf(merchant, key).value;
   const state = setAttitudeValue(merchantFlags(merchant).attitude[key], value, clock(), attitudeTables());
   await merchant.update({ [`flags.${MODULE_ID}.attitude.${key}`]: state });
   broadcast(MESSAGES.SHOP_CHANGED, { merchant: merchant.uuid });
+  const actor = typeof customer === "string" ? (game.actors.get(customer) ?? null) : customer;
+  if (state.value !== before) Hooks.callAll("kozmosTrade.attitudeChange", merchant, actor, { key, value: state.value, change: state.value - before, events: [] });
   return state.value;
 }

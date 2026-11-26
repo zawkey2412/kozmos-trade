@@ -48,7 +48,7 @@ export function serviceLines(keys, merchant, customer, give, context) {
       if (!item || itemFacts(item).identified !== false) throw new TradeError("KT.Service.NothingToIdentify");
       if (give.some((line) => line.item.id === item.id)) throw new TradeError("KT.Service.IdentifyOffered", { name: item.name });
     }
-    lines.push({ service, key, target: item, unit: buyQuote(service.price, context, false).copper });
+    lines.push({ service, key, target: item, unit: buyQuote(service.price, context, false, { id: service.id, name: service.label, type: "service" }).copper });
   }
   return lines;
 }

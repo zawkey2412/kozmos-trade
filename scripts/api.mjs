@@ -4,6 +4,7 @@ import { registerArchetype } from "./services/archetypes.mjs";
 import { PARTY_KEY, setAttitude } from "./services/attitude.mjs";
 import { addMarketRule, removeMarketRule } from "./services/market-rules.mjs";
 import { openTrade } from "./services/open-trade.mjs";
+import { getPrice } from "./services/price.mjs";
 import { tradeWithPlayer } from "./services/player-trade.mjs";
 import { setTrueValue } from "./services/shop.mjs";
 import { generateStock, restock } from "./services/stock.mjs";
@@ -16,6 +17,7 @@ export function createApi() {
     registerArchetype,
     generateStock,
     restock,
+    getPrice,
     setAttitude: apiSetAttitude,
     setTrueValue: apiSetTrueValue,
     addMarketRule: apiAddMarketRule,

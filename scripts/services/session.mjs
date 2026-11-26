@@ -341,6 +341,8 @@ function leaveSession({ merchant, customer }, sender) {
 export function priceContextFor(merchant, customer, owner = customer) {
   const flags = merchantFlags(merchant);
   return {
+    merchant: merchant.uuid,
+    customer: customer.uuid,
     archetype: flags.archetype,
     attitudeAdjustment: attitudeAdjustment(attitudeValue(merchant, customer), getTables().attitude),
     haggle: haggleDiscount(merchant.uuid, customer.uuid),

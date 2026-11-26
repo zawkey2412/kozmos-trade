@@ -33,6 +33,14 @@ import { COPPER, toCopper } from "./money.mjs";
  * @property {{ kind: string, factor: number }[]} modifiers
  */
 
+// A price change another module adds through the prePrice hook.
+/**
+ * @typedef {object} ExtraFactor
+ * @property {string} kind
+ * @property {number} factor
+ * @property {string} [label]
+ */
+
 const NOT_FOR_SALE = Object.freeze({ copper: 0, source: null, forSale: false });
 
 // Base value from the price waterfall.
@@ -108,29 +116,40 @@ export function sellRate({ scrap = false, wanted = null, fence = false, favored 
 // What the customer pays for one of a shelf item.
 /**
  * @param {number} shelf
- * @param {{ attitudeAdjustment?: number, haggle?: number, market?: number }} [modifiers]
+ * @param {{ attitudeAdjustment?: number, haggle?: number, market?: number, extra?: ExtraFactor[] }} [modifiers]
  * @returns {Price}
  */
-export function buyPrice(shelf, { attitudeAdjustment = 0, haggle = 0, market = 1 } = {}) {
+export function buyPrice(shelf, { attitudeAdjustment = 0, haggle = 0, market = 1, extra = [] } = {}) {
   return applyModifiers(shelf, [
     ["attitude", 1 - attitudeAdjustment],
     ["haggle", 1 - haggle],
     ["market", market],
+    ...extraPairs(extra),
   ]);
 }
 
 // What the merchant pays for one of the customer's items.
 /**
  * @param {number} basis
- * @param {{ rate: number, attitudeAdjustment?: number, market?: number }} modifiers
+ * @param {{ rate: number, attitudeAdjustment?: number, market?: number, extra?: ExtraFactor[] }} modifiers
  * @returns {Price}
  */
-export function sellPrice(basis, { rate, attitudeAdjustment = 0, market = 1 }) {
+export function sellPrice(basis, { rate, attitudeAdjustment = 0, market = 1, extra = [] }) {
   return applyModifiers(basis, [
     ["rate", rate],
     ["attitude", 1 + attitudeAdjustment],
     ["market", market],
+    ...extraPairs(extra),
   ]);
+}
+
+// Factors from hooks, keeping only numbers above 0.
+/**
+ * @param {ExtraFactor[]} extra
+ * @returns {[string, number][]}
+ */
+function extraPairs(extra) {
+  return extra.filter((entry) => Number.isFinite(entry?.factor) && entry.factor > 0).map((entry) => [String(entry.kind || "custom"), entry.factor]);
 }
 
 /**

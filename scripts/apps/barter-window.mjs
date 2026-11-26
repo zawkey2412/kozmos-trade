@@ -37,6 +37,7 @@ import { card, loadTradePartials, rarityTag, tag } from "./cards.mjs";
 /** @import { PriceContext } from "../services/offer.mjs"; */
 /** @import { Offer } from "../engine/tray.mjs"; */
 /** @import { Settlement } from "../engine/quote.mjs"; */
+/** @import { ExtraFactor } from "../engine/pricing.mjs"; */
 
 
 const COINS = Object.keys(COPPER);
@@ -176,6 +177,8 @@ export default class BarterWindow extends HandlebarsApplication {
   /** @returns {PriceContext} */
   get priceContext() {
     return {
+      merchant: this.snapshot.merchant.uuid,
+      customer: this.customer.uuid,
       archetype: this.snapshot.merchant.archetype,
       attitudeAdjustment: this.snapshot.attitude.adjustment,
       haggle: this.snapshot.haggle?.discount ?? 0,
@@ -415,7 +418,8 @@ export default class BarterWindow extends HandlebarsApplication {
     if (!service) return null;
     const item = target ? this.customer.items.get(target) : null;
     if (service.kind === "identify" && (!item || itemFacts(item).identified !== false)) return null;
-    return { service, name: item ? `${service.label} (${item.name})` : service.label, unit: buyQuote(service.price, this.priceContext, false).copper };
+    const quote = buyQuote(service.price, this.priceContext, false, serviceView(service));
+    return { service, name: item ? `${service.label} (${item.name})` : service.label, unit: quote.copper, extra: quote.extra };
   }
 
   /** @param {number} budget */
@@ -423,7 +427,7 @@ export default class BarterWindow extends HandlebarsApplication {
     const context = this.priceContext;
     const escape = foundry.utils.escapeHTML;
     return (this.snapshot.services ?? []).map((service) => {
-      const unit = buyQuote(service.price, context, false).copper;
+      const unit = buyQuote(service.price, context, false, serviceView(service)).copper;
       return {
         ...card(service.id, "service", service.label, "", { type: "service" }, 1, 0),
         icon: service.icon,
@@ -641,21 +645,35 @@ export default class BarterWindow extends HandlebarsApplication {
   // Copper each side has put up so far, in goods and in coins.
   #trayValues() {
     const context = this.priceContext;
+    /** @type {Map<string, ExtraFactor>} */
+    const extra = new Map();
+    const note = (/** @type {ExtraFactor[]} */ factors) => factors.forEach((factor) => extra.set(`${factor.kind}:${factor.factor}`, factor));
     let customerItems = 0;
     for (const [id, quantity] of this.offer.give) {
       const item = this.customer.items.get(id);
-      if (item) customerItems += sellQuote(item, context).unit * quantity;
+      if (!item) continue;
+      const quote = sellQuote(item, context);
+      customerItems += quote.unit * quantity;
+      note(quote.extra);
     }
     let merchantItems = 0;
     for (const [id, quantity] of this.offer.take) {
       const entry = this.snapshot.shelf.find((e) => e.id === id);
-      if (entry) merchantItems += buyQuote(entry.price, context, entry.limited, entry).copper * quantity;
+      if (!entry) continue;
+      const quote = buyQuote(entry.price, context, entry.limited, entry);
+      merchantItems += quote.copper * quantity;
+      note(quote.extra);
     }
     for (const [id, quantity] of this.offer.buyback) {
       const record = this.snapshot.buyback.find((b) => b.id === id);
       if (record) merchantItems += record.price * quantity;
     }
-    for (const key of this.offer.services.keys()) merchantItems += this.#serviceLine(key)?.unit ?? 0;
+    for (const key of this.offer.services.keys()) {
+      const line = this.#serviceLine(key);
+      if (!line) continue;
+      merchantItems += line.unit;
+      note(line.extra);
+    }
     let pooledCoins = 0;
     for (const entry of this.pool) {
       for (const line of entry.lines) customerItems += line.unit * line.quantity;
@@ -663,7 +681,7 @@ export default class BarterWindow extends HandlebarsApplication {
     }
     const coinsGive = coinsToCopper(this.offer.coinsGive) + pooledCoins;
     const coinsTake = coinsToCopper(this.offer.coinsTake);
-    return { customerItems, merchantItems, coinsGive, coinsTake, customer: customerItems + coinsGive, merchant: merchantItems + coinsTake };
+    return { customerItems, merchantItems, coinsGive, coinsTake, customer: customerItems + coinsGive, merchant: merchantItems + coinsTake, extra: [...extra.values()] };
   }
 
   #settlement() {
@@ -700,6 +718,10 @@ export default class BarterWindow extends HandlebarsApplication {
     for (const rule of this.snapshot.market ?? []) {
       const percent = percentOf(rule.multiplier);
       modifiers.push({ label: game.i18n.localize("KT.Balance.Market", { name: rule.name, categories: marketCategoryLabel(rule.categories) }), value: `${percent > 0 ? "+" : ""}${percent}%`, tone: "" });
+    }
+    for (const factor of this.#trayValues().extra) {
+      const percent = percentOf(factor.factor);
+      modifiers.push({ label: factor.label || factor.kind, value: `${percent > 0 ? "+" : ""}${percent}%`, tone: "" });
     }
     const needed = this.#coinsNeeded(result);
     return {
@@ -1238,6 +1260,12 @@ export default class BarterWindow extends HandlebarsApplication {
  */
 export function windowId(merchant, customer) {
   return `kt-barter-${merchant}-${customer}`.replace(/[^A-Za-z0-9-]/g, "-");
+}
+
+// A service as the price hook sees it, matching the GM's check.
+/** @param {{ id: string, label: string }} service */
+function serviceView(service) {
+  return { id: service.id, name: service.label, type: "service" };
 }
 
 /** @param {string} side */

@@ -207,4 +207,17 @@ describe("trade time prices", () => {
   it("pays more with good attitude", () => {
     assert.equal(sellPrice(100 * GP, { rate: 0.5, attitudeAdjustment: 0.15 }).copper, 5_750);
   });
+
+  it("adds price changes other modules ask for, both ways", () => {
+    const extra = [{ kind: "guild", factor: 0.9, label: "Guild member" }];
+    const bought = buyPrice(100 * GP, { extra });
+    assert.equal(bought.copper, 90 * GP);
+    assert.deepEqual(bought.modifiers, [{ kind: "guild", factor: 0.9 }]);
+    assert.equal(sellPrice(100 * GP, { rate: 0.5, extra }).copper, 45 * GP);
+  });
+
+  it("ignores a broken price change from another module", () => {
+    const extra = [{ kind: "bad", factor: -2 }, { kind: "nan", factor: Number.NaN }, { kind: "zero", factor: 0 }];
+    assert.deepEqual(buyPrice(100 * GP, { extra }), { copper: 100 * GP, modifiers: [] });
+  });
 });
