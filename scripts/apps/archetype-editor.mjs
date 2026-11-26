@@ -14,6 +14,7 @@ import { HandlebarsApplication } from "./base.mjs";
  * @property {string} tools
  * @property {string} stocks
  * @property {string} favored
+ * @property {string} reactions
  */
 
 export default class ArchetypeEditor extends HandlebarsApplication {
@@ -63,6 +64,7 @@ export default class ArchetypeEditor extends HandlebarsApplication {
       tools: String(data.tools ?? ""),
       stocks: String(data.stocks ?? "[]"),
       favored: String(data.favored ?? "[]"),
+      reactions: String(data.reactions ?? ""),
     };
   }
 
@@ -151,6 +153,7 @@ function toDraft(archetype) {
     tools: archetype.tools.join(", "),
     stocks: JSON.stringify(archetype.stocks, null, 2),
     favored: JSON.stringify(archetype.favored, null, 2),
+    reactions: archetype.reactions ? JSON.stringify(archetype.reactions, null, 2) : "",
   };
 }
 
@@ -159,9 +162,9 @@ function toDraft(archetype) {
  * @returns {Archetype}
  */
 function fromDraft(draft) {
-  const parse = (/** @type {string} */ text, /** @type {string} */ name) => {
+  const parse = (/** @type {string} */ text, /** @type {string} */ name, empty = "[]") => {
     try {
-      return JSON.parse(text || "[]");
+      return JSON.parse(text.trim() || empty);
     } catch {
       throw new Error(game.i18n.localize("KT.Archetypes.BadJson", { field: name }));
     }
@@ -173,5 +176,6 @@ function fromDraft(draft) {
     tools: draft.tools.split(",").map((tool) => tool.trim()).filter(Boolean),
     stocks: parse(draft.stocks, game.i18n.localize("KT.Archetypes.Stocks")),
     favored: parse(draft.favored, game.i18n.localize("KT.Archetypes.Favored")),
+    reactions: parse(draft.reactions, game.i18n.localize("KT.Archetypes.Reactions"), "{}"),
   });
 }

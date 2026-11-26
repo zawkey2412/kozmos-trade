@@ -1,6 +1,8 @@
 // How an item fits a shop's archetype.
+import { cleanReactions } from "./reactions.mjs";
 
 /** @import { ItemFacts } from "./pricing.mjs"; */
+/** @import { ReactionLines } from "./reactions.mjs"; */
 
 /**
  * @typedef {object} ItemFilter
@@ -18,6 +20,7 @@
  * @property {boolean} [fence]
  * @property {string[]} skills
  * @property {string[]} tools
+ * @property {ReactionLines} [reactions]
  */
 
 /**
@@ -99,5 +102,7 @@ export function cleanArchetype(archetype) {
     tools: texts(archetype.tools, "tools"),
   };
   if (typeof archetype.label === "string" && archetype.label.trim()) clean.label = archetype.label.trim();
+  const reactions = cleanReactions(archetype.reactions);
+  if (Object.keys(reactions).length) clean.reactions = reactions;
   return clean;
 }

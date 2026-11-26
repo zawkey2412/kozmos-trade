@@ -53,6 +53,22 @@ export function registerSettings() {
     type: new foundry.data.fields.BooleanField({ initial: false }),
   });
 
+  register(SETTINGS.REACTIONS, {
+    name: "KT.Settings.Reactions.Name",
+    hint: "KT.Settings.Reactions.Hint",
+    scope: "world",
+    config: true,
+    type: new foundry.data.fields.BooleanField({ initial: true }),
+  });
+
+  register(SETTINGS.GREETING, {
+    name: "KT.Settings.Greeting.Name",
+    hint: "KT.Settings.Greeting.Hint",
+    scope: "world",
+    config: true,
+    type: new foundry.data.fields.BooleanField({ initial: false }),
+  });
+
   register(SETTINGS.COMPENDIUMS, {
     name: "KT.Settings.Compendiums.Name",
     hint: "KT.Settings.Compendiums.Hint",

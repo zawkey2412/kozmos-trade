@@ -54,6 +54,12 @@
       <p class="hint">{{localize "KT.Archetypes.FilterHint"}}</p>
     </div>
 
+    <div class="form-group stacked">
+      <label for="{{rootId}}-reactions">{{localize "KT.Archetypes.Reactions"}}</label>
+      <textarea id="{{rootId}}-reactions" name="reactions" class="kt-json" spellcheck="false" placeholder="{{localize "KT.Archetypes.ReactionsPlaceholder"}}">{{selected.reactions}}</textarea>
+      <p class="hint">{{localize "KT.Archetypes.ReactionsHint"}}</p>
+    </div>
+
     <button type="button" data-action="remove">
       {{#if selected.custom}}
       <i class="fa-solid fa-trash" inert></i> {{localize "KT.Archetypes.Delete"}}

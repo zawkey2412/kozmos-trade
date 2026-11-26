@@ -485,3 +485,15 @@
   height: var(--kt-chip-height);
   border: none;
 }
+/* The merchant's reaction line under the portrait. */
+.kt-barter .kt-reaction {
+  margin: 0;
+  font-size: var(--kt-font-small);
+  font-style: italic;
+  color: var(--kt-text-muted);
+  text-align: right;
+}
+
+.kt-barter .kt-reaction i {
+  color: var(--kt-text-subtle);
+}

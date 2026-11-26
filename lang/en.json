@@ -33,6 +33,14 @@
       "AttitudeDecay": {
         "Name": "Attitude fades",
         "Hint": "Each full in-game week, every merchant's attitude moves 1 point back toward neutral."
+      },
+      "Reactions": {
+        "Name": "Merchant reactions",
+        "Hint": "A short line under the merchant's portrait reacts to the offer. Archetypes can have their own lines."
+      },
+      "Greeting": {
+        "Name": "Merchant greetings",
+        "Hint": "A merchant greets a player in a speech bubble when their token comes close. Needs core chat bubbles."
       }
     },
     "Error": {
@@ -281,7 +289,10 @@
       "Reset": "Reset to the default",
       "Saved": "Archetypes saved.",
       "Invalid": "{name}: {error}",
-      "BadJson": "{field} is not valid JSON."
+      "BadJson": "{field} is not valid JSON.",
+      "Reactions": "Reaction lines",
+      "ReactionsPlaceholder": "{ \"short\": { \"cold\": [\"Not with that purse.\"] } }",
+      "ReactionsHint": "Optional. Situations: greeting, empty, short, even, generous. Bands: hostile, cold, neutral, warm, friendly. Anything left out uses the default lines."
     },
     "Stock": {
       "Restock": "Restock",
@@ -404,6 +415,118 @@
       "ConfigureHint": "Rolled with each restock. Named items leave the board once someone brings one. The Open Shop card shows the board too.",
       "Empty": "Nothing wanted right now.",
       "Roll": "Roll a new board"
+    },
+    "Reactions": {
+      "greeting": {
+        "hostile": [
+          "You again. Make it quick.",
+          "I have nothing for the likes of you."
+        ],
+        "cold": [
+          "Browse if you must.",
+          "Hm. What do you want?"
+        ],
+        "neutral": [
+          "Welcome. Have a look around.",
+          "Good day. See anything you like?"
+        ],
+        "warm": [
+          "Ah, good to see you again!",
+          "Come in, come in. I kept a few things aside."
+        ],
+        "friendly": [
+          "My favorite customer! What can I do for you?",
+          "There you are, friend. The kettle is on."
+        ]
+      },
+      "empty": {
+        "hostile": [
+          "Well? I am not here to watch you stare.",
+          "Buy something or get out."
+        ],
+        "cold": [
+          "Take your time. Not too much of it.",
+          "Prices are on the tags."
+        ],
+        "neutral": [
+          "Let me know when you have chosen.",
+          "Everything is for sale, for the right coin."
+        ],
+        "warm": [
+          "Take all the time you need.",
+          "Anything catch your eye?"
+        ],
+        "friendly": [
+          "For you, I will see what I can do.",
+          "Whatever you need, just ask."
+        ]
+      },
+      "short": {
+        "hostile": [
+          "Is that an insult or a joke?",
+          "You are wasting my time."
+        ],
+        "cold": [
+          "That is well short. Try again.",
+          "I am not running a charity."
+        ],
+        "neutral": [
+          "Not quite enough, I am afraid.",
+          "We are a little apart still."
+        ],
+        "warm": [
+          "Close, but I have to eat too.",
+          "A bit more and we have a deal."
+        ],
+        "friendly": [
+          "Almost there, friend.",
+          "I would love to, but I cannot go that low."
+        ]
+      },
+      "even": {
+        "hostile": [
+          "Fine. Take it and go.",
+          "That will do. Barely."
+        ],
+        "cold": [
+          "Fair enough.",
+          "Acceptable."
+        ],
+        "neutral": [
+          "That is a fair deal.",
+          "Done, if you are."
+        ],
+        "warm": [
+          "A pleasure doing business.",
+          "A good deal for us both."
+        ],
+        "friendly": [
+          "Always a pleasure, friend.",
+          "Deal! Come back soon."
+        ]
+      },
+      "generous": {
+        "hostile": [
+          "More than fair. I will remember that.",
+          "Trying to buy my good will? It might work."
+        ],
+        "cold": [
+          "That is generous of you.",
+          "Well. That is unexpected."
+        ],
+        "neutral": [
+          "Very generous. Thank you.",
+          "You will not hear me complain."
+        ],
+        "warm": [
+          "You are too kind!",
+          "I will remember this."
+        ],
+        "friendly": [
+          "You spoil me, friend.",
+          "Next round is on me."
+        ]
+      }
     }
   }
 }

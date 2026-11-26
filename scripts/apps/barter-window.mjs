@@ -1,8 +1,9 @@
 // The barter window: both inventories, both offer trays and the balance between them.
 // Documents are typed any here because their schema fields have no generated types.
-import { MODULE_ID } from "../constants.mjs";
+import { MODULE_ID, SETTINGS } from "../constants.mjs";
 import { coinLabels, combatStats, holdingFacts, itemDescription, itemFacts, locale, purse, rarityLabel, rollCheck, skillLabel } from "../adapter/dnd5e.mjs";
 import { appraisalDC } from "../engine/appraisal.mjs";
+import { situationOf } from "../engine/reactions.mjs";
 import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
 import { COPPER, coinsToCopper, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
@@ -13,6 +14,7 @@ import { archetypeLabel } from "../services/archetypes.mjs";
 import { ATTITUDE_ICONS } from "../services/attitude.mjs";
 import { TradeError, warn } from "../services/errors.mjs";
 import { APPRAISE_ROLL } from "../services/appraisal.mjs";
+import { reactionLine } from "../services/reactions.mjs";
 import { HAGGLE_ROLL, haggleChoices } from "../services/haggle.mjs";
 import { rollFlags } from "../services/rolls.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
@@ -208,7 +210,7 @@ export default class BarterWindow extends HandlebarsApplication {
       gm: game.user.isGM,
       header: this.#header(budget),
       customerColumn: this.#column("customer", customerCards, budget),
-      merchantColumn: this.#column("merchant", this.view.merchantTab === "buyback" ? buybackCards : merchantCards, budget),
+      merchantColumn: { ...this.#column("merchant", this.view.merchantTab === "buyback" ? buybackCards : merchantCards, budget), reaction: this.#reaction(result) },
       giveTray: this.#tray("give", customerCards, this.offer.coinsGive, held),
       takeTray: this.#tray("take", merchantCards, this.offer.coinsTake, null, buybackCards),
     });
@@ -566,6 +568,18 @@ export default class BarterWindow extends HandlebarsApplication {
       modifiers,
       cannotCover: needed > 0 && this.purseCheck?.amount === needed && !this.purseCheck.covers,
     };
+  }
+
+  // The merchant's line for the offer as it stands. It changes only when the situation or band does.
+  /** @param {Settlement} result */
+  #reaction(result) {
+    if (this.counter || !game.settings.get(MODULE_ID, SETTINGS.REACTIONS)) return null;
+    const situation = situationOf(result, isEmpty(this.offer));
+    const band = this.snapshot.attitude.on ? this.snapshot.attitude.band : "neutral";
+    if (this.reaction?.situation !== situation || this.reaction.band !== band) {
+      this.reaction = { situation, band, line: reactionLine(this.snapshot.merchant.archetype, situation, band) };
+    }
+    return this.reaction.line;
   }
 
   // The Haggle button, or why haggling is closed.
