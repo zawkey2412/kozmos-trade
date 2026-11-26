@@ -172,7 +172,7 @@ describe("sell rates", () => {
 
   it("pays the Wanted board's rate over any other", () => {
     assert.equal(sellRate({ wanted: 0.9, fence: true }, tables), 0.9);
-    assert.equal(sellRate({ wanted: tables.wanted.named }, tables), 1.5);
+    assert.equal(sellRate({ wanted: tables.wanted.namedRange[1] }, tables), 1.5);
   });
 
   it("pays 10% as scrap", () => {

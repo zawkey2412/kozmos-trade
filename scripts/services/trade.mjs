@@ -1,7 +1,8 @@
 // Trades on the active GM: everything is checked again, then items and coins move, and any failure is undone.
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID } from "../constants.mjs";
-import { holdingFacts, itemFacts, purse } from "../adapter/dnd5e.mjs";
+import { holdingFacts, itemFacts, itemSource, purse } from "../adapter/dnd5e.mjs";
+import { namedFilled } from "../engine/wanted.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { attitudeAdjustment, sweetenGain } from "../engine/attitude.mjs";
 import { COPPER, coinsToCopper } from "../engine/money.mjs";
@@ -92,6 +93,7 @@ export function priceContextFor(merchant, customer) {
     haggle: haggleDiscount(merchant.uuid, customer.uuid),
     market: 1,
     appraised: appraisedIds(merchant, customer),
+    wanted: feature("wanted") ? flags.wanted : [],
   };
 }
 
@@ -111,7 +113,12 @@ export async function runTrade(payload, sender, { requireBalance = true } = {}) 
   const sold = trade.give.map((line, index) => ({ id: record.merchantCreated[index], from: line.item.id, price: line.unit, quantity: line.quantity }));
   updateSold(trade.merchant.uuid, trade.customer.uuid, sold, trade.boughtBack);
   if (trade.take.length) useHaggle(trade.merchant.uuid, trade.customer.uuid);
-  await recordAttitude(trade.merchant, trade.customer, tradeEvents(trade.result)).catch((error) => console.error("Kozmos Trade | Attitude failed", error));
+  const delivered = await deliverWanted(trade).catch((error) => {
+    console.error("Kozmos Trade | Wanted board failed", error);
+    return 0;
+  });
+  const events = [...tradeEvents(trade.result), ...Array.from({ length: delivered }, () => /** @type {AttitudeEvent} */ ("wanted"))];
+  await recordAttitude(trade.merchant, trade.customer, events).catch((error) => console.error("Kozmos Trade | Attitude failed", error));
   Hooks.callAll("kozmosTrade.trade", trade, record);
   broadcast(MESSAGES.TRADE_DONE, { merchant: trade.merchant.uuid, customer: trade.customer.uuid });
   return { paid: trade.coins.paid, change: trade.result.change, receipt: entry?.id ?? null };
@@ -313,6 +320,18 @@ export function transferData(item, quantity, restoreFlags) {
   if (data.flags) delete data.flags[MODULE_ID];
   if (stolen || restoreFlags) data.flags[MODULE_ID] = { ...(restoreFlags ?? {}), ...(stolen ? { stolen } : {}) };
   return data;
+}
+
+// Named Wanted items in the trade come off the board. Answers how many.
+/** @param {PreparedTrade} trade */
+async function deliverWanted(trade) {
+  if (!feature("wanted")) return 0;
+  const board = merchantFlags(trade.merchant).wanted;
+  const given = trade.give.map((line) => ({ ...itemFacts(line.item), name: line.item.name, source: itemSource(line.item) }));
+  const filled = namedFilled(given, board);
+  if (!filled.length) return 0;
+  await trade.merchant.update({ [`flags.${MODULE_ID}.wanted`]: board.filter((entry) => !filled.includes(entry)) });
+  return filled.length;
 }
 
 // A balanced trade pleases the merchant once a day, and overpaying pleases it more.

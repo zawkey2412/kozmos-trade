@@ -4,6 +4,7 @@ import { MODULE_ID } from "../constants.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { archetypeLabel } from "./archetypes.mjs";
 import { openTrade } from "./open-trade.mjs";
+import { wantedLabels, wantedView } from "./session.mjs";
 
 const TEMPLATE = `modules/${MODULE_ID}/templates/chat/shop.hbs`;
 
@@ -13,6 +14,7 @@ export async function postShopCard(merchant) {
   const content = await foundry.applications.handlebars.renderTemplate(TEMPLATE, {
     name: merchant.name,
     archetype: archetypeLabel(flags.archetype),
+    wanted: wantedLabels(wantedView(merchant)),
   });
   return ChatMessage.create(/** @type {any} */ ({
     content,

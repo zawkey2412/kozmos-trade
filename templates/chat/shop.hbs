@@ -5,6 +5,12 @@
   </header>
   <p class="kt-muted">{{archetype}}</p>
   <p>{{localize "KT.ShopCard.Body" name=name}}</p>
+  {{#if wanted.length}}
+  <p class="kt-chat-wanted"><i class="fa-solid fa-bullhorn" inert></i> <strong>{{localize "KT.Wanted.Title"}}</strong></p>
+  <ul class="kt-chat-list">
+    {{#each wanted as |entry|}}<li>{{entry.label}}, {{localize "KT.Wanted.Pays" rate=entry.rate}}</li>{{/each}}
+  </ul>
+  {{/if}}
   <div class="kt-chat-buttons">
     <button type="button" data-kt-action="browse"><i class="fa-solid fa-scale-balanced" inert></i> {{localize "KT.ShopCard.Browse"}}</button>
   </div>

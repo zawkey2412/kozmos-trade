@@ -74,9 +74,11 @@ export const TABLES = {
       fence: 0.3,
       scrap: 0.1,
     },
+    // Wanted board rates, rolled in steps.
     wanted: {
       category: [0.75, 1],
-      named: 1.5,
+      namedRange: [1.25, 1.5],
+      step: 0.05,
     },
   },
   // maxMundane caps the base value of items with no rarity. null is no cap.
@@ -98,6 +100,11 @@ export const TABLES = {
     curios: [1, 2],
     // Items kept under the counter for friendly customers, each restock.
     underCounter: 1,
+    // Wanted board: how many categories, or the chance of one named item instead.
+    wanted: {
+      categories: [1, 2],
+      namedChance: 0.35,
+    },
   },
   access: {
     // Grid squares between the customer's and the merchant's tokens.

@@ -96,6 +96,12 @@ export function passiveScore(actor, skill) {
   return Number.isFinite(passive) ? passive : 10;
 }
 
+// The compendium entry an item was copied from, when known.
+/** @param {any} item */
+export function itemSource(item) {
+  return item._stats?.compendiumSource ?? item.flags?.core?.sourceId ?? null;
+}
+
 // The full skill bonus, for a merchant's rolled Insight.
 /**
  * @param {any} actor

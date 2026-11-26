@@ -10,7 +10,8 @@ import { coinLabels, locale } from "../adapter/dnd5e.mjs";
 import { warn } from "../services/errors.mjs";
 import { ledgerOf, revertEntry } from "../services/receipts.mjs";
 import { postShopCard } from "../services/shop-card.mjs";
-import { generateStock, importStock } from "../services/stock.mjs";
+import { generateStock, importStock, rerollWanted } from "../services/stock.mjs";
+import { wantedLabels, wantedView } from "../services/session.mjs";
 import { removeShop, saveShop, shelf } from "../services/shop.mjs";
 
 import { HandlebarsDocumentSheet } from "./base.mjs";
@@ -21,7 +22,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     position: { width: 560 },
     window: { icon: "fa-solid fa-scale-balanced", contentClasses: ["standard-form"] },
     form: { handler: ConfigureShop.#onSubmit, closeOnSubmit: true },
-    actions: { removeShop: ConfigureShop.#onRemoveShop, revert: ConfigureShop.#onRevert, postCard: ConfigureShop.#onPostCard, generate: ConfigureShop.#onGenerate },
+    actions: { removeShop: ConfigureShop.#onRemoveShop, revert: ConfigureShop.#onRevert, postCard: ConfigureShop.#onPostCard, generate: ConfigureShop.#onGenerate, rollWanted: ConfigureShop.#onRollWanted },
     sheetConfig: false,
     ownershipConfig: false,
   };
@@ -29,6 +30,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
   static PARTS = {
     settings: { template: `modules/${MODULE_ID}/templates/configure/settings.hbs` },
     attitude: { template: `modules/${MODULE_ID}/templates/configure/attitude.hbs` },
+    wanted: { template: `modules/${MODULE_ID}/templates/configure/wanted.hbs` },
     stock: { template: `modules/${MODULE_ID}/templates/configure/stock.hbs`, scrollable: [".kt-stock-list"] },
     ledger: { template: `modules/${MODULE_ID}/templates/configure/ledger.hbs`, scrollable: [".kt-ledger-list"] },
     footer: { template: "templates/generic/form-footer.hbs" },
@@ -84,6 +86,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     return Object.assign(context, {
       ledger,
       attitudes: attitudeRows(this.document),
+      wanted: wantedLabels(wantedView(this.document)),
       attitudeRange: { min: tables.min, max: tables.max },
       shop: { ...flags, archetype: flags.archetype || DEFAULT_ARCHETYPE },
       archetypes: Object.fromEntries(Object.keys(getArchetypes()).map((id) => [id, archetypeLabel(id)])),
@@ -132,7 +135,9 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
 
   _configureRenderParts(options) {
     const parts = super._configureRenderParts(options);
-    if (!merchantFlags(this.document).enabled || !feature("attitude")) delete parts.attitude;
+    const enabled = merchantFlags(this.document).enabled;
+    if (!enabled || !feature("attitude")) delete parts.attitude;
+    if (!enabled || !feature("wanted")) delete parts.wanted;
     return parts;
   }
 
@@ -166,6 +171,12 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     if (!result) return;
     const purse = formatCopper(result.purse, { locale: locale(), labels: coinLabels() });
     ui.notifications.info(game.i18n.localize("KT.Configure.Generated", { count: result.items.length, purse }));
+  }
+
+  /** @this {ConfigureShop} */
+  static async #onRollWanted() {
+    await rerollWanted(this.document).catch((error) => warn(error));
+    this.render({ parts: ["wanted"] });
   }
 
   /** @this {ConfigureShop} */

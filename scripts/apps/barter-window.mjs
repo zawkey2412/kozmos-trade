@@ -18,7 +18,7 @@ import { rollFlags } from "../services/rolls.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
 import { ledgerOf, revertEntry } from "../services/receipts.mjs";
-import { snapshot as shelfSnapshot } from "../services/session.mjs";
+import { snapshot as shelfSnapshot, wantedLabels } from "../services/session.mjs";
 import { saveShop } from "../services/shop.mjs";
 import { importStock, restock } from "../services/stock.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
@@ -173,6 +173,7 @@ export default class BarterWindow extends HandlebarsApplication {
       haggle: this.snapshot.haggle?.discount ?? 0,
       market: 1,
       appraised: Object.keys(this.snapshot.appraisal?.items ?? {}).filter((id) => this.snapshot.appraisal.items[id] === "appraised"),
+      wanted: this.snapshot.wanted ?? [],
     };
   }
 
@@ -317,6 +318,7 @@ export default class BarterWindow extends HandlebarsApplication {
       sort: view.sort,
       items: arrange(cards, { category: view.category, sort: view.sort, budget, locale: locale() }),
       empty: game.i18n.localize(side === "customer" ? "KT.Barter.EmptyCustomer" : "KT.Barter.EmptyShelf"),
+      wanted: side === "merchant" ? wantedLabels(this.snapshot.wanted ?? []) : [],
       tabs:
         side === "merchant" && this.snapshot.buyback.length
           ? ["shelf", "buyback"].map((id) => ({ id, label: game.i18n.localize(`KT.Barter.Tab.${id}`), active: this.view.merchantTab === id }))
@@ -375,7 +377,8 @@ export default class BarterWindow extends HandlebarsApplication {
       if (quote.scrap) tags.push(tag("scrap", "fa-solid fa-recycle"));
       if (appraisal === "appraised") tags.push(tag("appraised", "fa-solid fa-magnifying-glass-dollar"));
       if (quote.scrap && appraisal === "failed") tags.push(tag("appraiseFailed", "fa-solid fa-clock"));
-      if (quote.favored) tags.push(tag("favored", "fa-solid fa-thumbs-up"));
+      if (quote.wanted) tags.push(tag("wanted", "fa-solid fa-bullhorn"));
+      else if (quote.favored) tags.push(tag("favored", "fa-solid fa-thumbs-up"));
       const staged = this.offer.give.get(item.id) ?? 0;
       cards.push({
         ...card(item.id, "customer", item.name, item.img, facts, holding.quantity, staged),
@@ -1061,6 +1064,7 @@ export default class BarterWindow extends HandlebarsApplication {
  * @param {string} merchant
  * @param {string} customer
  */
+
 export function windowId(merchant, customer) {
   return `kt-barter-${merchant}-${customer}`.replace(/[^A-Za-z0-9-]/g, "-");
 }

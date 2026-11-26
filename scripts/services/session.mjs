@@ -24,6 +24,15 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  */
 
 /**
+ * @typedef {object} WantedView
+ * @property {string} category
+ * @property {string} uuid
+ * @property {string} name
+ * @property {number} multiplier
+ * @property {string | null} img
+ */
+
+/**
  * @typedef {object} HaggleView
  * @property {boolean} on
  * @property {boolean} locked
@@ -59,6 +68,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {{ on: boolean, band: string, adjustment: number }} attitude
  * @property {HaggleView} haggle
  * @property {{ on: boolean, items: Record<string, "appraised" | "failed"> }} appraisal
+ * @property {WantedView[]} wanted
  * @property {ShelfItem[]} shelf
  * @property {{ id: string, price: number, quantity: number }[]} buyback
  */
@@ -167,6 +177,29 @@ export function haggleView(merchant, customer) {
     dcs: opposed ? null : Object.fromEntries(tables.haggle.asks.map((ask) => [String(ask), haggleDC({ insight, ask, attitude }, tables)])),
     opposed,
   };
+}
+
+// The Wanted board, with each named item's picture.
+/**
+ * @param {any} merchant
+ * @returns {WantedView[]}
+ */
+export function wantedView(merchant) {
+  if (!feature("wanted")) return [];
+  return merchantFlags(merchant).wanted.map((entry) => {
+    const source = entry.uuid ? /** @type {any} */ (foundry.utils.fromUuidSync(entry.uuid, { strict: false })) : null;
+    return { ...entry, name: entry.name || source?.name || "", img: source?.img ?? null };
+  });
+}
+
+// The board's entries as short labels with the share of value paid.
+/** @param {WantedView[]} board */
+export function wantedLabels(board) {
+  return board.map((entry) => ({
+    label: entry.category ? game.i18n.localize(`KT.Category.${entry.category}`) : entry.name,
+    img: entry.category ? null : entry.img,
+    rate: `${Math.round(entry.multiplier * 100)}%`,
+  }));
 }
 
 // What this merchant made of the customer's unpriced items: appraised for good, or failed today.
@@ -295,6 +328,7 @@ export function snapshot(merchant, customer) {
     customer: customer.uuid,
     haggle: haggleView(merchant, customer),
     appraisal: appraisalView(merchant, customer),
+    wanted: wantedView(merchant),
     attitude: {
       on: attitudeOn,
       band,

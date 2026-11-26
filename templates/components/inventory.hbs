@@ -6,6 +6,14 @@
     {{/each}}
   </nav>
   {{/if}}
+  {{#if wanted.length}}
+  <div class="kt-wanted" data-tooltip-text="{{localize "KT.Wanted.Hint"}}">
+    <span class="kt-wanted-title"><i class="fa-solid fa-bullhorn" inert></i> {{localize "KT.Wanted.Title"}}</span>
+    {{#each wanted as |entry|}}
+    <span class="kt-wanted-entry">{{#if entry.img}}<img src="{{entry.img}}" alt="">{{/if}}{{entry.label}} <strong>{{entry.rate}}</strong></span>
+    {{/each}}
+  </div>
+  {{/if}}
   <div class="kt-inventory-tools">
     <input type="search" class="kt-search" data-side="{{side}}" value="{{search}}"
            placeholder="{{localize "KT.Barter.Search"}}" aria-label="{{localize "KT.Barter.Search"}}">

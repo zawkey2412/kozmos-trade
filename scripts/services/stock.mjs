@@ -1,7 +1,7 @@
 // Generating stock on the GM's client: a shelf rolled from compendiums replaces the unpinned stock.
 // Documents and CONFIG.Dice are typed any here because their fields have no generated types.
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
-import { clock, itemFacts, rulesVersion } from "../adapter/dnd5e.mjs";
+import { clock, itemFacts, itemSource, rulesVersion } from "../adapter/dnd5e.mjs";
 import { DEFAULT_ARCHETYPE } from "../data/archetypes.mjs";
 import { cleanFlags, ItemFlags, merchantFlags } from "../data/flags.mjs";
 import { splitCopper } from "../engine/money.mjs";
@@ -9,6 +9,7 @@ import { rarityRank } from "../engine/catalog.mjs";
 import { baseValue } from "../engine/pricing.mjs";
 import { TRADE_TYPES } from "../engine/shelf.mjs";
 import { rollShelf } from "../engine/stock.mjs";
+import { rollWanted } from "../engine/wanted.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { getArchetypes } from "./archetypes.mjs";
 import { TradeError } from "./errors.mjs";
@@ -79,7 +80,8 @@ export async function generateStock(merchant, { archetype, tier } = {}) {
   }
   const created = data.length ? await merchant.createEmbeddedDocuments("Item", data) : [];
   await merchant.update({ "system.currency": { pp: 0, ep: 0, ...splitCopper(result.purse) } });
-  await saveShop(merchant, { shop: { ...options, lastRestock: game.time.worldTime } });
+  const wanted = feature("wanted") ? rollWanted(pool, { archetype: definition, tier: options.tier, tables, random, exclude: result.picks.map((pick) => pick.uuid) }) : [];
+  await saveShop(merchant, { shop: { ...options, wanted, lastRestock: game.time.worldTime } });
   const summary = { ...options, items: created.map((item) => item.id), purse: result.purse };
   Hooks.callAll("kozmosTrade.generateStock", merchant, summary);
   return summary;
@@ -106,6 +108,21 @@ export async function candidates(tables, rules) {
     }
   }
   return list;
+}
+
+// A new Wanted board only, keeping the shelf.
+/** @param {any} merchant */
+export async function rerollWanted(merchant) {
+  if (!game.user.isGM) throw new TradeError("KT.Error.GMOnly");
+  const flags = merchantFlags(merchant);
+  const definition = getArchetypes()[flags.archetype || DEFAULT_ARCHETYPE];
+  if (!definition) throw new TradeError("KT.Error.NoArchetype", { name: flags.archetype });
+  const tables = getTables();
+  const random = /** @type {() => number} */ (/** @type {any} */ (CONFIG.Dice).randomUniform);
+  const pool = await candidates(tables, rulesVersion());
+  const wanted = rollWanted(pool, { archetype: definition, tier: flags.tier, tables, random, exclude: shelf(merchant).map((entry) => itemSource(entry.item)).filter(Boolean) });
+  await saveShop(merchant, { shop: { wanted } });
+  return wanted;
 }
 
 // A new shelf with the shop's own archetype and wealth.

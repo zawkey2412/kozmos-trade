@@ -77,6 +77,10 @@
   color: var(--kt-generous);
 }
 
+.kozmos-trade .kt-tag.wanted {
+  color: var(--kt-generous);
+}
+
 .kozmos-trade .kt-tag.favored {
   color: var(--kt-even);
 }

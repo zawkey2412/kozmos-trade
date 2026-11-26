@@ -456,3 +456,32 @@
   font-size: var(--kt-font-small);
   color: var(--kt-text-muted);
 }
+/* Wanted board above the merchant's shelf. */
+.kt-barter .kt-wanted {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kt-space-small);
+  padding: var(--kt-space-small);
+  border: var(--kt-border);
+  border-radius: var(--kt-radius);
+  background: var(--kt-surface);
+  font-size: var(--kt-font-small);
+}
+
+.kt-barter .kt-wanted-title {
+  color: var(--kt-generous);
+  font-weight: bold;
+}
+
+.kt-barter .kt-wanted-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kt-space-tight);
+}
+
+.kt-barter .kt-wanted-entry img {
+  width: var(--kt-chip-height);
+  height: var(--kt-chip-height);
+  border: none;
+}

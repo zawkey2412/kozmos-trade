@@ -157,3 +157,26 @@
   flex: none;
   width: auto;
 }
+
+/* Wanted board rows and their reroll button. */
+.kt-configure-wanted .kt-wanted-rows li {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-small);
+  padding: var(--kt-space-tight) 0;
+}
+
+.kt-configure-wanted .kt-wanted-rows img {
+  width: var(--kt-icon-small);
+  height: var(--kt-icon-small);
+  border: none;
+}
+
+.kt-configure-wanted .kt-wanted-rows span {
+  flex: 1;
+}
+
+.kt-configure-wanted .kt-wanted-tools {
+  display: flex;
+  justify-content: flex-end;
+}

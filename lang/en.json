@@ -198,7 +198,8 @@
       "buyback": "Buy back at the price you sold it for",
       "underCounter": "Under the counter",
       "appraised": "Appraised",
-      "appraiseFailed": "Appraise again tomorrow"
+      "appraiseFailed": "Appraise again tomorrow",
+      "wanted": "Wanted"
     },
     "Balance": {
       "short": "Short",
@@ -395,6 +396,14 @@
       "Title": "True value: {name}",
       "Label": "True value",
       "Hint": "What a merchant pays on once this item is appraised. Leave empty to use its type's floor price."
+    },
+    "Wanted": {
+      "Title": "Wanted",
+      "Hint": "This merchant pays extra for these. Bringing a named item also wins its favor.",
+      "Pays": "pays {rate}",
+      "ConfigureHint": "Rolled with each restock. Named items leave the board once someone brings one. The Open Shop card shows the board too.",
+      "Empty": "Nothing wanted right now.",
+      "Roll": "Roll a new board"
     }
   }
 }
