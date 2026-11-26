@@ -40,7 +40,8 @@ export function getArchetypes() {
   const changes = game.settings.get(MODULE_ID, SETTINGS.ARCHETYPES) ?? {};
   for (const [id, change] of Object.entries(changes)) {
     try {
-      all[id] = cleanArchetype(change);
+      const inherit = change && typeof change === "object" && !("services" in change) && all[id]?.services;
+      all[id] = cleanArchetype(inherit ? { ...change, services: all[id].services } : change);
     } catch (error) {
       console.warn(`Kozmos Trade | Archetype "${id}" was skipped`, error);
     }
@@ -51,6 +52,19 @@ export function getArchetypes() {
 /** @param {string} id */
 export function isBuiltIn(id) {
   return id in ARCHETYPES || registered.has(id);
+}
+
+// Services a shop sells, with each name in the reader's language.
+/** @param {string} id */
+export function servicesOf(id) {
+  return (getArchetypes()[id]?.services ?? []).map((service) => ({ ...service, label: serviceLabel(service) }));
+}
+
+/** @param {{ id: string, label?: string }} service */
+export function serviceLabel(service) {
+  if (service.label) return service.label;
+  const key = `KT.Service.${service.id}.Name`;
+  return game.i18n.has(key) ? game.i18n.localize(key) : service.id;
 }
 
 /** @param {string} id */

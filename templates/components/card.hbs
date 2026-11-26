@@ -1,7 +1,7 @@
 <li class="kt-card{{#if dim}} dim{{/if}}{{#if disabled}} disabled{{/if}}{{#if staged}} staged{{/if}}" data-item-id="{{id}}" data-side="{{side}}"
     {{#unless disabled}}draggable="true" data-action="stage" tabindex="0" role="button"{{/unless}} aria-label="{{name}}"
     data-tooltip-html="{{tooltip}}" data-tooltip-class="kt-tooltip" data-tooltip-direction="LEFT">
-  <img src="{{img}}" alt="">
+  {{#if icon}}<i class="{{icon}} kt-card-icon" inert></i>{{else}}<img src="{{img}}" alt="">{{/if}}
   <div class="kt-card-text">
     <span class="kt-card-name">{{name}}</span>
     {{#if tags.length}}

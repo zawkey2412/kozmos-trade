@@ -1,8 +1,10 @@
 // How an item fits a shop's archetype.
 import { cleanReactions } from "./reactions.mjs";
+import { cleanServices } from "./services.mjs";
 
 /** @import { ItemFacts } from "./pricing.mjs"; */
 /** @import { ReactionLines } from "./reactions.mjs"; */
+/** @import { Service } from "./services.mjs"; */
 
 /**
  * @typedef {object} ItemFilter
@@ -21,6 +23,7 @@ import { cleanReactions } from "./reactions.mjs";
  * @property {string[]} skills
  * @property {string[]} tools
  * @property {ReactionLines} [reactions]
+ * @property {Service[]} [services]
  */
 
 /**
@@ -104,5 +107,6 @@ export function cleanArchetype(archetype) {
   if (typeof archetype.label === "string" && archetype.label.trim()) clean.label = archetype.label.trim();
   const reactions = cleanReactions(archetype.reactions);
   if (Object.keys(reactions).length) clean.reactions = reactions;
+  if (archetype.services !== undefined) clean.services = cleanServices(archetype.services);
   return clean;
 }

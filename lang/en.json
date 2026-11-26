@@ -85,7 +85,9 @@
       "AlreadyJoined": "You already joined {name}'s trade here.",
       "JoinGM": "A GM can't join a trade. Open the shop for a character instead.",
       "NothingToJoin": "Nobody is trading with {name} right now.",
-      "NotJoined": "That character is not part of this trade anymore."
+      "NotJoined": "That character is not part of this trade anymore.",
+      "NoService": "This merchant does not offer that service.",
+      "RevertService": "Trades with a service can't be reverted. Undo them by hand."
     },
     "Shop": {
       "Control": "Shop"
@@ -184,7 +186,8 @@
       "Remote": "Trading from the Shops list",
       "Tab": {
         "shelf": "Shelf",
-        "buyback": "Buy back"
+        "buyback": "Buy back",
+        "services": "Services"
       }
     },
     "Attitude": {
@@ -276,7 +279,8 @@
       "RevertedNote": "Reverted.",
       "Attitude": "Attitude {value}",
       "From": "{name}: {line}",
-      "GoesTo": "Purchases go to {name}."
+      "GoesTo": "Purchases go to {name}.",
+      "Service": "{name}, {price}"
     },
     "Ledger": {
       "Label": "Ledger",
@@ -312,7 +316,47 @@
       "BadJson": "{field} is not valid JSON.",
       "Reactions": "Reaction lines",
       "ReactionsPlaceholder": "{ \"short\": { \"cold\": [\"Not with that purse.\"] } }",
-      "ReactionsHint": "Optional. Situations: greeting, empty, short, even, generous. Bands: hostile, cold, neutral, warm, friendly. Anything left out uses the default lines."
+      "ReactionsHint": "Optional. Situations: greeting, empty, short, even, generous. Bands: hostile, cold, neutral, warm, friendly. Anything left out uses the default lines.",
+      "Services": "Services",
+      "ServicesPlaceholder": "[{ \"id\": \"repair\", \"kind\": \"note\", \"price\": 10 }]",
+      "ServicesHint": "Optional. A list of services, priced in gold. Each has an id and a kind: identify, note or effect. Any can have a label, an icon and a note. A note can heal, such as \"heal\": \"2d8+3\". An effect can have a name, img, days, changes and statuses. Leave empty for the default services, or type [] for none."
+    },
+    "Service": {
+      "identify": {
+        "Name": "Identify",
+        "Hint": "Learn what one of your unidentified items really is. It then sells at its true value."
+      },
+      "cureWounds": {
+        "Name": "Cure Wounds",
+        "Hint": "A priest heals your wounds."
+      },
+      "removeCurse": {
+        "Name": "Remove Curse",
+        "Hint": "Ends curses on you, so you can let go of a cursed item."
+      },
+      "repair": {
+        "Name": "Repair",
+        "Hint": "Fixes a damaged weapon, armor or tool. Tell your GM which one."
+      },
+      "roomAndMeal": {
+        "Name": "Room and meal",
+        "Hint": "A warm meal and a bed for the night."
+      },
+      "Kind": {
+        "identify": "Identifies one of your unidentified items.",
+        "note": "The merchant does this for you, and the GM sees it in chat.",
+        "effect": "Puts an effect on your character."
+      },
+      "Card": {
+        "identify": "{merchant} identifies {item} for {customer}.",
+        "note": "{merchant} provides {service} for {customer}.",
+        "effect": "{customer} gets {service} from {merchant}."
+      },
+      "NothingToIdentify": "You have nothing unidentified, or it is already on offer.",
+      "IdentifyOffered": "Take {name} off the offer before you have it identified.",
+      "Item": "Item",
+      "PickTitle": "Identify which item?",
+      "Pick": "Choose"
     },
     "Stock": {
       "Restock": "Restock",

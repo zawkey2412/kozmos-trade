@@ -77,6 +77,13 @@ describe("reverting a trade", () => {
     assert.throws(() => reversePlan(merchant, customer, pooled), /KT.Error.Missing/);
   });
 
+  it("refuses a trade that bought a service, which cannot be taken back", () => {
+    const merchant = actor(coins({ gp: 400 }), { daggerOnMerchant: 1 });
+    const customer = actor(coins({ gp: 5 }), { potionOnCustomer: 2 });
+    const withService = { ...entry, services: [{ id: "identify", label: "Identify", unit: 5000, target: "Wand" }] };
+    assert.throws(() => reversePlan(merchant, customer, withService), /KT.Error.RevertService/);
+  });
+
   it("refuses when the coins have been spent", () => {
     const merchant = actor(coins({ gp: 50 }), { daggerOnMerchant: 1 });
     const customer = actor(coins({ gp: 5 }), { potionOnCustomer: 2 });

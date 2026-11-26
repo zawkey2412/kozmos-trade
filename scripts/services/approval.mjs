@@ -144,7 +144,10 @@ async function cardContent(trade, proposal) {
     merchant: trade.merchant.name,
     mode: game.i18n.localize(`KT.ExecutionMode.${merchantFlags(trade.merchant).executionMode}`),
     gives: [...lines(trade.give, trade.coinsGive), ...pooled],
-    gets: lines(trade.take, trade.coinsTake),
+    gets: [
+      ...lines(trade.take, trade.coinsTake),
+      ...trade.services.map((s) => game.i18n.localize("KT.Receipt.Service", { name: s.target ? `${s.service.label} (${s.target.name})` : s.service.label, price: formatCopper(s.unit, money) })),
+    ],
     recipient: trade.recipient !== trade.customer ? trade.recipient.name : null,
     balance: game.i18n.localize(`KT.Balance.${result.state}`),
     net: `${result.net < 0 ? "-" : result.net > 0 ? "+" : ""}${formatCopper(Math.abs(result.net), money)}`,

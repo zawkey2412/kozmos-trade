@@ -11,7 +11,7 @@
     </li>
     {{else}}
     <li class="kt-line" data-item-id="{{row.id}}" data-side="{{row.side}}" draggable="true" tabindex="0" aria-label="{{row.name}}">
-      <img src="{{row.img}}" alt="">
+      {{#if row.icon}}<i class="{{row.icon}} kt-line-icon" inert></i>{{else}}<img src="{{row.img}}" alt="">{{/if}}
       <span class="kt-line-name">{{#if row.buyback}}<i class="fa-solid fa-rotate-left" inert data-tooltip aria-label="{{localize "KT.Tag.buyback"}}"></i> {{/if}}{{row.name}}</span>
       <span class="kt-line-stepper">
         <button type="button" class="inline-control icon fa-solid fa-minus" data-action="step" data-delta="-1"

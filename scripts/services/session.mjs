@@ -12,6 +12,7 @@ import { coinsToCopper, COPPER, payFrom } from "../engine/money.mjs";
 import { cleanPlayerOffer } from "../engine/player-trade.mjs";
 import { noCoins } from "../engine/tray.mjs";
 import { feature, getTables } from "../settings.mjs";
+import { servicesOf } from "./archetypes.mjs";
 import { TradeError } from "./errors.mjs";
 import { sellLine, sellQuote } from "./offer.mjs";
 import { shelf } from "./shop.mjs";
@@ -99,6 +100,17 @@ import { metByParty, recordVisit } from "./visits.mjs";
  * @property {ShelfItem[]} shelf
  * @property {{ id: string, price: number, quantity: number }[]} buyback
  * @property {PoolView[]} pool
+ * @property {ServiceView[]} services
+ */
+
+/**
+ * @typedef {object} ServiceView
+ * @property {string} id
+ * @property {string} kind
+ * @property {string} label
+ * @property {number} price
+ * @property {string} icon
+ * @property {string} hint
  */
 
 /** @type {Map<string, Session>} */
@@ -582,6 +594,14 @@ export function snapshot(merchant, customer) {
       adjustment: attitudeAdjustment(value, tables.attitude),
     },
     pool: poolView(merchant, customer),
+    services: servicesOf(flags.archetype).map((service) => ({
+      id: service.id,
+      kind: service.kind,
+      label: service.label,
+      price: service.price,
+      icon: service.icon ?? "fa-solid fa-hand-holding-heart",
+      hint: service.note ?? game.i18n.localize(game.i18n.has(`KT.Service.${service.id}.Hint`) ? `KT.Service.${service.id}.Hint` : `KT.Service.Kind.${service.kind}`),
+    })),
     buyback: soldToday(merchant.uuid, customer.uuid).flatMap((entry) => {
       const item = merchant.items.get(entry.id);
       const held = Number(item?.system?.quantity) || 0;

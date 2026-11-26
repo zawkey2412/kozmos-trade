@@ -1,6 +1,7 @@
 // Archetype editor: the GM changes archetypes and adds their own.
 import { MODULE_ID } from "../constants.mjs";
 import { cleanArchetype } from "../engine/fit.mjs";
+import { servicesFromGold, servicesToGold } from "../engine/services.mjs";
 import { ARCHETYPE_ID, archetypeLabel, baseArchetypes, getArchetypes, isBuiltIn, saveArchetypes } from "../services/archetypes.mjs";
 import { HandlebarsApplication } from "./base.mjs";
 
@@ -15,6 +16,7 @@ import { HandlebarsApplication } from "./base.mjs";
  * @property {string} stocks
  * @property {string} favored
  * @property {string} reactions
+ * @property {string} services
  */
 
 export default class ArchetypeEditor extends HandlebarsApplication {
@@ -65,6 +67,7 @@ export default class ArchetypeEditor extends HandlebarsApplication {
       stocks: String(data.stocks ?? "[]"),
       favored: String(data.favored ?? "[]"),
       reactions: String(data.reactions ?? ""),
+      services: String(data.services ?? ""),
     };
   }
 
@@ -154,6 +157,7 @@ function toDraft(archetype) {
     stocks: JSON.stringify(archetype.stocks, null, 2),
     favored: JSON.stringify(archetype.favored, null, 2),
     reactions: archetype.reactions ? JSON.stringify(archetype.reactions, null, 2) : "",
+    services: archetype.services ? JSON.stringify(servicesToGold(archetype.services), null, 2) : "",
   };
 }
 
@@ -177,5 +181,6 @@ function fromDraft(draft) {
     stocks: parse(draft.stocks, game.i18n.localize("KT.Archetypes.Stocks")),
     favored: parse(draft.favored, game.i18n.localize("KT.Archetypes.Favored")),
     reactions: parse(draft.reactions, game.i18n.localize("KT.Archetypes.Reactions"), "{}"),
+    ...(draft.services.trim() ? { services: servicesFromGold(parse(draft.services, game.i18n.localize("KT.Archetypes.Services"))) } : {}),
   });
 }

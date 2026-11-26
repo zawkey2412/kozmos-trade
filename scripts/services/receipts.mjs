@@ -41,6 +41,7 @@ import { moveAll } from "./trade.mjs";
  * @property {{ actor: string, name: string, given: LedgerLine[], coinsGive: Record<string, number> }[]} [pool]
  * @property {string} [recipient]
  * @property {string} [recipientName]
+ * @property {{ id: string, label: string, unit: number, target: string | null }[]} [services]
  */
 
 const LEDGER_SIZE = 50;
@@ -130,6 +131,9 @@ export async function recordTrade(trade, record, sender) {
     entry.recipient = trade.recipient.uuid;
     entry.recipientName = trade.recipient.name;
   }
+  if (trade.services?.length) {
+    entry.services = trade.services.map((s) => ({ id: s.service.id, label: s.service.label, unit: s.unit, target: s.target?.name ?? null }));
+  }
   const message = /** @type {any} */ (await ChatMessage.create(/** @type {any} */ ({
     content: await receiptContent(trade.merchant.name, entry),
     speaker: ChatMessage.getSpeaker({ actor: trade.merchant }),
@@ -178,7 +182,8 @@ async function revert({ merchant: merchantUuid, entry: entryId }, sender) {
  * @param {Map<string, any>} [others]
  */
 export function reversePlan(merchant, customer, entry, others = new Map()) {
-  const back = (/** @type {any} */ actor, /** @type {any} */ target, /** @type {LedgerLine[]} */ lines, /** @type {boolean} */ withShelf) =>
+  if (entry.services?.length) throw new TradeError("KT.Error.RevertService");
+  const back =(/** @type {any} */ actor, /** @type {any} */ target, /** @type {LedgerLine[]} */ lines, /** @type {boolean} */ withShelf) =>
     lines.map((line) => {
       const item = actor.items.get(line.id);
       const held = Number(item?.system?.quantity) || 0;
@@ -241,11 +246,12 @@ export async function receiptContent(merchantName, entry) {
   const coins = (/** @type {Record<string, number>} */ c) => (coinsToCopper(c) ? [formatCopper(coinsToCopper(c), money)] : []);
   const adjustment = entry.attitudeAdjustment;
   const pooled = (entry.pool ?? []).flatMap((part) => [...items(part.given), ...coins(part.coinsGive)].map((line) => game.i18n.localize("KT.Receipt.From", { name: part.name, line })));
+  const services = (entry.services ?? []).map((s) => game.i18n.localize("KT.Receipt.Service", { name: s.target ? `${s.label} (${s.target})` : s.label, price: formatCopper(s.unit, money) }));
   return foundry.applications.handlebars.renderTemplate(TEMPLATE, {
     merchant: merchantName,
     customer: entry.customerName,
     gives: [...items(entry.given), ...coins(entry.coinsGive), ...pooled],
-    gets: [...items(entry.received), ...coins(entry.paid)],
+    gets: [...items(entry.received), ...services, ...coins(entry.paid)],
     recipient: entry.recipientName ?? null,
     change: entry.change ? formatCopper(entry.change, money) : null,
     modifiers: adjustment ? [game.i18n.localize("KT.Receipt.Attitude", { value: `${adjustment > 0 ? "+" : "-"}${Math.round(Math.abs(adjustment) * 100)}%` })] : [],

@@ -6,6 +6,7 @@ import { COPPER } from "./money.mjs";
  * @property {Map<string, number>} give
  * @property {Map<string, number>} take
  * @property {Map<string, number>} buyback
+ * @property {Map<string, number>} services
  * @property {Record<string, number>} coinsGive
  * @property {Record<string, number>} coinsTake
  * @property {boolean} keepChange
@@ -18,7 +19,7 @@ export function noCoins() {
 
 /** @returns {Offer} */
 export function emptyOffer() {
-  return { give: new Map(), take: new Map(), buyback: new Map(), coinsGive: noCoins(), coinsTake: noCoins(), keepChange: false };
+  return { give: new Map(), take: new Map(), buyback: new Map(), services: new Map(), coinsGive: noCoins(), coinsTake: noCoins(), keepChange: false };
 }
 
 // How many a click stages: 1, half the stack with Shift, all of it with Ctrl or Cmd.
@@ -72,5 +73,5 @@ export function addCoins(a, b, sign = 1) {
 /** @param {Offer} offer */
 export function isEmpty(offer) {
   const noCoinsIn = (coins) => Object.values(coins).every((count) => !count);
-  return !offer.give.size && !offer.take.size && !offer.buyback.size && noCoinsIn(offer.coinsGive) && noCoinsIn(offer.coinsTake);
+  return !offer.give.size && !offer.take.size && !offer.buyback.size && !offer.services?.size && noCoinsIn(offer.coinsGive) && noCoinsIn(offer.coinsTake);
 }

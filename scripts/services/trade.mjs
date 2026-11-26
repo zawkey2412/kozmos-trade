@@ -16,9 +16,11 @@ import { attitudeTables, recordAttitude } from "./attitude.mjs";
 import { checkVisit, clearPool, poolOf, priceContextFor, resolvePair, sessionAt, soldToday, updateSold, useHaggle, visibleShelf } from "./session.mjs";
 import { recordTrade } from "./receipts.mjs";
 import { shelf } from "./shop.mjs";
+import { postServiceNotes, serviceLines, serviceSteps } from "./shop-services.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
 
 /** @import { PriceContext } from "./offer.mjs"; */
+/** @import { ServiceLine } from "./shop-services.mjs"; */
 /** @import { Settlement } from "../engine/quote.mjs"; */
 /** @import { CoinPlan } from "../engine/trade.mjs"; */
 /** @import { AttitudeEvent } from "../engine/attitude.mjs"; */
@@ -34,6 +36,7 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  * @property {Record<string, number>} coinsTake
  * @property {boolean} keepChange
  * @property {string} [recipient]
+ * @property {[string, number][]} [services]
  */
 
 // What one joined character puts up.
@@ -67,6 +70,7 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  * @property {CoinPlan} coins
  * @property {PriceContext} context
  * @property {PoolPart[]} pool
+ * @property {ServiceLine[]} services
  * @property {any} recipient
  * @property {[any, Record<string, number>][]} currency
  * @property {ExtraStep[]} [steps]
@@ -123,8 +127,9 @@ export async function runTrade(payload, sender, { requireBalance = true } = {}) 
   });
   const sold = trade.give.map((line, index) => ({ id: record.merchantCreated[index], from: line.item.id, price: line.unit, quantity: line.quantity }));
   updateSold(trade.merchant.uuid, trade.customer.uuid, sold, trade.boughtBack);
-  if (trade.take.length) useHaggle(trade.merchant.uuid, trade.customer.uuid);
+  if (trade.take.length || trade.services.length) useHaggle(trade.merchant.uuid, trade.customer.uuid);
   if (trade.pool.length) clearPool(trade.merchant.uuid, trade.customer.uuid);
+  await postServiceNotes(trade.services, trade.merchant, trade.customer).catch((error) => console.error("Kozmos Trade | Service note failed", error));
   const delivered = await deliverWanted(trade).catch((error) => {
     console.error("Kozmos Trade | Wanted board failed", error);
     return 0;
@@ -179,18 +184,21 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
     if (total > line.held) throw new TradeError("KT.Error.ItemGone", { name: line.item.name });
   }
 
+  const services = serviceLines(payload.services, merchant, customer, give, context);
   const coinsGive = wholeCoins(payload.coinsGive);
   const coinsTake = wholeCoins(payload.coinsTake);
   const poolCoins = pool.reduce((sum, part) => addCoins(sum, part.coins), noCoins());
   const pooledItems = pool.reduce((sum, part) => sum + linesValue(part.give), 0);
-  const nothing = !give.length && !take.length && !pool.some((part) => part.give.length) && !coinsToCopper(coinsGive) && !coinsToCopper(poolCoins) && !coinsToCopper(coinsTake);
+  const servicesValue = services.reduce((sum, line) => sum + line.unit, 0);
+  const goods = give.length || take.length || services.length || pool.some((part) => part.give.length);
+  const nothing = !goods && !coinsToCopper(coinsGive) && !coinsToCopper(poolCoins) && !coinsToCopper(coinsTake);
   if (nothing) throw new TradeError("KT.Error.Empty");
   const held = purse(customer);
   if (Object.keys(COPPER).some((coin) => coinsGive[coin] > held[coin])) throw new TradeError("KT.Error.NotEnoughCoins");
 
   const result = settle({
     giveItems: linesValue(give) + pooledItems,
-    takeItems: linesValue(take),
+    takeItems: linesValue(take) + servicesValue,
     coinsGive: coinsToCopper(coinsGive) + coinsToCopper(poolCoins),
     coinsTake: coinsToCopper(coinsTake),
     keepChange: Boolean(payload.keepChange),
@@ -210,7 +218,8 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
   });
   if (!coins) throw new TradeError("KT.Error.ExactCoins", { name: merchant.name });
   const currency = currencyAfter({ merchant, customer, recipient, coinsGive, pool, coins });
-  return { merchant, customer, give, take, boughtBack, coinsGive, coinsTake, result, coins, context, pool, recipient, currency };
+  const steps = serviceSteps(services, merchant, customer);
+  return { merchant, customer, give, take, boughtBack, coinsGive, coinsTake, result, coins, context, pool, services, recipient, currency, steps };
 }
 
 // Items and coins from everyone who joined the customer's trade.

@@ -8,6 +8,7 @@ import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
 import { COPPER, coinsToCopper, formatCoins, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
 import { settle } from "../engine/quote.mjs";
+import { parseServiceKey, serviceKey } from "../engine/services.mjs";
 import { addCoins, clampCoins, emptyOffer, isEmpty, setLine, stageAmount } from "../engine/tray.mjs";
 import { proposalOf } from "../services/approval.mjs";
 import { archetypeLabel } from "../services/archetypes.mjs";
@@ -110,6 +111,7 @@ export default class BarterWindow extends HandlebarsApplication {
     const app = new BarterWindow({ id, snapshot: shelfSnapshot(merchant, customer), customer, counter: { messageId: message.id } });
     app.offer.give = new Map(payload.give);
     app.offer.take = new Map(payload.take);
+    app.offer.services = new Map(payload.services ?? []);
     app.offer.coinsGive = clampCoins(payload.coinsGive, null);
     app.offer.coinsTake = clampCoins(payload.coinsTake, null);
     app.offer.keepChange = Boolean(payload.keepChange);
@@ -194,8 +196,14 @@ export default class BarterWindow extends HandlebarsApplication {
       setLine(this.offer.take, id, quantity, entry?.quantity ?? 0);
     }
     for (const [id, quantity] of this.offer.buyback) setLine(this.offer.buyback, id, quantity, this.#available("buyback", id) ?? 0);
-    if (!snapshot.buyback.length) this.view.merchantTab = "shelf";
+    for (const key of [...this.offer.services.keys()]) if (this.#available("service", key) === null) this.offer.services.delete(key);
+    if (!this.#merchantTabs().includes(this.view.merchantTab)) this.view.merchantTab = "shelf";
     if (this.recipient && !(snapshot.pool ?? []).some((entry) => entry.actor === this.recipient)) this.recipient = null;
+  }
+
+  // Shelf, plus Buy back and Services when there is something in them.
+  #merchantTabs() {
+    return ["shelf", ...(this.snapshot.buyback.length ? ["buyback"] : []), ...(this.snapshot.services?.length ? ["services"] : [])];
   }
 
   // What joined characters put up, priced by the GM.
@@ -215,15 +223,17 @@ export default class BarterWindow extends HandlebarsApplication {
     const customerCards = this.#customerCards();
     const merchantCards = this.#merchantCards(budget);
     const buybackCards = this.#buybackCards();
+    const serviceCards = this.#serviceCards(budget);
     const result = this.#settlement();
     this.#checkPurse(result);
+    const shown = { buyback: buybackCards, services: serviceCards }[this.view.merchantTab] ?? merchantCards;
     return Object.assign(context, {
       balance: this.#balance(result),
       footer: this.#footer(result),
       gm: game.user.isGM,
       header: this.#header(budget),
       customerColumn: this.#column("customer", customerCards, budget),
-      merchantColumn: { ...this.#column("merchant", this.view.merchantTab === "buyback" ? buybackCards : merchantCards, budget), reaction: this.#reaction(result) },
+      merchantColumn: { ...this.#column("merchant", shown, budget), reaction: this.#reaction(result) },
       giveTray: this.#tray("give", customerCards, this.offer.coinsGive, held),
       takeTray: this.#tray("take", merchantCards, this.offer.coinsTake, null, buybackCards),
     });
@@ -290,6 +300,7 @@ export default class BarterWindow extends HandlebarsApplication {
       give: [...this.offer.give],
       take: [...this.offer.take],
       buyback: [...this.offer.buyback],
+      services: [...this.offer.services],
       coinsGive: this.offer.coinsGive,
       coinsTake: this.offer.coinsTake,
       keepChange: this.offer.keepChange,
@@ -337,8 +348,8 @@ export default class BarterWindow extends HandlebarsApplication {
       empty: game.i18n.localize(side === "customer" ? "KT.Barter.EmptyCustomer" : "KT.Barter.EmptyShelf"),
       wanted: side === "merchant" ? wantedLabels(this.snapshot.wanted ?? []) : [],
       tabs:
-        side === "merchant" && this.snapshot.buyback.length
-          ? ["shelf", "buyback"].map((id) => ({ id, label: game.i18n.localize(`KT.Barter.Tab.${id}`), active: this.view.merchantTab === id }))
+        side === "merchant" && this.#merchantTabs().length > 1
+          ? this.#merchantTabs().map((id) => ({ id, label: game.i18n.localize(`KT.Barter.Tab.${id}`), active: this.view.merchantTab === id }))
           : null,
     };
   }
@@ -366,6 +377,7 @@ export default class BarterWindow extends HandlebarsApplication {
       }
     }
     if (side === "give") rows.push(...this.#poolRows());
+    if (side === "take") rows.push(...this.#serviceRows());
     total += coinsToCopper(coins);
     return {
       side,
@@ -376,6 +388,83 @@ export default class BarterWindow extends HandlebarsApplication {
       keepChange: side === "give" ? { checked: this.offer.keepChange } : null,
       recipient: side === "take" ? this.#recipientChoice() : null,
     };
+  }
+
+  #serviceRows() {
+    return [...this.offer.services.keys()].flatMap((key) => {
+      const line = this.#serviceLine(key);
+      if (!line) return [];
+      return [{ id: key, side: "service", name: line.name, img: null, icon: line.service.icon, quantity: 1, max: 1, totalLabel: formatCopper(line.unit, this.money), buyback: false }];
+    });
+  }
+
+  // A staged service with its name, the item it works on, and its price.
+  /** @param {string} key */
+  #serviceLine(key) {
+    const { id, target } = parseServiceKey(key);
+    const service = this.snapshot.services?.find((s) => s.id === id);
+    if (!service) return null;
+    const item = target ? this.customer.items.get(target) : null;
+    if (service.kind === "identify" && (!item || itemFacts(item).identified !== false)) return null;
+    return { service, name: item ? `${service.label} (${item.name})` : service.label, unit: buyQuote(service.price, this.priceContext, false).copper };
+  }
+
+  /** @param {number} budget */
+  #serviceCards(budget) {
+    const context = this.priceContext;
+    const escape = foundry.utils.escapeHTML;
+    return (this.snapshot.services ?? []).map((service) => {
+      const unit = buyQuote(service.price, context, false).copper;
+      return {
+        ...card(service.id, "service", service.label, "", { type: "service" }, 1, 0),
+        icon: service.icon,
+        staged: [...this.offer.services.keys()].some((key) => parseServiceKey(key).id === service.id),
+        price: unit,
+        priceLabel: formatCopper(unit, this.money),
+        tooltip: `<h4>${escape(service.label)}</h4><p>${escape(service.hint)}</p>`,
+        tags: [],
+        dim: unit > budget,
+      };
+    });
+  }
+
+  // Stages a service. Identify first asks which item.
+  /** @param {string} id */
+  async #stageService(id) {
+    if (this.counter) return;
+    const service = this.snapshot.services?.find((s) => s.id === id);
+    if (!service) return;
+    let target = null;
+    if (service.kind === "identify") {
+      target = await this.#pickUnidentified(id);
+      if (!target) return;
+    }
+    const key = serviceKey(id, target);
+    if (this.offer.services.has(key)) return;
+    this.offer.services.set(key, 1);
+    this.pending = false;
+    this.refresh();
+  }
+
+  // The customer's unidentified item, picked when there is more than one.
+  /** @param {string} id */
+  async #pickUnidentified(id) {
+    const items = this.customer.items.filter((item) => itemFacts(item).identified === false && !this.offer.give.has(item.id) && !this.offer.services.has(serviceKey(id, item.id)));
+    if (!items.length) {
+      ui.notifications.warn("KT.Service.NothingToIdentify", { localize: true });
+      return null;
+    }
+    if (items.length === 1) return items[0].id;
+    const { createFormGroup, createSelectInput } = foundry.applications.fields;
+    const select = createSelectInput({ name: "item", options: items.map((item) => ({ value: item.id, label: item.name })), value: items[0].id });
+    const group = createFormGroup({ label: game.i18n.localize("KT.Service.Item"), input: select });
+    const data = /** @type {any} */ (await foundry.applications.api.DialogV2.input(/** @type {any} */ ({
+      window: { title: "KT.Service.PickTitle", icon: "fa-solid fa-eye" },
+      content: group.outerHTML,
+      ok: { label: "KT.Service.Pick", icon: "fa-solid fa-check" },
+      rejectClose: false,
+    })));
+    return data?.item ?? null;
   }
 
   // Joined characters' items and coins, shown in the customer's tray but changed only by their own players.
@@ -471,6 +560,7 @@ export default class BarterWindow extends HandlebarsApplication {
   /** @param {string} tray */
   #linesOf(tray) {
     if (tray === "give") return this.offer.give;
+    if (tray === "service") return this.offer.services;
     return tray === "buyback" ? this.offer.buyback : this.offer.take;
   }
 
@@ -481,6 +571,7 @@ export default class BarterWindow extends HandlebarsApplication {
    * @param {{ half?: boolean, all?: boolean, amount?: number }} [how]
    */
   async stage(side, id, how = {}) {
+    if (side === "service") return this.#stageService(id);
     if (this.counter && side === "customer") return;
     const lines = this.#linesOf(trayOf(side));
     const available = this.#available(side, id);
@@ -555,6 +646,7 @@ export default class BarterWindow extends HandlebarsApplication {
       const record = this.snapshot.buyback.find((b) => b.id === id);
       if (record) merchantItems += record.price * quantity;
     }
+    for (const key of this.offer.services.keys()) merchantItems += this.#serviceLine(key)?.unit ?? 0;
     let pooledCoins = 0;
     for (const entry of this.pool) {
       for (const line of entry.lines) customerItems += line.unit * line.quantity;
@@ -628,7 +720,7 @@ export default class BarterWindow extends HandlebarsApplication {
     const haggle = this.snapshot.haggle;
     if (!haggle?.on || this.counter || haggle.discount) return null;
     if (haggle.locked) return { locked: true, text: game.i18n.localize("KT.Haggle.LockedShort") };
-    const buying = this.offer.take.size > 0;
+    const buying = this.offer.take.size > 0 || this.offer.services.size > 0;
     return { locked: false, disabled: !buying || Boolean(this.busy), reason: buying ? null : game.i18n.localize("KT.Haggle.NeedPurchase") };
   }
 
@@ -768,6 +860,7 @@ export default class BarterWindow extends HandlebarsApplication {
    * @param {string} id
    */
   #available(side, id) {
+    if (side === "service") return this.#serviceLine(id) ? 1 : null;
     if (side === "merchant" || side === "buyback") {
       const onShelf = this.snapshot.shelf.find((e) => e.id === id)?.quantity ?? null;
       if (onShelf === null) return null;
@@ -899,8 +992,9 @@ export default class BarterWindow extends HandlebarsApplication {
     const data = /** @type {any} */ (foundry.applications.ux.TextEditor.implementation.getDragEventData(event));
     const zoneSide = zone.dataset.side;
     if (data?.type === DRAG_TYPE) {
-      if (data.from === "inventory" && zone.matches(".kt-tray") && trayOf(data.side) === zoneSide) return this.stage(data.side, data.id);
-      if (data.from === "tray" && zone.matches(".kt-inventory") && sideOf(data.side) === (zoneSide === "merchant" && data.side === "buyback" ? "buyback" : zoneSide)) return this.unstage(data.side, data.id);
+      const merchantSide = ["buyback", "service"].includes(data.side);
+      if (data.from === "inventory" && zone.matches(".kt-tray") && (merchantSide ? "take" : trayOf(data.side)) === zoneSide) return this.stage(data.side, data.id);
+      if (data.from === "tray" && zone.matches(".kt-inventory") && (merchantSide ? "merchant" : sideOf(data.side)) === zoneSide) return this.unstage(data.side, data.id);
       return;
     }
     if (game.user.isGM && zoneSide === "merchant" && ["Item", "Folder", "RollTable"].includes(data?.type)) {
@@ -919,7 +1013,7 @@ export default class BarterWindow extends HandlebarsApplication {
   /** @param {PointerEvent} event */
   async #onHover(event) {
     const row = /** @type {HTMLElement | null} */ (/** @type {HTMLElement} */ (event.target).closest?.(".kt-card"));
-    if (!row || row.dataset.tooltipReady) return;
+    if (!row || row.dataset.tooltipReady || row.dataset.side === "service") return;
     row.dataset.tooltipReady = "true";
     row.dataset.tooltipHtml = await this.#tooltip(row.dataset.side, row.dataset.itemId);
     if (game.tooltip.element === row) game.tooltip.activate(row);
@@ -932,7 +1026,7 @@ export default class BarterWindow extends HandlebarsApplication {
   async #tooltip(side, id) {
     const key = `${side}.${id}`;
     if (this.tooltips.has(key)) return this.tooltips.get(key);
-    const entry = side === "merchant" ? this.snapshot.shelf.find((e) => e.id === id) : null;
+    const entry = side === "merchant" || side === "buyback" ? this.snapshot.shelf.find((e) => e.id === id) : null;
     const item = side === "customer" ? this.customer.items.get(id) : null;
     const name = foundry.utils.escapeHTML(entry?.name ?? item?.name ?? "");
     const stats = entry?.stats ?? (item ? combatStats(item) : { damage: null, ac: null });

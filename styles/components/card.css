@@ -118,6 +118,14 @@
   font-size: var(--kt-font-tiny);
 }
 
+/* Services show an icon in place of a picture. */
+.kozmos-trade .kt-card .kt-card-icon {
+  width: var(--kt-icon);
+  font-size: var(--kt-font-large);
+  text-align: center;
+  color: var(--kt-text-muted);
+}
+
 /* Appraise button beside the scrap price. */
 .kozmos-trade .kt-card-side:has(.kt-appraise-button) {
   flex-direction: row;
