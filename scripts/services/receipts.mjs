@@ -1,8 +1,9 @@
 // Receipts, the merchant's ledger, and reverting a trade.
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID } from "../constants.mjs";
-import { coinLabels, locale, purse } from "../adapter/dnd5e.mjs";
+import { coinLabels, itemFacts, locale, purse } from "../adapter/dnd5e.mjs";
 import { cleanFlags, itemFlags, MerchantFlags, merchantFlags } from "../data/flags.mjs";
+import { percentOf, ruleApplies } from "../engine/market.mjs";
 import { COPPER, coinsToCopper, formatCopper } from "../engine/money.mjs";
 import { addCoins } from "../engine/tray.mjs";
 import { TradeError, warn } from "./errors.mjs";
@@ -42,6 +43,7 @@ import { moveAll } from "./trade.mjs";
  * @property {string} [recipient]
  * @property {string} [recipientName]
  * @property {{ id: string, label: string, unit: number, target: string | null }[]} [services]
+ * @property {{ name: string, multiplier: number }[]} [market]
  */
 
 const LEDGER_SIZE = 50;
@@ -134,6 +136,9 @@ export async function recordTrade(trade, record, sender) {
   if (trade.services?.length) {
     entry.services = trade.services.map((s) => ({ id: s.service.id, label: s.service.label, unit: s.unit, target: s.target?.name ?? null }));
   }
+  const traded = [...trade.give, ...trade.take, ...pool.flatMap((part) => part.give)];
+  const market = (trade.context.market ?? []).filter((rule) => traded.some((l) => ruleApplies(rule, itemFacts(l.item))));
+  if (market.length) entry.market = market.map((rule) => ({ name: rule.name, multiplier: rule.multiplier }));
   const message = /** @type {any} */ (await ChatMessage.create(/** @type {any} */ ({
     content: await receiptContent(trade.merchant.name, entry),
     speaker: ChatMessage.getSpeaker({ actor: trade.merchant }),
@@ -254,7 +259,13 @@ export async function receiptContent(merchantName, entry) {
     gets: [...items(entry.received), ...services, ...coins(entry.paid)],
     recipient: entry.recipientName ?? null,
     change: entry.change ? formatCopper(entry.change, money) : null,
-    modifiers: adjustment ? [game.i18n.localize("KT.Receipt.Attitude", { value: `${adjustment > 0 ? "+" : "-"}${Math.round(Math.abs(adjustment) * 100)}%` })] : [],
+    modifiers: [
+      ...(adjustment ? [game.i18n.localize("KT.Receipt.Attitude", { value: `${adjustment > 0 ? "+" : "-"}${Math.round(Math.abs(adjustment) * 100)}%` })] : []),
+      ...(entry.market ?? []).map((rule) => {
+        const percent = percentOf(rule.multiplier);
+        return game.i18n.localize("KT.Receipt.Market", { name: rule.name, value: `${percent > 0 ? "+" : ""}${percent}%` });
+      }),
+    ],
     reverted: entry.reverted,
   });
 }

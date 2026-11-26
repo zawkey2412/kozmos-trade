@@ -37,6 +37,7 @@ export const MESSAGES = Object.freeze({
   SHOW_SHOP: "shop.show",
   SHOP_SHOWN: "shop.shown",
   MARKET_LIST: "market.list",
+  MARKET_CHANGED: "market.changed",
   PLAYER_OPEN: "player.open",
   PLAYER_OFFER: "player.offer",
   PLAYER_ACCEPT: "player.accept",

@@ -14,12 +14,14 @@ import { noCoins } from "../engine/tray.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { servicesOf } from "./archetypes.mjs";
 import { TradeError } from "./errors.mjs";
+import { marketRulesFor } from "./market-rules.mjs";
 import { sellLine, sellQuote } from "./offer.mjs";
 import { shelf } from "./shop.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
 import { metByParty, recordVisit } from "./visits.mjs";
 
 /** @import { PriceContext } from "./offer.mjs"; */
+/** @import { MarketRule } from "../engine/market.mjs"; */
 
 /**
  * @typedef {object} PoolEntry
@@ -101,6 +103,7 @@ import { metByParty, recordVisit } from "./visits.mjs";
  * @property {{ id: string, price: number, quantity: number }[]} buyback
  * @property {PoolView[]} pool
  * @property {ServiceView[]} services
+ * @property {MarketRule[]} market
  */
 
 /**
@@ -341,7 +344,7 @@ export function priceContextFor(merchant, customer, owner = customer) {
     archetype: flags.archetype,
     attitudeAdjustment: attitudeAdjustment(attitudeValue(merchant, customer), getTables().attitude),
     haggle: haggleDiscount(merchant.uuid, customer.uuid),
-    market: 1,
+    market: marketRulesFor(merchant),
     appraised: appraisedIds(merchant, owner),
     wanted: feature("wanted") ? flags.wanted : [],
   };
@@ -594,6 +597,7 @@ export function snapshot(merchant, customer) {
       adjustment: attitudeAdjustment(value, tables.attitude),
     },
     pool: poolView(merchant, customer),
+    market: marketRulesFor(merchant),
     services: servicesOf(flags.archetype).map((service) => ({
       id: service.id,
       kind: service.kind,

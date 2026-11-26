@@ -207,7 +207,8 @@
       "consumables": "Consumables",
       "gear": "Gear",
       "magic": "Magic",
-      "loot": "Loot"
+      "loot": "Loot",
+      "food": "Food"
     },
     "Sort": {
       "name": "Name",
@@ -237,7 +238,8 @@
       "Change": "Change back: {amount}",
       "Attitude": "Attitude: {band}",
       "CannotCover": "Merchant can't cover this. Add goods to make up the gap.",
-      "Haggle": "Haggle"
+      "Haggle": "Haggle",
+      "Market": "{name}: {categories}"
     },
     "Footer": {
       "Empty": "Put something on offer.",
@@ -280,7 +282,8 @@
       "Attitude": "Attitude {value}",
       "From": "{name}: {line}",
       "GoesTo": "Purchases go to {name}.",
-      "Service": "{name}, {price}"
+      "Service": "{name}, {price}",
+      "Market": "Market: {name} {value}"
     },
     "Ledger": {
       "Label": "Ledger",
@@ -641,7 +644,38 @@
       "VisitedYesterday": "Visited yesterday",
       "VisitedDays": "Visited {days} days ago",
       "Empty": "Your party has not visited any merchants yet.",
-      "EmptyGM": "No shops yet. Use the scales button on an NPC's token to make one."
+      "EmptyGM": "No shops yet. Use the scales button on an NPC's token to make one.",
+      "Rules": {
+        "Title": "Market rules",
+        "Open": "Edit market rules",
+        "Hint": "Temporary price changes for the whole world or one scene, such as war or a festival.",
+        "Intro": "Each rule changes prices both ways for the goods it names, until its end date. Players see every rule in force under the balance.",
+        "Off": "Market modifiers are off in this world, so these rules do nothing. Turn them on in Feature toggles.",
+        "Empty": "No market rules yet.",
+        "World": "Whole world",
+        "ThisScene": "This scene: {name}",
+        "New": "New rule",
+        "Name": "Name",
+        "NamePlaceholder": "War",
+        "Where": "Where",
+        "Categories": "Goods",
+        "CategoriesHint": "Leave empty to change the price of every item.",
+        "Percent": "Price change",
+        "PercentHint": "Raise prices with a plus number, such as 30, or lower them with a minus number, such as -20.",
+        "Days": "Lasts (days)",
+        "DaysHint": "In-game days from now. Leave empty to keep the rule until you remove it.",
+        "Add": "Add rule",
+        "Remove": "Remove this rule",
+        "AllGoods": "All goods",
+        "NoEnd": "No end date",
+        "Ended": "Ended",
+        "EndsToday": "Ends today",
+        "EndsIn": "Ends in {days} days",
+        "NoName": "Give the rule a name.",
+        "BadPercent": "The price change must be a number other than 0, from -90 to 500.",
+        "BadCategory": "That is not a kind of goods a rule can name.",
+        "BadDays": "The length must be more than 0 days, or empty."
+      }
     },
     "Show": {
       "Control": "Show to players",

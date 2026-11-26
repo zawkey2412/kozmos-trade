@@ -4,6 +4,7 @@ import { warn } from "../services/errors.mjs";
 import { openTrade, pickCustomer } from "../services/open-trade.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
 import ConfigureShop from "./configure-shop.mjs";
+import MarketRules from "./market-rules.mjs";
 import { HandlebarsApplication } from "./base.mjs";
 
 /** @import { MarketRow } from "../services/market-list.mjs"; */
@@ -18,6 +19,7 @@ export default class MarketList extends HandlebarsApplication {
       trade: MarketList.#onTrade,
       configure: MarketList.#onConfigure,
       reload: MarketList.#onReload,
+      rules: MarketList.#onRules,
     },
   };
 
@@ -92,6 +94,11 @@ export default class MarketList extends HandlebarsApplication {
   /** @this {MarketList} */
   static #onReload() {
     this.render();
+  }
+
+  /** @this {MarketList} */
+  static #onRules() {
+    MarketRules.open();
   }
 }
 

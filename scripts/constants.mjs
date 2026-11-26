@@ -24,6 +24,7 @@ export const SETTINGS = Object.freeze({
   ATTITUDE_DECAY: "attitudeDecay",
   REACTIONS: "reactions",
   GREETING: "greeting",
+  MARKET: "market",
 });
 
 export const MODES = Object.freeze({

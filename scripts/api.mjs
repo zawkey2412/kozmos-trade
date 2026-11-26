@@ -2,6 +2,7 @@
 import MarketList from "./apps/market-list.mjs";
 import { registerArchetype } from "./services/archetypes.mjs";
 import { PARTY_KEY, setAttitude } from "./services/attitude.mjs";
+import { addMarketRule, removeMarketRule } from "./services/market-rules.mjs";
 import { openTrade } from "./services/open-trade.mjs";
 import { tradeWithPlayer } from "./services/player-trade.mjs";
 import { setTrueValue } from "./services/shop.mjs";
@@ -17,7 +18,19 @@ export function createApi() {
     restock,
     setAttitude: apiSetAttitude,
     setTrueValue: apiSetTrueValue,
+    addMarketRule: apiAddMarketRule,
+    removeMarketRule,
   });
+}
+
+// Takes { name, categories, percent, days } and a scene, its UUID, or nothing for the whole world.
+/**
+ * @param {{ name: string, categories?: string[], percent: number, days?: number | null }} rule
+ * @param {{ scene?: any | string | null }} [options]
+ */
+async function apiAddMarketRule(rule, { scene = null } = {}) {
+  const target = typeof scene === "string" ? await foundry.utils.fromUuid(scene) : scene;
+  return addMarketRule({ name: rule.name, categories: rule.categories ?? [], percent: rule.percent, days: rule.days ?? null }, { scene: target });
 }
 
 // Takes two characters or their UUIDs: the user's own first.

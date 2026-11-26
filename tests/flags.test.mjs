@@ -1,7 +1,7 @@
 import "./foundry.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { cleanFlags, itemFlags, ItemFlags, merchantFlags, MerchantFlags, tokenFlags, characterFlags } from "../scripts/data/flags.mjs";
+import { cleanFlags, itemFlags, ItemFlags, merchantFlags, MerchantFlags, SceneFlags, sceneFlags, tokenFlags, characterFlags } from "../scripts/data/flags.mjs";
 
 const withFlags = (flags) => ({ flags: { "kozmos-trade": flags } });
 const attitude = { value: 12, day: 3, gained: 4, fairTradeDay: 3, since: 1000 };
@@ -80,6 +80,18 @@ describe("item flags", () => {
 
   it("keeps prices at 0 or above", () => {
     assert.equal(cleanFlags(ItemFlags, { listedPrice: -20 }).listedPrice, 0);
+  });
+});
+
+describe("scene flags", () => {
+  it("reads a scene with no market rules", () => {
+    assert.deepEqual(sceneFlags({}).market, []);
+  });
+
+  it("keeps a market rule and refuses one with no change", () => {
+    const rule = { id: "war", name: "War", categories: ["weapons"], multiplier: 1.3, until: null };
+    assert.deepEqual(cleanFlags(SceneFlags, { market: [rule] }).market, [rule]);
+    assert.throws(() => cleanFlags(SceneFlags, { market: [{ ...rule, multiplier: 0 }] }));
   });
 });
 

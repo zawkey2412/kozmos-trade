@@ -8,7 +8,9 @@ import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
 import { COPPER, coinsToCopper, formatCoins, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
 import { settle } from "../engine/quote.mjs";
+import { percentOf } from "../engine/market.mjs";
 import { parseServiceKey, serviceKey } from "../engine/services.mjs";
+import { marketCategoryLabel } from "./market-rules.mjs";
 import { addCoins, clampCoins, emptyOffer, isEmpty, setLine, stageAmount } from "../engine/tray.mjs";
 import { proposalOf } from "../services/approval.mjs";
 import { archetypeLabel } from "../services/archetypes.mjs";
@@ -177,7 +179,7 @@ export default class BarterWindow extends HandlebarsApplication {
       archetype: this.snapshot.merchant.archetype,
       attitudeAdjustment: this.snapshot.attitude.adjustment,
       haggle: this.snapshot.haggle?.discount ?? 0,
-      market: 1,
+      market: this.snapshot.market ?? [],
       appraised: Object.keys(this.snapshot.appraisal?.items ?? {}).filter((id) => this.snapshot.appraisal.items[id] === "appraised"),
       wanted: this.snapshot.wanted ?? [],
     };
@@ -272,6 +274,13 @@ export default class BarterWindow extends HandlebarsApplication {
   /** @param {string[]} [parts] */
   refresh(parts = OFFER_PARTS) {
     return this.render({ parts });
+  }
+
+  // Every open window asks for a fresh shelf, after the market rules change.
+  static refreshAll() {
+    for (const app of foundry.applications.instances.values()) {
+      if (app instanceof BarterWindow && !app.counter) app.refreshSnapshot();
+    }
   }
 
   // Every open window at this merchant asks for a fresh shelf.
@@ -525,7 +534,7 @@ export default class BarterWindow extends HandlebarsApplication {
     const context = this.priceContext;
     const actor = game.user.isGM ? /** @type {any} */ (foundry.utils.fromUuidSync(this.snapshot.merchant.uuid)) : null;
     return this.snapshot.shelf.map((entry) => {
-      const unit = buyQuote(entry.price, context, entry.limited).copper;
+      const unit = buyQuote(entry.price, context, entry.limited, entry).copper;
       const tags = [entry.identified ? rarityTag(entry.rarity) : null];
       if (entry.limited) tags.push(tag("limited", "fa-solid fa-hourglass-half"));
       if (entry.underCounter) tags.push(tag("underCounter", "fa-solid fa-box-open"));
@@ -640,7 +649,7 @@ export default class BarterWindow extends HandlebarsApplication {
     let merchantItems = 0;
     for (const [id, quantity] of this.offer.take) {
       const entry = this.snapshot.shelf.find((e) => e.id === id);
-      if (entry) merchantItems += buyQuote(entry.price, context, entry.limited).copper * quantity;
+      if (entry) merchantItems += buyQuote(entry.price, context, entry.limited, entry).copper * quantity;
     }
     for (const [id, quantity] of this.offer.buyback) {
       const record = this.snapshot.buyback.find((b) => b.id === id);
@@ -687,6 +696,10 @@ export default class BarterWindow extends HandlebarsApplication {
     const haggle = this.snapshot.haggle;
     if (haggle?.on && haggle.discount) {
       modifiers.push({ label: game.i18n.localize("KT.Balance.Haggle"), value: `-${Math.round(haggle.discount * 100)}%`, tone: "good" });
+    }
+    for (const rule of this.snapshot.market ?? []) {
+      const percent = percentOf(rule.multiplier);
+      modifiers.push({ label: game.i18n.localize("KT.Balance.Market", { name: rule.name, categories: marketCategoryLabel(rule.categories) }), value: `${percent > 0 ? "+" : ""}${percent}%`, tone: "" });
     }
     const needed = this.#coinsNeeded(result);
     return {

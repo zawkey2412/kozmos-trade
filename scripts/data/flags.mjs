@@ -3,6 +3,7 @@ import { MODULE_ID } from "../constants.mjs";
 import { TABLES } from "./tables.mjs";
 
 /** @import { AttitudeState } from "../engine/attitude.mjs"; */
+/** @import { MarketRule } from "../engine/market.mjs"; */
 
 /**
  * @typedef {object} MerchantFlagData
@@ -43,6 +44,11 @@ import { TABLES } from "./tables.mjs";
 /**
  * @typedef {object} CharacterFlagData
  * @property {Record<string, { points: number, lastCatch: number }>} notoriety
+ */
+
+/**
+ * @typedef {object} SceneFlagData
+ * @property {MarketRule[]} market
  */
 
 export const TIERS = Object.freeze(["poor", "modest", "wealthy"]);
@@ -134,6 +140,32 @@ export class CharacterFlags extends foundry.abstract.DataModel {
       ),
     };
   }
+}
+
+// One market rule, for a scene's flags and the world setting.
+export function marketRuleField() {
+  const { ArrayField, NumberField, SchemaField, StringField } = foundry.data.fields;
+  return new SchemaField({
+    id: new StringField({ required: true, blank: false }),
+    name: new StringField({ required: true, blank: false }),
+    categories: new ArrayField(new StringField({ required: true, blank: false })),
+    multiplier: new NumberField({ required: true, nullable: false, positive: true, initial: 1 }),
+    until: new NumberField({ required: true, nullable: true, initial: null }),
+  });
+}
+
+export class SceneFlags extends foundry.abstract.DataModel {
+  static defineSchema() {
+    return { market: new foundry.data.fields.ArrayField(marketRuleField()) };
+  }
+}
+
+/**
+ * @param {{ flags?: object }} document
+ * @returns {SceneFlagData}
+ */
+export function sceneFlags(document) {
+  return readFlags(SceneFlags, document);
 }
 
 /**

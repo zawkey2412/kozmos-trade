@@ -110,6 +110,11 @@ export const TABLES = {
     // Grid squares between the customer's and the merchant's tokens.
     proximity: 2,
   },
+  market: {
+    // Smallest and largest price change a market rule may make, in percent.
+    minPercent: -90,
+    maxPercent: 500,
+  },
   haggle: {
     asks: [0.05, 0.1, 0.15, 0.2, 0.25],
     limitedMaxAsk: 0.1,

@@ -1,4 +1,5 @@
 import { MODES, MODULE_ID, SETTINGS } from "./constants.mjs";
+import { marketRuleField } from "./data/flags.mjs";
 import { featuresFor } from "./data/modes.mjs";
 import { forgetArchetypes } from "./services/archetypes.mjs";
 import { TABLES } from "./data/tables.mjs";
@@ -106,6 +107,15 @@ export function registerSettings() {
     scope: "world",
     config: false,
     type: new foundry.data.fields.ObjectField({ initial: {} }),
+  });
+
+  // Market rules for the whole world.
+  register(SETTINGS.MARKET, {
+    name: "KT.Market.Rules.Title",
+    hint: "KT.Market.Rules.Hint",
+    scope: "world",
+    config: false,
+    type: new foundry.data.fields.ArrayField(marketRuleField()),
   });
 
   // The GM's changes to the default tables.

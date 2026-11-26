@@ -1,6 +1,10 @@
 <section class="kt-market">
   <div class="kt-market-tools">
     <p class="hint">{{localize (ifThen gm "KT.Market.HintGM" "KT.Market.Hint")}}</p>
+    {{#if gm}}
+    <button type="button" class="inline-control icon fa-solid fa-chart-line" data-action="rules"
+            data-tooltip aria-label="{{localize "KT.Market.Rules.Title"}}"></button>
+    {{/if}}
     <button type="button" class="inline-control icon fa-solid fa-rotate" data-action="reload"
             data-tooltip aria-label="{{localize "KT.Market.Reload"}}"></button>
   </div>
