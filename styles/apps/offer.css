@@ -18,6 +18,25 @@
   font-size: var(--kt-font-small);
 }
 
+.kt-barter .kt-line .kt-line-icon {
+  grid-area: icon;
+  justify-self: center;
+  color: var(--kt-text-muted);
+}
+
+/* Who gets the purchases, once someone joined. */
+.kt-barter .kt-recipient {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-small);
+  font-size: var(--kt-font-small);
+}
+
+.kt-barter .kt-recipient select {
+  flex: 1;
+  min-width: 0;
+}
+
 .kt-barter .kt-their-coins {
   margin: 0;
   text-align: center;

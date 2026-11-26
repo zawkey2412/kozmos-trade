@@ -81,7 +81,11 @@
       "PartnerAway": "Nobody playing {name} is online.",
       "PlayerTradeGone": "That trade has ended.",
       "OfferChanged": "The offer changed. Check it and accept again.",
-      "CoinsGone": "{name} no longer has those coins."
+      "CoinsGone": "{name} no longer has those coins.",
+      "AlreadyJoined": "You already joined {name}'s trade here.",
+      "JoinGM": "A GM can't join a trade. Open the shop for a character instead.",
+      "NothingToJoin": "Nobody is trading with {name} right now.",
+      "NotJoined": "That character is not part of this trade anymore."
     },
     "Shop": {
       "Control": "Shop"
@@ -270,7 +274,9 @@
       "RevertBody": "Items and coins go back to where they were before the trade.",
       "Reverted": "Trade reverted.",
       "RevertedNote": "Reverted.",
-      "Attitude": "Attitude {value}"
+      "Attitude": "Attitude {value}",
+      "From": "{name}: {line}",
+      "GoesTo": "Purchases go to {name}."
     },
     "Ledger": {
       "Label": "Ledger",
@@ -541,6 +547,25 @@
           "Next round is on me."
         ]
       }
+    },
+    "Join": {
+      "Ask": {
+        "Title": "Join the trade?",
+        "Body": "{name} is already trading here. Join their trade and add your own items or coins?",
+        "Yes": "Join",
+        "No": "Not now"
+      },
+      "Title": "Joining {lead} at {merchant}",
+      "Heading": "Joined trade",
+      "YouAdd": "You add",
+      "Panel": "Your items and coins go into {lead}'s offer at {merchant}.",
+      "PanelHint": "{lead} picks who gets the purchases and presses Accept for everyone.",
+      "Worth": "{merchant} values what you add at {amount}.",
+      "Leave": "Leave the trade",
+      "Ended": "{name} left the shop, so the joined trade ended.",
+      "Traded": "{name} finished the trade with what you added.",
+      "From": "from {name}",
+      "GoesTo": "Goes to"
     },
     "PlayerTrade": {
       "Title": "{first} and {second}",

@@ -138,12 +138,14 @@ async function cardContent(trade, proposal) {
     ...(coinsToCopper(coins) ? [formatCopper(coinsToCopper(coins), money)] : []),
   ];
   const { result } = trade;
+  const pooled = trade.pool.flatMap((part) => lines(part.give, part.coins).map((line) => game.i18n.localize("KT.Receipt.From", { name: part.actor.name, line })));
   return foundry.applications.handlebars.renderTemplate(TEMPLATE, {
     customer: trade.customer.name,
     merchant: trade.merchant.name,
     mode: game.i18n.localize(`KT.ExecutionMode.${merchantFlags(trade.merchant).executionMode}`),
-    gives: lines(trade.give, trade.coinsGive),
+    gives: [...lines(trade.give, trade.coinsGive), ...pooled],
     gets: lines(trade.take, trade.coinsTake),
+    recipient: trade.recipient !== trade.customer ? trade.recipient.name : null,
     balance: game.i18n.localize(`KT.Balance.${result.state}`),
     net: `${result.net < 0 ? "-" : result.net > 0 ? "+" : ""}${formatCopper(Math.abs(result.net), money)}`,
     state: result.state,

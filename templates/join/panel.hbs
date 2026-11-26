@@ -1,0 +1,8 @@
+<section class="kt-join-panel" aria-live="polite">
+  <p><i class="fa-solid fa-people-group" inert></i> {{localize "KT.Join.Panel" lead=panel.lead merchant=panel.merchant}}</p>
+  <p class="hint">{{localize "KT.Join.PanelHint" lead=panel.lead}}</p>
+  {{#if panel.worth}}
+  <p>{{localize "KT.Join.Worth" merchant=panel.merchant amount=panel.worth}}</p>
+  {{/if}}
+  <button type="button" data-action="leave"><i class="fa-solid fa-right-from-bracket" inert></i> {{localize "KT.Join.Leave"}}</button>
+</section>

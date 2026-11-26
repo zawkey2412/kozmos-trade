@@ -14,6 +14,7 @@
       <ul class="plain">{{#each gets as |line|}}<li>{{line}}</li>{{else}}<li class="kt-muted">{{localize "KT.Proposal.Nothing"}}</li>{{/each}}</ul>
     </div>
   </div>
+  {{#if recipient}}<p class="kt-muted">{{localize "KT.Receipt.GoesTo" name=recipient}}</p>{{/if}}
   {{#if change}}<p class="kt-muted">{{localize "KT.Balance.Change" amount=change}}</p>{{/if}}
   {{#each modifiers as |modifier|}}<p class="kt-muted">{{modifier}}</p>{{/each}}
   {{#if reverted}}

@@ -7,7 +7,7 @@ import { COPPER, coinsToCopper, formatCopper } from "../engine/money.mjs";
 import { addCoins } from "../engine/tray.mjs";
 import { TradeError, warn } from "./errors.mjs";
 import { broadcast, MESSAGES, onRequest, request } from "./socket.mjs";
-import { applyTrade } from "./trade.mjs";
+import { moveAll } from "./trade.mjs";
 
 /** @import { PreparedTrade, TradeLine, TradeRecord } from "./trade.mjs"; */
 
@@ -38,6 +38,9 @@ import { applyTrade } from "./trade.mjs";
  * @property {number} attitudeAdjustment
  * @property {boolean} reverted
  * @property {string | null} messageId
+ * @property {{ actor: string, name: string, given: LedgerLine[], coinsGive: Record<string, number> }[]} [pool]
+ * @property {string} [recipient]
+ * @property {string} [recipientName]
  */
 
 const LEDGER_SIZE = 50;
@@ -114,6 +117,19 @@ export async function recordTrade(trade, record, sender) {
     reverted: false,
     messageId: null,
   };
+  const pool = trade.pool ?? [];
+  if (pool.length) {
+    entry.pool = pool.map((part, index) => ({
+      actor: part.actor.uuid,
+      name: part.actor.name,
+      given: part.give.map((g, i) => line(g, record.poolCreated?.[index]?.[i], false)),
+      coinsGive: part.coins,
+    }));
+  }
+  if (trade.recipient && trade.recipient !== trade.customer) {
+    entry.recipient = trade.recipient.uuid;
+    entry.recipientName = trade.recipient.name;
+  }
   const message = /** @type {any} */ (await ChatMessage.create(/** @type {any} */ ({
     content: await receiptContent(trade.merchant.name, entry),
     speaker: ChatMessage.getSpeaker({ actor: trade.merchant }),
@@ -136,8 +152,16 @@ async function revert({ merchant: merchantUuid, entry: entryId }, sender) {
   if (!entry || entry.reverted) throw new TradeError("KT.Error.RevertGone");
   const customer = /** @type {any} */ (await foundry.utils.fromUuid(entry.customer));
   if (!customer) throw new TradeError("KT.Error.Missing");
-  const plan = reversePlan(merchant, customer, entry);
-  await applyTrade({ merchant, customer, ...plan });
+  /** @type {Map<string, any>} */
+  const others = new Map();
+  for (const uuid of [entry.recipient, ...(entry.pool ?? []).map((part) => part.actor)]) {
+    if (!uuid || others.has(uuid)) continue;
+    const actor = await foundry.utils.fromUuid(uuid);
+    if (!actor) throw new TradeError("KT.Error.Missing");
+    others.set(uuid, actor);
+  }
+  const plan = reversePlan(merchant, customer, entry, others);
+  await moveAll({ currency: plan.currency, moves: plan.moves });
   entry.reverted = true;
   await writeLedger(merchant, ledger);
   const message = entry.messageId ? game.messages.get(entry.messageId) : null;
@@ -146,13 +170,14 @@ async function revert({ merchant: merchantUuid, entry: entryId }, sender) {
   return true;
 }
 
-// The reverse of a ledger entry, when both actors still hold what changed hands.
+// The reverse of a ledger entry when everyone still holds what changed hands, with joined and receiving characters in others by UUID.
 /**
  * @param {any} merchant
  * @param {any} customer
  * @param {LedgerEntry} entry
+ * @param {Map<string, any>} [others]
  */
-export function reversePlan(merchant, customer, entry) {
+export function reversePlan(merchant, customer, entry, others = new Map()) {
   const back = (/** @type {any} */ actor, /** @type {any} */ target, /** @type {LedgerLine[]} */ lines, /** @type {boolean} */ withShelf) =>
     lines.map((line) => {
       const item = actor.items.get(line.id);
@@ -161,13 +186,41 @@ export function reversePlan(merchant, customer, entry) {
       const mergeInto = line.from && target.items.get(line.from) ? line.from : undefined;
       return { item, quantity: line.quantity, unit: line.unit, held, mergeInto, ...(withShelf && line.shelf ? { restoreFlags: line.shelf } : {}) };
     });
-  const give = back(customer, merchant, entry.received, true);
+  const recipient = entry.recipient ? others.get(entry.recipient) : customer;
+  if (!recipient) throw new TradeError("KT.Error.Missing");
+  const give = back(recipient, merchant, entry.received, true);
   const take = back(merchant, customer, entry.given, false);
-  const customerAfter = addCoins(addCoins(purse(customer), entry.coinsGive), entry.paid, -1);
-  const merchantAfter = addCoins(addCoins(purse(merchant), entry.coinsGive, -1), entry.paid);
-  const short = Object.keys(COPPER).some((coin) => customerAfter[coin] < 0 || merchantAfter[coin] < 0);
+  const returns = (entry.pool ?? []).map((part) => {
+    const actor = others.get(part.actor);
+    if (!actor) throw new TradeError("KT.Error.Missing");
+    return { actor, lines: back(merchant, actor, part.given, false), coins: part.coinsGive };
+  });
+
+  /** @type {Map<any, Record<string, number>>} */
+  const after = new Map();
+  const shift = (/** @type {any} */ actor, /** @type {Record<string, number>} */ coins, /** @type {1 | -1} */ sign) => after.set(actor, addCoins(after.get(actor) ?? purse(actor), coins, sign));
+  shift(customer, entry.coinsGive, 1);
+  shift(merchant, entry.coinsGive, -1);
+  for (const part of returns) {
+    shift(part.actor, part.coins, 1);
+    shift(merchant, part.coins, -1);
+  }
+  shift(recipient, entry.paid, -1);
+  shift(merchant, entry.paid, 1);
+  const short = [...after.values()].some((coins) => Object.keys(COPPER).some((coin) => coins[coin] < 0));
   if (short) throw new TradeError("KT.Error.RevertCoins");
-  return { give, take, coins: { customerAfter, merchantAfter } };
+
+  return {
+    give,
+    take,
+    coins: { customerAfter: after.get(customer), merchantAfter: after.get(merchant) },
+    currency: [...after],
+    moves: [
+      { from: recipient, to: merchant, lines: give },
+      { from: merchant, to: customer, lines: take },
+      ...returns.map((part) => ({ from: merchant, to: part.actor, lines: part.lines })),
+    ],
+  };
 }
 
 /**
@@ -187,11 +240,13 @@ export async function receiptContent(merchantName, entry) {
   const items = (/** @type {LedgerLine[]} */ lines) => lines.map((l) => game.i18n.localize("KT.Proposal.Line", { quantity: l.quantity, name: l.name, price: formatCopper(l.unit * l.quantity, money) }));
   const coins = (/** @type {Record<string, number>} */ c) => (coinsToCopper(c) ? [formatCopper(coinsToCopper(c), money)] : []);
   const adjustment = entry.attitudeAdjustment;
+  const pooled = (entry.pool ?? []).flatMap((part) => [...items(part.given), ...coins(part.coinsGive)].map((line) => game.i18n.localize("KT.Receipt.From", { name: part.name, line })));
   return foundry.applications.handlebars.renderTemplate(TEMPLATE, {
     merchant: merchantName,
     customer: entry.customerName,
-    gives: [...items(entry.given), ...coins(entry.coinsGive)],
+    gives: [...items(entry.given), ...coins(entry.coinsGive), ...pooled],
     gets: [...items(entry.received), ...coins(entry.paid)],
+    recipient: entry.recipientName ?? null,
     change: entry.change ? formatCopper(entry.change, money) : null,
     modifiers: adjustment ? [game.i18n.localize("KT.Receipt.Attitude", { value: `${adjustment > 0 ? "+" : "-"}${Math.round(Math.abs(adjustment) * 100)}%` })] : [],
     reverted: entry.reverted,

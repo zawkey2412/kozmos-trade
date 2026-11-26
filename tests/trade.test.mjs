@@ -40,6 +40,12 @@ describe("coins in a trade", () => {
     assert.deepEqual(plan.customerAfter, coins({ gp: 5, sp: 2 }));
   });
 
+  it("can pay change out of coins a joined character put up", () => {
+    const plan = planCoins({ ...base, customerHeld: coins(), merchantHeld: coins({ sp: 5 }), coinsGive: coins(), extraGive: coins({ gp: 1 }), payout: 30 });
+    assert.deepEqual(plan.paid, coins({ sp: 3 }));
+    assert.deepEqual(plan.merchantAfter, coins({ gp: 1, sp: 2 }));
+  });
+
   it("moves no coins when nothing is owed", () => {
     const plan = planCoins({ ...base, customerHeld: coins({ gp: 3 }), merchantHeld: coins({ gp: 9 }), coinsGive: coins(), payout: 0 });
     assert.deepEqual(plan.customerAfter, coins({ gp: 3 }));

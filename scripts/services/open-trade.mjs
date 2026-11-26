@@ -8,9 +8,17 @@ import { MESSAGES, request } from "./socket.mjs";
 /** @type {((snapshot: Snapshot, customer: any) => any) | null} */
 let showWindow = null;
 
+/** @type {((view: any, customer: any) => any) | null} */
+let showJoin = null;
+
 /** @param {(snapshot: Snapshot, customer: any) => any} open */
 export function setTradeWindow(open) {
   showWindow = open;
+}
+
+/** @param {(view: any, customer: any) => any} open */
+export function setJoinWindow(open) {
+  showJoin = open;
 }
 
 // A remote trade skips the distance check, where the shop allows it.
@@ -20,14 +28,40 @@ export function setTradeWindow(open) {
  * @param {{ remote?: boolean }} [options]
  */
 export async function openTrade(customer, merchant, { remote = false } = {}) {
+  const merchantUuid = typeof merchant === "string" ? merchant : merchant?.uuid;
+  let who = null;
   try {
-    if (typeof customer === "string") customer = await foundry.utils.fromUuid(customer);
-    customer ??= await pickCustomer();
-    if (!customer) return null;
-    const merchantUuid = typeof merchant === "string" ? merchant : merchant?.uuid;
+    who = typeof customer === "string" ? await foundry.utils.fromUuid(customer) : customer;
+    who ??= await pickCustomer();
+    if (!who) return null;
     /** @type {Snapshot} */
-    const snapshot = await request(MESSAGES.SESSION_OPEN, { merchant: merchantUuid, customer: customer.uuid, remote });
-    return showWindow ? showWindow(snapshot, customer) : snapshot;
+    const snapshot = await request(MESSAGES.SESSION_OPEN, { merchant: merchantUuid, customer: who.uuid, remote });
+    return showWindow ? showWindow(snapshot, who) : snapshot;
+  } catch (error) {
+    if (error instanceof TradeError && error.data?.join && who) return askToJoin(who, merchantUuid, String(error.data.name ?? ""));
+    warn(error);
+    return null;
+  }
+}
+
+// Busy with another player: offers to join their trade instead.
+/**
+ * @param {any} customer
+ * @param {string} merchant
+ * @param {string} name
+ */
+async function askToJoin(customer, merchant, name) {
+  const yes = await foundry.applications.api.DialogV2.confirm(/** @type {any} */ ({
+    window: { title: "KT.Join.Ask.Title", icon: "fa-solid fa-people-group" },
+    content: `<p>${game.i18n.localize("KT.Join.Ask.Body", { name: foundry.utils.escapeHTML(name) })}</p>`,
+    yes: { label: "KT.Join.Ask.Yes", icon: "fa-solid fa-people-group" },
+    no: { label: "KT.Join.Ask.No" },
+    rejectClose: false,
+  }));
+  if (!yes) return null;
+  try {
+    const view = await request(MESSAGES.SESSION_JOIN, { merchant, customer: customer.uuid });
+    return showJoin ? showJoin(view, customer) : view;
   } catch (error) {
     warn(error);
     return null;

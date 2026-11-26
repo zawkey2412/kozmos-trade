@@ -5,7 +5,7 @@ import { coinLabels, combatStats, holdingFacts, itemDescription, itemFacts, loca
 import { appraisalDC } from "../engine/appraisal.mjs";
 import { situationOf } from "../engine/reactions.mjs";
 import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
-import { COPPER, coinsToCopper, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
+import { COPPER, coinsToCopper, formatCoins, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
 import { settle } from "../engine/quote.mjs";
 import { addCoins, clampCoins, emptyOffer, isEmpty, setLine, stageAmount } from "../engine/tray.mjs";
@@ -116,6 +116,13 @@ export default class BarterWindow extends HandlebarsApplication {
     return app.render({ force: true });
   }
 
+  // Someone joined, left or changed what they put up: the customer's window asks for a fresh snapshot.
+  /** @param {{ merchant: string, customer: string }} change */
+  static onPool({ merchant, customer }) {
+    const app = /** @type {any} */ (foundry.applications.instances.get(windowId(merchant, customer)));
+    if (app && !app.counter) app.refreshSnapshot();
+  }
+
   // A GM's answer to this client's proposal.
   /** @param {{ merchant: string, customer: string, status: string, counter: { take: [string, number][], coinsTake: Record<string, number> } | null }} result */
   static onProposalResult({ merchant, customer, status, counter }) {
@@ -141,6 +148,8 @@ export default class BarterWindow extends HandlebarsApplication {
     this.customer = customer;
     this.counter = counter ?? null;
     this.pending = false;
+    /** @type {string | null} */
+    this.recipient = null;
     /** @type {Offer} */
     this.offer = emptyOffer();
     this.view = {
@@ -186,6 +195,17 @@ export default class BarterWindow extends HandlebarsApplication {
     }
     for (const [id, quantity] of this.offer.buyback) setLine(this.offer.buyback, id, quantity, this.#available("buyback", id) ?? 0);
     if (!snapshot.buyback.length) this.view.merchantTab = "shelf";
+    if (this.recipient && !(snapshot.pool ?? []).some((entry) => entry.actor === this.recipient)) this.recipient = null;
+  }
+
+  // What joined characters put up, priced by the GM.
+  get pool() {
+    return this.snapshot.pool ?? [];
+  }
+
+  // Whether anything sits on either side, joined contributions included.
+  #isEmpty() {
+    return isEmpty(this.offer) && this.pool.every((entry) => !entry.lines.length && !coinsToCopper(entry.coins));
   }
 
   async _prepareContext(options) {
@@ -273,6 +293,7 @@ export default class BarterWindow extends HandlebarsApplication {
       coinsGive: this.offer.coinsGive,
       coinsTake: this.offer.coinsTake,
       keepChange: this.offer.keepChange,
+      recipient: this.recipient ?? this.customer.uuid,
     };
   }
 
@@ -344,6 +365,7 @@ export default class BarterWindow extends HandlebarsApplication {
         rows.push({ id, side: tray, name: card.name, img: card.img, quantity, max, unitLabel: card.priceLabel, totalLabel: formatCopper(lineTotal, this.money), buyback: tray === "buyback" });
       }
     }
+    if (side === "give") rows.push(...this.#poolRows());
     total += coinsToCopper(coins);
     return {
       side,
@@ -352,7 +374,26 @@ export default class BarterWindow extends HandlebarsApplication {
       coins: COINS.map((coin) => ({ coin, name: `coins.${side}.${coin}`, value: coins[coin] || "", label: coinLabels()[coin] ?? coin, max: held?.[coin] ?? null })),
       total: formatCopper(total, this.money),
       keepChange: side === "give" ? { checked: this.offer.keepChange } : null,
+      recipient: side === "take" ? this.#recipientChoice() : null,
     };
+  }
+
+  // Joined characters' items and coins, shown in the customer's tray but changed only by their own players.
+  #poolRows() {
+    const money = this.money;
+    return this.pool.flatMap((entry) => {
+      const owner = game.i18n.localize("KT.Join.From", { name: entry.name });
+      const lines = entry.lines.map((line) => ({ readonly: true, name: game.i18n.localize("KT.Ledger.Item", { quantity: line.quantity, name: line.name }), img: line.img, owner, totalLabel: formatCopper(line.unit * line.quantity, money) }));
+      const coins = formatCoins(entry.coins, money);
+      return coins ? [...lines, { readonly: true, name: coins, img: null, owner, totalLabel: formatCopper(coinsToCopper(entry.coins), money) }] : lines;
+    });
+  }
+
+  // Who gets the purchases, once someone has joined.
+  #recipientChoice() {
+    if (!this.pool.length || this.counter) return null;
+    const options = { [this.customer.uuid]: this.customer.name, ...Object.fromEntries(this.pool.map((entry) => [entry.actor, entry.name])) };
+    return { options, selected: this.recipient ?? this.customer.uuid };
   }
 
   #customerCards() {
@@ -514,7 +555,12 @@ export default class BarterWindow extends HandlebarsApplication {
       const record = this.snapshot.buyback.find((b) => b.id === id);
       if (record) merchantItems += record.price * quantity;
     }
-    const coinsGive = coinsToCopper(this.offer.coinsGive);
+    let pooledCoins = 0;
+    for (const entry of this.pool) {
+      for (const line of entry.lines) customerItems += line.unit * line.quantity;
+      pooledCoins += coinsToCopper(entry.coins);
+    }
+    const coinsGive = coinsToCopper(this.offer.coinsGive) + pooledCoins;
     const coinsTake = coinsToCopper(this.offer.coinsTake);
     return { customerItems, merchantItems, coinsGive, coinsTake, customer: customerItems + coinsGive, merchant: merchantItems + coinsTake };
   }
@@ -569,7 +615,7 @@ export default class BarterWindow extends HandlebarsApplication {
   /** @param {Settlement} result */
   #reaction(result) {
     if (this.counter || !game.settings.get(MODULE_ID, SETTINGS.REACTIONS)) return null;
-    const situation = situationOf(result, isEmpty(this.offer));
+    const situation = situationOf(result, this.#isEmpty());
     const band = this.snapshot.attitude.on ? this.snapshot.attitude.band : "neutral";
     if (this.reaction?.situation !== situation || this.reaction.band !== band) {
       this.reaction = { situation, band, line: reactionLine(this.snapshot.merchant.archetype, situation, band) };
@@ -708,7 +754,7 @@ export default class BarterWindow extends HandlebarsApplication {
     if (this.busy) reason = "KT.Footer.Working";
     else if (!game.users.activeGM) reason = "KT.Error.NoGM";
     else if (this.pending) reason = "KT.Footer.Pending";
-    else if (isEmpty(this.offer)) reason = "KT.Footer.Empty";
+    else if (this.#isEmpty()) reason = "KT.Footer.Empty";
     else if (!approval && !this.counter && result.state === "short") reason = "KT.Footer.Short";
     else if (this.#balance(result).cannotCover) reason = "KT.Footer.CannotCover";
     let action = { label: "KT.Barter.Accept", icon: "fa-solid fa-handshake" };
@@ -781,6 +827,11 @@ export default class BarterWindow extends HandlebarsApplication {
     if (target.matches(".kt-sort")) {
       this.view[target.dataset.side].sort = target.value;
       return this.render({ parts: [target.dataset.side] });
+    }
+    if (target.matches(".kt-recipient-select")) {
+      this.pending = false;
+      this.recipient = target.value === this.customer.uuid ? null : target.value;
+      return this.refresh(["footer"]);
     }
     if (target.matches(".kt-keep-change")) {
       if (this.counter) return this.refresh(["give"]);

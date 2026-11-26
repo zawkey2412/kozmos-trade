@@ -1,11 +1,15 @@
 // Unit prices for the lines of an offer, the same in the customer's window and in the GM's check.
-import { itemFacts, itemSource, rulesVersion } from "../adapter/dnd5e.mjs";
+import { holdingFacts, itemFacts, itemSource, rulesVersion } from "../adapter/dnd5e.mjs";
 import { wantedRate } from "../engine/wanted.mjs";
 import { itemFlags } from "../data/flags.mjs";
 import { getArchetypes } from "./archetypes.mjs";
 import { sellFit } from "../engine/fit.mjs";
 import { baseValue, buyPrice, sellBasis, sellPrice, sellRate } from "../engine/pricing.mjs";
+import { tradeable } from "../engine/shelf.mjs";
 import { getTables } from "../settings.mjs";
+import { TradeError } from "./errors.mjs";
+
+/** @import { TradeLine } from "./trade.mjs"; */
 
 /** @import { Price } from "../engine/pricing.mjs"; */
 /** @import { WantedEntry } from "../engine/wanted.mjs"; */
@@ -47,6 +51,26 @@ export function sellQuote(item, context) {
   const rate = sellRate({ scrap: basis.scrap, wanted, fence: fit.fence, favored: fit.favored }, tables);
   const price = sellPrice(basis.copper, { rate, attitudeAdjustment: context.attitudeAdjustment, market: context.market });
   return { forSale: true, unit: price.copper, modifiers: price.modifiers, scrap: basis.scrap, favored: fit.favored, wanted: wanted !== null && !basis.scrap };
+}
+
+// One of a character's items put up for sale, checked against what it holds now.
+/**
+ * @param {any} actor
+ * @param {string} id
+ * @param {number} quantity
+ * @param {PriceContext} context
+ * @returns {TradeLine}
+ */
+export function sellLine(actor, id, quantity, context) {
+  const item = actor.items.get(id);
+  if (!item) throw new TradeError("KT.Error.SoldOut");
+  const facts = itemFacts(item);
+  const holding = holdingFacts(item);
+  const full = facts.type === "container" && holding.contents > 0;
+  if (!tradeable(facts, holding) || full || quantity > holding.quantity) throw new TradeError("KT.Error.ItemGone", { name: item.name });
+  const quote = sellQuote(item, context);
+  if (!quote.forSale) throw new TradeError("KT.Error.NotForSale", { name: item.name });
+  return { item, quantity, unit: quote.unit, held: holding.quantity };
 }
 
 // What the customer pays for one of a shelf item. Limited Stock caps the haggle discount.

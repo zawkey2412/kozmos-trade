@@ -2,6 +2,7 @@ import { createApi } from "./api.mjs";
 import { registerArchetypeMenu } from "./apps/archetype-editor.mjs";
 import { registerFeatureMenu } from "./apps/feature-toggles.mjs";
 import BarterWindow from "./apps/barter-window.mjs";
+import JoinWindow from "./apps/join-window.mjs";
 import MarketList from "./apps/market-list.mjs";
 import PlayerTradeWindow from "./apps/player-trade.mjs";
 import { MODULE_ID } from "./constants.mjs";
@@ -11,7 +12,7 @@ import { registerHaggleHandlers } from "./services/haggle.mjs";
 import { registerMarketListHandlers } from "./services/market-list.mjs";
 import { registerPlayerTradeHandlers, setPlayerTradeWindow } from "./services/player-trade.mjs";
 import { registerRollHandlers } from "./services/rolls.mjs";
-import { setTradeWindow } from "./services/open-trade.mjs";
+import { setJoinWindow, setTradeWindow } from "./services/open-trade.mjs";
 import { registerShowHandlers } from "./services/show.mjs";
 import { registerReceiptCards, registerReceiptHandlers } from "./services/receipts.mjs";
 import { registerShopCards } from "./services/shop-card.mjs";
@@ -33,6 +34,7 @@ Hooks.once("init", () => {
   registerGmControls();
   registerSceneControls();
   setTradeWindow((snapshot, customer) => BarterWindow.show(snapshot, customer));
+  setJoinWindow((view, customer) => JoinWindow.show(view, customer));
   setCounterWindow((message) => BarterWindow.openCounter(message));
   setPlayerTradeWindow({ sync: (view) => PlayerTradeWindow.sync(view), ended: (id, reason, name) => PlayerTradeWindow.ended(id, reason, name) });
   registerProposalCards();
@@ -63,5 +65,10 @@ Hooks.once("ready", () => {
     MarketList.refreshAll();
   });
   onBroadcast(MESSAGES.PROPOSAL_RESULT, (result) => BarterWindow.onProposalResult(result));
+  onBroadcast(MESSAGES.POOL_CHANGED, (change) => {
+    BarterWindow.onPool(change);
+    JoinWindow.onPool(change);
+  });
+  onBroadcast(MESSAGES.SESSION_ENDED, (payload) => JoinWindow.ended(payload));
   listen();
 });

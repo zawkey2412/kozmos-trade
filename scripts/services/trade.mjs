@@ -1,19 +1,19 @@
 // Trades on the active GM: everything is checked again, then items and coins move, and any failure is undone.
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID } from "../constants.mjs";
-import { holdingFacts, itemFacts, itemSource, purse } from "../adapter/dnd5e.mjs";
+import { itemFacts, itemSource, purse } from "../adapter/dnd5e.mjs";
 import { namedFilled } from "../engine/wanted.mjs";
 import { merchantFlags } from "../data/flags.mjs";
-import { attitudeAdjustment, sweetenGain } from "../engine/attitude.mjs";
+import { sweetenGain } from "../engine/attitude.mjs";
 import { COPPER, coinsToCopper } from "../engine/money.mjs";
 import { settle } from "../engine/quote.mjs";
-import { tradeable } from "../engine/shelf.mjs";
 import { planCoins } from "../engine/trade.mjs";
+import { addCoins, noCoins } from "../engine/tray.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
-import { buyQuote, sellQuote } from "./offer.mjs";
-import { attitudeTables, attitudeValue, recordAttitude } from "./attitude.mjs";
-import { appraisedIds, checkVisit, haggleDiscount, resolvePair, sessionAt, soldToday, updateSold, useHaggle, visibleShelf } from "./session.mjs";
+import { buyQuote, sellLine } from "./offer.mjs";
+import { attitudeTables, recordAttitude } from "./attitude.mjs";
+import { checkVisit, clearPool, poolOf, priceContextFor, resolvePair, sessionAt, soldToday, updateSold, useHaggle, visibleShelf } from "./session.mjs";
 import { recordTrade } from "./receipts.mjs";
 import { shelf } from "./shop.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
@@ -33,6 +33,15 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  * @property {Record<string, number>} coinsGive
  * @property {Record<string, number>} coinsTake
  * @property {boolean} keepChange
+ * @property {string} [recipient]
+ */
+
+// What one joined character puts up.
+/**
+ * @typedef {object} PoolPart
+ * @property {any} actor
+ * @property {TradeLine[]} give
+ * @property {Record<string, number>} coins
  */
 
 /**
@@ -57,12 +66,17 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  * @property {Settlement} result
  * @property {CoinPlan} coins
  * @property {PriceContext} context
+ * @property {PoolPart[]} pool
+ * @property {any} recipient
+ * @property {[any, Record<string, number>][]} currency
+ * @property {ExtraStep[]} [steps]
  */
 
 /**
  * @typedef {object} TradeRecord
  * @property {string[]} merchantCreated
  * @property {string[]} customerCreated
+ * @property {string[][]} [poolCreated]
  */
 
 /**
@@ -95,23 +109,6 @@ async function instantTrade(payload, sender) {
 }
 
 /**
- * @param {any} merchant
- * @param {any} customer
- * @returns {PriceContext}
- */
-export function priceContextFor(merchant, customer) {
-  const flags = merchantFlags(merchant);
-  return {
-    archetype: flags.archetype,
-    attitudeAdjustment: attitudeAdjustment(attitudeValue(merchant, customer), getTables().attitude),
-    haggle: haggleDiscount(merchant.uuid, customer.uuid),
-    market: 1,
-    appraised: appraisedIds(merchant, customer),
-    wanted: feature("wanted") ? flags.wanted : [],
-  };
-}
-
-/**
  * @param {TradeRequest} payload
  * @param {any} sender
  * @param {{ requireBalance?: boolean }} [options]
@@ -127,6 +124,7 @@ export async function runTrade(payload, sender, { requireBalance = true } = {}) 
   const sold = trade.give.map((line, index) => ({ id: record.merchantCreated[index], from: line.item.id, price: line.unit, quantity: line.quantity }));
   updateSold(trade.merchant.uuid, trade.customer.uuid, sold, trade.boughtBack);
   if (trade.take.length) useHaggle(trade.merchant.uuid, trade.customer.uuid);
+  if (trade.pool.length) clearPool(trade.merchant.uuid, trade.customer.uuid);
   const delivered = await deliverWanted(trade).catch((error) => {
     console.error("Kozmos Trade | Wanted board failed", error);
     return 0;
@@ -153,17 +151,9 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
   const tables = getTables();
   const context = priceContextFor(merchant, customer);
 
-  const give = cleanLines(payload.give).map(([id, quantity]) => {
-    const item = customer.items.get(id);
-    if (!item) throw new TradeError("KT.Error.SoldOut");
-    const facts = itemFacts(item);
-    const holding = holdingFacts(item);
-    const full = facts.type === "container" && holding.contents > 0;
-    if (!tradeable(facts, holding) || full || quantity > holding.quantity) throw new TradeError("KT.Error.ItemGone", { name: item.name });
-    const quote = sellQuote(item, context);
-    if (!quote.forSale) throw new TradeError("KT.Error.NotForSale", { name: item.name });
-    return { item, quantity, unit: quote.unit, held: holding.quantity };
-  });
+  const give = cleanLines(payload.give).map(([id, quantity]) => sellLine(customer, id, quantity, context));
+  const pool = await poolParts(merchant, customer);
+  const recipient = await recipientOf(payload.recipient, merchant, customer, pool);
 
   const stock = shelf(merchant);
   const visible = visibleShelf(merchant, customer);
@@ -191,14 +181,17 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
 
   const coinsGive = wholeCoins(payload.coinsGive);
   const coinsTake = wholeCoins(payload.coinsTake);
-  if (!give.length && !take.length && !coinsToCopper(coinsGive) && !coinsToCopper(coinsTake)) throw new TradeError("KT.Error.Empty");
+  const poolCoins = pool.reduce((sum, part) => addCoins(sum, part.coins), noCoins());
+  const pooledItems = pool.reduce((sum, part) => sum + linesValue(part.give), 0);
+  const nothing = !give.length && !take.length && !pool.some((part) => part.give.length) && !coinsToCopper(coinsGive) && !coinsToCopper(poolCoins) && !coinsToCopper(coinsTake);
+  if (nothing) throw new TradeError("KT.Error.Empty");
   const held = purse(customer);
   if (Object.keys(COPPER).some((coin) => coinsGive[coin] > held[coin])) throw new TradeError("KT.Error.NotEnoughCoins");
 
   const result = settle({
-    giveItems: linesValue(give),
+    giveItems: linesValue(give) + pooledItems,
     takeItems: linesValue(take),
-    coinsGive: coinsToCopper(coinsGive),
+    coinsGive: coinsToCopper(coinsGive) + coinsToCopper(poolCoins),
     coinsTake: coinsToCopper(coinsTake),
     keepChange: Boolean(payload.keepChange),
     sweetenStep: tables.attitude.sweeten.step,
@@ -210,32 +203,86 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
     customerHeld: held,
     merchantHeld: purse(merchant),
     coinsGive,
+    extraGive: poolCoins,
     payout: coinsToCopper(coinsTake) + result.change,
     tolerance: tables.money.changeTolerance,
     purseLimit: feature("purseLimit"),
   });
   if (!coins) throw new TradeError("KT.Error.ExactCoins", { name: merchant.name });
-  return { merchant, customer, give, take, boughtBack, coinsGive, coinsTake, result, coins, context };
+  const currency = currencyAfter({ merchant, customer, recipient, coinsGive, pool, coins });
+  return { merchant, customer, give, take, boughtBack, coinsGive, coinsTake, result, coins, context, pool, recipient, currency };
 }
 
-// Swaps both sides of a merchant trade.
+// Items and coins from everyone who joined the customer's trade.
 /**
- * @param {Pick<PreparedTrade, "merchant" | "customer" | "give" | "take"> & { coins: Pick<CoinPlan, "customerAfter" | "merchantAfter"> }} trade
+ * @param {any} merchant
+ * @param {any} customer
+ * @returns {Promise<PoolPart[]>}
+ */
+async function poolParts(merchant, customer) {
+  const parts = [];
+  for (const entry of poolOf(merchant.uuid, customer.uuid)) {
+    if (!entry.give.length && !coinsToCopper(entry.coins)) continue;
+    const actor = /** @type {any} */ (await foundry.utils.fromUuid(entry.actor));
+    if (!actor) throw new TradeError("KT.Error.Missing");
+    const held = purse(actor);
+    if (Object.keys(COPPER).some((coin) => (entry.coins[coin] ?? 0) > held[coin])) throw new TradeError("KT.Error.CoinsGone", { name: actor.name });
+    const context = priceContextFor(merchant, customer, actor);
+    parts.push({ actor, give: entry.give.map(([id, quantity]) => sellLine(actor, id, quantity, context)), coins: wholeCoins(entry.coins) });
+  }
+  return parts;
+}
+
+// Who gets what the merchant hands over: the customer, or a character who joined the trade.
+/**
+ * @param {string | undefined} uuid
+ * @param {any} merchant
+ * @param {any} customer
+ * @param {PoolPart[]} pool
+ */
+async function recipientOf(uuid, merchant, customer, pool) {
+  if (!uuid || uuid === customer.uuid) return customer;
+  if (!poolOf(merchant.uuid, customer.uuid).some((entry) => entry.actor === uuid)) throw new TradeError("KT.Error.NotJoined");
+  const actor = pool.find((part) => part.actor.uuid === uuid)?.actor ?? (await foundry.utils.fromUuid(uuid));
+  if (!actor) throw new TradeError("KT.Error.Missing");
+  return actor;
+}
+
+// Every purse after the trade: givers lose their coins, and the receiving character gets what the merchant pays.
+/**
+ * @param {{ merchant: any, customer: any, recipient: any, coinsGive: Record<string, number>, pool: PoolPart[], coins: CoinPlan }} trade
+ * @returns {[any, Record<string, number>][]}
+ */
+function currencyAfter({ merchant, customer, recipient, coinsGive, pool, coins }) {
+  /** @type {Map<any, Record<string, number>>} */
+  const after = new Map([[customer, addCoins(purse(customer), coinsGive, -1)]]);
+  for (const part of pool) after.set(part.actor, addCoins(after.get(part.actor) ?? purse(part.actor), part.coins, -1));
+  after.set(recipient, addCoins(after.get(recipient) ?? purse(recipient), coins.paid));
+  after.set(merchant, coins.merchantAfter);
+  return [...after];
+}
+
+// Both sides of a merchant trade change hands, joined characters' items included.
+/**
+ * @param {Pick<PreparedTrade, "merchant" | "customer" | "give" | "take"> & Partial<Pick<PreparedTrade, "pool" | "recipient" | "currency" | "steps">> & { coins: Pick<CoinPlan, "customerAfter" | "merchantAfter"> }} trade
  * @returns {Promise<TradeRecord>}
  */
 export async function applyTrade(trade) {
   const { merchant, customer } = trade;
-  const [merchantCreated, customerCreated] = await moveAll({
-    currency: [
+  const pool = trade.pool ?? [];
+  const created = await moveAll({
+    currency: trade.currency ?? [
       [customer, trade.coins.customerAfter],
       [merchant, trade.coins.merchantAfter],
     ],
     moves: [
       { from: customer, to: merchant, lines: trade.give },
-      { from: merchant, to: customer, lines: trade.take },
+      ...pool.map((part) => ({ from: part.actor, to: merchant, lines: part.give })),
+      { from: merchant, to: trade.recipient ?? customer, lines: trade.take },
     ],
+    steps: trade.steps ?? [],
   });
-  return { merchantCreated, customerCreated };
+  return { merchantCreated: created[0], customerCreated: created[created.length - 1], poolCreated: created.slice(1, -1) };
 }
 
 // Moves coins and items between any actors, and undoes the finished steps if one fails.
@@ -364,7 +411,8 @@ export function transferData(item, quantity, restoreFlags) {
 async function deliverWanted(trade) {
   if (!feature("wanted")) return 0;
   const board = merchantFlags(trade.merchant).wanted;
-  const given = trade.give.map((line) => ({ ...itemFacts(line.item), name: line.item.name, source: itemSource(line.item) }));
+  const lines = [...trade.give, ...trade.pool.flatMap((part) => part.give)];
+  const given = lines.map((line) => ({ ...itemFacts(line.item), name: line.item.name, source: itemSource(line.item) }));
   const filled = namedFilled(given, board);
   if (!filled.length) return 0;
   await trade.merchant.update({ [`flags.${MODULE_ID}.wanted`]: board.filter((entry) => !filled.includes(entry)) });

@@ -8,12 +8,26 @@ import { attitudeAdjustment, attitudeBand } from "../engine/attitude.mjs";
 import { attitudeTables, attitudeValue } from "./attitude.mjs";
 import { appraisalKey, appraisalState } from "../engine/appraisal.mjs";
 import { haggleDC, isLocked } from "../engine/haggle.mjs";
-import { coinsToCopper, payFrom } from "../engine/money.mjs";
+import { coinsToCopper, COPPER, payFrom } from "../engine/money.mjs";
+import { cleanPlayerOffer } from "../engine/player-trade.mjs";
+import { noCoins } from "../engine/tray.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
+import { sellLine, sellQuote } from "./offer.mjs";
 import { shelf } from "./shop.mjs";
-import { MESSAGES, onRequest } from "./socket.mjs";
+import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
 import { metByParty, recordVisit } from "./visits.mjs";
+
+/** @import { PriceContext } from "./offer.mjs"; */
+
+/**
+ * @typedef {object} PoolEntry
+ * @property {string} userId
+ * @property {string} actor
+ * @property {string} name
+ * @property {[string, number][]} give
+ * @property {Record<string, number>} coins
+ */
 
 /**
  * @typedef {object} Session
@@ -24,6 +38,15 @@ import { metByParty, recordVisit } from "./visits.mjs";
  * @property {{ discount: number }} haggle
  * @property {boolean} shown
  * @property {boolean} remote
+ * @property {PoolEntry[]} pool
+ */
+
+/**
+ * @typedef {object} PoolView
+ * @property {string} actor
+ * @property {string} name
+ * @property {{ id: string, name: string, img: string, quantity: number, unit: number }[]} lines
+ * @property {Record<string, number>} coins
  */
 
 /**
@@ -75,6 +98,7 @@ import { metByParty, recordVisit } from "./visits.mjs";
  * @property {WantedView[]} wanted
  * @property {ShelfItem[]} shelf
  * @property {{ id: string, price: number, quantity: number }[]} buyback
+ * @property {PoolView[]} pool
  */
 
 /** @type {Map<string, Session>} */
@@ -109,10 +133,65 @@ function takeGrant(merchant, userId) {
 export function registerSessionHandlers() {
   onRequest(MESSAGES.SESSION_OPEN, openSession, { queueKey: (payload) => payload?.merchant });
   onRequest(MESSAGES.SESSION_CLOSE, closeSession, { queueKey: (payload) => payload?.merchant });
+  onRequest(MESSAGES.SESSION_JOIN, joinSession, { queueKey: (payload) => payload?.merchant });
+  onRequest(MESSAGES.SESSION_CONTRIBUTE, contribute, { queueKey: (payload) => payload?.merchant });
+  onRequest(MESSAGES.SESSION_LEAVE, leaveSession, { queueKey: (payload) => payload?.merchant });
   onRequest(MESSAGES.PURSE_CHECK, checkPurse);
   Hooks.on("userConnected", (user, connected) => {
-    if (!connected) for (const [merchant, session] of sessions) if (session.userId === user.id) sessions.delete(merchant);
+    if (connected) return;
+    for (const [merchant, session] of [...sessions]) {
+      if (session.userId === user.id) endSession(merchant);
+      else if (session.pool.some((entry) => entry.userId === user.id)) {
+        session.pool = session.pool.filter((entry) => entry.userId !== user.id);
+        sendPool(merchant);
+      }
+    }
   });
+}
+
+// Drops a session, and tells anyone who joined it.
+/** @param {string} merchant */
+function endSession(merchant) {
+  const session = sessions.get(merchant);
+  if (!session) return;
+  sessions.delete(merchant);
+  const users = [...new Set(session.pool.map((entry) => entry.userId))];
+  if (users.length) broadcast(MESSAGES.SESSION_ENDED, { merchant, name: session.customerName }, { users });
+}
+
+// Tells the session's customer and everyone who joined what the pool holds now.
+/**
+ * @param {string} merchant
+ * @param {{ traded?: boolean }} [options]
+ */
+function sendPool(merchant, { traded = false } = {}) {
+  const session = sessions.get(merchant);
+  if (!session) return;
+  const users = [...new Set([session.userId, ...session.pool.map((entry) => entry.userId)])];
+  const pool = session.pool.map(({ actor, give, coins }) => ({ actor, give, coins }));
+  broadcast(MESSAGES.POOL_CHANGED, { merchant, customer: session.customer, pool, traded }, { users });
+}
+
+// After a trade the joined items and coins are gone, so every contribution starts empty.
+/**
+ * @param {string} merchant
+ * @param {string} customer
+ */
+export function clearPool(merchant, customer) {
+  const session = sessions.get(merchant);
+  if (session?.customer !== customer || !session.pool.length) return;
+  for (const entry of session.pool) Object.assign(entry, { give: [], coins: noCoins() });
+  sendPool(merchant, { traded: true });
+}
+
+// The characters who joined this session.
+/**
+ * @param {string} merchant
+ * @param {string} customer
+ */
+export function poolOf(merchant, customer) {
+  const session = sessions.get(merchant);
+  return session?.customer === customer ? session.pool : [];
 }
 
 /** @param {string} merchant */
@@ -134,8 +213,10 @@ async function openSession({ merchant, customer, remote: fromAfar }, sender) {
   const remote = (Boolean(fromAfar) && remoteAllowed(pair.merchant, sender)) || Boolean(ownVisit && current.remote);
   if (!sender.isGM && !shown) checkAccess(pair.merchant, pair.customer, { distance: !remote });
   if (current && !sameCustomer && game.users.get(current.userId)?.active) {
-    throw new TradeError("KT.Error.Busy", { name: current.customerName });
+    const joined = current.pool.some((entry) => entry.actor === pair.customer.uuid);
+    throw new TradeError(joined ? "KT.Error.AlreadyJoined" : "KT.Error.Busy", { name: current.customerName, join: !sender.isGM && !joined });
   }
+  if (current && !sameCustomer) endSession(pair.merchant.uuid);
   const keepUser = sameCustomer && sender.isGM && current.userId !== sender.id && game.users.get(current.userId)?.active;
   sessions.set(pair.merchant.uuid, {
     customer: pair.customer.uuid,
@@ -145,6 +226,7 @@ async function openSession({ merchant, customer, remote: fromAfar }, sender) {
     haggle: sameCustomer ? current.haggle : { discount: 0 },
     shown,
     remote,
+    pool: sameCustomer ? current.pool : [],
   });
   if (!sameCustomer) await recordVisit(pair.merchant, pair.customer).catch((error) => console.error("Kozmos Trade | Visit failed", error));
   return snapshot(pair.merchant, pair.customer);
@@ -169,8 +251,108 @@ function remoteAllowed(merchant, sender) {
 function closeSession({ merchant, customer }, sender) {
   const current = sessions.get(merchant);
   if (current?.customer !== customer) return true;
-  if (current.userId === sender.id || !game.users.get(current.userId)?.active) sessions.delete(merchant);
+  if (current.userId === sender.id || !game.users.get(current.userId)?.active) endSession(merchant);
   return true;
+}
+
+// Another player adds their own character's items and coins to the customer's side of a trade.
+/**
+ * @param {{ merchant: string, customer: string }} payload
+ * @param {any} sender
+ */
+async function joinSession({ merchant, customer }, sender) {
+  if (sender.isGM) throw new TradeError("KT.Error.JoinGM");
+  const pair = await resolvePair(merchant, customer, sender);
+  const session = sessions.get(pair.merchant.uuid);
+  if (!session || !game.users.get(session.userId)?.active) throw new TradeError("KT.Error.NothingToJoin", { name: pair.merchant.name });
+  if (session.customer === pair.customer.uuid) throw new TradeError("KT.Error.AlreadyJoined", { name: session.customerName });
+  if (!session.shown) checkAccess(pair.merchant, pair.customer, { distance: !session.remote });
+  session.pool = session.pool.filter((entry) => entry.actor !== pair.customer.uuid);
+  session.pool.push({ userId: sender.id, actor: pair.customer.uuid, name: pair.customer.name, give: [], coins: noCoins() });
+  sendPool(pair.merchant.uuid);
+  await recordVisit(pair.merchant, pair.customer).catch((error) => console.error("Kozmos Trade | Visit failed", error));
+  const lead = /** @type {any} */ (foundry.utils.fromUuidSync(session.customer));
+  return {
+    merchant: { uuid: pair.merchant.uuid, name: pair.merchant.name, img: pair.merchant.img },
+    lead: { uuid: session.customer, name: session.customerName, img: lead?.img ?? "" },
+  };
+}
+
+// A joined character's items and coins, checked against what it holds. Answers the unit price of each item.
+/**
+ * @param {{ merchant: string, customer: string, give: [string, number][], coins: Record<string, number> }} payload
+ * @param {any} sender
+ */
+async function contribute({ merchant, customer, give, coins }, sender) {
+  const session = sessions.get(merchant);
+  const entry = session?.pool.find((e) => e.actor === customer && e.userId === sender.id);
+  if (!entry) throw new TradeError("KT.Error.NotJoined");
+  const offer = cleanPlayerOffer({ items: give, coins });
+  if (!offer) throw new TradeError("KT.Error.Empty");
+  const shop = /** @type {any} */ (await foundry.utils.fromUuid(merchant));
+  const actor = /** @type {any} */ (await foundry.utils.fromUuid(customer));
+  const lead = /** @type {any} */ (await foundry.utils.fromUuid(session.customer));
+  if (!shop || !actor || !lead) throw new TradeError("KT.Error.Missing");
+  const held = purse(actor);
+  if (Object.keys(COPPER).some((coin) => offer.coins[coin] > held[coin])) throw new TradeError("KT.Error.NotEnoughCoins");
+  const context = priceContextFor(shop, lead, actor);
+  const prices = Object.fromEntries(offer.items.map(([id, quantity]) => [id, sellLine(actor, id, quantity, context).unit]));
+  entry.give = offer.items;
+  entry.coins = offer.coins;
+  sendPool(merchant);
+  return { prices };
+}
+
+/**
+ * @param {{ merchant: string, customer: string }} payload
+ * @param {any} sender
+ */
+function leaveSession({ merchant, customer }, sender) {
+  const session = sessions.get(merchant);
+  if (!session) return true;
+  const before = session.pool.length;
+  session.pool = session.pool.filter((entry) => !(entry.actor === customer && entry.userId === sender.id));
+  if (session.pool.length !== before) sendPool(merchant);
+  return true;
+}
+
+// Prices for a customer at this merchant. Appraisals are read for the owner of the items, who may have joined the trade.
+/**
+ * @param {any} merchant
+ * @param {any} customer
+ * @param {any} [owner]
+ * @returns {PriceContext}
+ */
+export function priceContextFor(merchant, customer, owner = customer) {
+  const flags = merchantFlags(merchant);
+  return {
+    archetype: flags.archetype,
+    attitudeAdjustment: attitudeAdjustment(attitudeValue(merchant, customer), getTables().attitude),
+    haggle: haggleDiscount(merchant.uuid, customer.uuid),
+    market: 1,
+    appraised: appraisedIds(merchant, owner),
+    wanted: feature("wanted") ? flags.wanted : [],
+  };
+}
+
+// What each joined character puts up, priced for the session's customer.
+/**
+ * @param {any} merchant
+ * @param {any} customer
+ * @returns {PoolView[]}
+ */
+function poolView(merchant, customer) {
+  return poolOf(merchant.uuid, customer.uuid).map((entry) => {
+    const actor = /** @type {any} */ (foundry.utils.fromUuidSync(entry.actor));
+    const context = actor ? priceContextFor(merchant, customer, actor) : null;
+    const lines = entry.give.flatMap(([id, quantity]) => {
+      const item = actor?.items.get(id);
+      if (!item || !context) return [];
+      const quote = sellQuote(item, context);
+      return [{ id, name: item.name, img: item.img, quantity, unit: quote.forSale ? quote.unit : 0 }];
+    });
+    return { actor: entry.actor, name: entry.name, lines, coins: entry.coins };
+  });
 }
 
 // Whether the merchant can pay an amount in coins.
@@ -399,6 +581,7 @@ export function snapshot(merchant, customer) {
       band,
       adjustment: attitudeAdjustment(value, tables.attitude),
     },
+    pool: poolView(merchant, customer),
     buyback: soldToday(merchant.uuid, customer.uuid).flatMap((entry) => {
       const item = merchant.items.get(entry.id);
       const held = Number(item?.system?.quantity) || 0;

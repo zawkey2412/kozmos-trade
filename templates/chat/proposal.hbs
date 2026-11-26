@@ -17,6 +17,7 @@
       <ul class="plain">{{#each gets as |line|}}<li>{{line}}</li>{{else}}<li class="kt-muted">{{localize "KT.Proposal.Nothing"}}</li>{{/each}}</ul>
     </div>
   </div>
+  {{#if recipient}}<p class="kt-muted">{{localize "KT.Receipt.GoesTo" name=recipient}}</p>{{/if}}
   <p class="kt-chat-balance"><strong>{{net}}</strong> {{balance}}</p>
   {{#if pending}}
   <div class="kt-chat-buttons">
