@@ -21,6 +21,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {string} userId
  * @property {{ id: string, from?: string, price: number, quantity: number, day: number }[]} sold
  * @property {{ discount: number }} haggle
+ * @property {boolean} shown
  */
 
 /**
@@ -76,6 +77,32 @@ import { MESSAGES, onRequest } from "./socket.mjs";
 /** @type {Map<string, Session>} */
 const sessions = new Map();
 
+// Players a GM showed a shop to, by merchant, with when the offer runs out.
+/** @type {Map<string, Map<string, number>>} */
+const grants = new Map();
+const GRANT_TIME = 2 * 60 * 1000;
+
+// GM side: these players may open the shop once without the access checks.
+/**
+ * @param {string} merchant
+ * @param {string[]} userIds
+ */
+export function grantShow(merchant, userIds) {
+  const users = grants.get(merchant) ?? new Map();
+  for (const id of userIds) users.set(id, Date.now() + GRANT_TIME);
+  grants.set(merchant, users);
+}
+
+/**
+ * @param {string} merchant
+ * @param {string} userId
+ */
+function takeGrant(merchant, userId) {
+  const until = grants.get(merchant)?.get(userId);
+  grants.get(merchant)?.delete(userId);
+  return until !== undefined && until > Date.now();
+}
+
 export function registerSessionHandlers() {
   onRequest(MESSAGES.SESSION_OPEN, openSession, { queueKey: (payload) => payload?.merchant });
   onRequest(MESSAGES.SESSION_CLOSE, closeSession, { queueKey: (payload) => payload?.merchant });
@@ -97,9 +124,10 @@ export function sessionAt(merchant) {
  */
 async function openSession({ merchant, customer }, sender) {
   const pair = await resolvePair(merchant, customer, sender);
-  if (!sender.isGM) checkAccess(pair.merchant, pair.customer);
   const current = sessions.get(pair.merchant.uuid);
   const sameCustomer = current?.customer === pair.customer.uuid;
+  const shown = takeGrant(pair.merchant.uuid, sender.id) || Boolean(sameCustomer && current.shown && current.userId === sender.id);
+  if (!sender.isGM && !shown) checkAccess(pair.merchant, pair.customer);
   if (current && !sameCustomer && game.users.get(current.userId)?.active) {
     throw new TradeError("KT.Error.Busy", { name: current.customerName });
   }
@@ -110,6 +138,7 @@ async function openSession({ merchant, customer }, sender) {
     userId: keepUser ? current.userId : sender.id,
     sold: sameCustomer ? current.sold : [],
     haggle: sameCustomer ? current.haggle : { discount: 0 },
+    shown,
   });
   return snapshot(pair.merchant, pair.customer);
 }
@@ -279,6 +308,19 @@ export async function resolvePair(merchantUuid, customerUuid, sender) {
   if (!merchantFlags(merchant).enabled) throw new TradeError("KT.Error.NotShop", { name: merchant.name });
   if (!sender.isGM && !customer.testUserPermission(sender, "OWNER")) throw new TradeError("KT.Error.NotYours");
   return { merchant, customer };
+}
+
+// The checks for a request inside a visit: none for a GM or a shop a GM showed.
+/**
+ * @param {any} merchant
+ * @param {any} customer
+ * @param {any} sender
+ */
+export function checkVisit(merchant, customer, sender) {
+  if (sender.isGM) return;
+  const session = sessions.get(merchant.uuid);
+  if (session?.customer === customer.uuid && session.shown) return;
+  checkAccess(merchant, customer);
 }
 
 /**

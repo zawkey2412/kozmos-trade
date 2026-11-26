@@ -15,6 +15,7 @@ import { ATTITUDE_ICONS } from "../services/attitude.mjs";
 import { TradeError, warn } from "../services/errors.mjs";
 import { APPRAISE_ROLL } from "../services/appraisal.mjs";
 import { reactionLine } from "../services/reactions.mjs";
+import { showShop } from "../services/show.mjs";
 import { HAGGLE_ROLL, haggleChoices } from "../services/haggle.mjs";
 import { rollFlags } from "../services/rolls.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
@@ -60,6 +61,7 @@ export default class BarterWindow extends HandlebarsApplication {
       restock: BarterWindow.#onRestock,
       haggle: BarterWindow.#onHaggle,
       appraise: BarterWindow.#onAppraise,
+      showPlayers: BarterWindow.#onShowPlayers,
     },
   };
 
@@ -921,6 +923,11 @@ export default class BarterWindow extends HandlebarsApplication {
   static #onTab(event, target) {
     this.view.merchantTab = target.dataset.tab;
     this.render({ parts: ["merchant"] });
+  }
+
+  /** @this {BarterWindow} */
+  static #onShowPlayers() {
+    return showShop(foundry.utils.fromUuidSync(this.snapshot.merchant.uuid));
   }
 
   /**

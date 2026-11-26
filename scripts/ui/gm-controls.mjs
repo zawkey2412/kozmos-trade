@@ -1,6 +1,7 @@
 // GM controls: the scales button on NPC token HUDs and actor sheet headers, and an item's true value.
 import ConfigureShop from "../apps/configure-shop.mjs";
 import { openTrade, pickCustomer } from "../services/open-trade.mjs";
+import { showShop } from "../services/show.mjs";
 import { canBeShop, isShop, setTrueValue } from "../services/shop.mjs";
 import { itemFlags } from "../data/flags.mjs";
 import { COPPER } from "../engine/money.mjs";
@@ -11,6 +12,22 @@ export function registerGmControls() {
   Hooks.on("renderTokenHUD", addHudButton);
   Hooks.on("getHeaderControlsActorSheetV2", addHeaderControl);
   Hooks.on("getHeaderControlsDocumentSheetV2", addTrueValueControl);
+  Hooks.on("getActorContextOptions", addShowOption);
+}
+
+// "Show to players" on shops in the Actors sidebar.
+/**
+ * @param {any} directory
+ * @param {object[]} options
+ */
+function addShowOption(directory, options) {
+  const actorOf = (/** @type {HTMLElement} */ li) => game.actors.get(/** @type {HTMLElement} */ (li.closest("[data-entry-id]")).dataset.entryId);
+  options.push({
+    label: "KT.Show.Control",
+    icon: "fa-solid fa-eye",
+    visible: (/** @type {HTMLElement} */ li) => game.user.isGM && isShop(actorOf(li)),
+    onClick: (/** @type {Event} */ event, /** @type {HTMLElement} */ li) => showShop(actorOf(li)),
+  });
 }
 
 // The barter window for a shop that is set up, Configure Shop for anything else.

@@ -8,6 +8,7 @@ import { registerAppraisalHandlers } from "./services/appraisal.mjs";
 import { registerHaggleHandlers } from "./services/haggle.mjs";
 import { registerRollHandlers } from "./services/rolls.mjs";
 import { setTradeWindow } from "./services/open-trade.mjs";
+import { registerShowHandlers } from "./services/show.mjs";
 import { registerReceiptCards, registerReceiptHandlers } from "./services/receipts.mjs";
 import { registerShopCards } from "./services/shop-card.mjs";
 import { registerAutoRestock } from "./services/stock.mjs";
@@ -42,6 +43,7 @@ Hooks.once("ready", () => {
   registerRollHandlers();
   registerHaggleHandlers();
   registerAppraisalHandlers();
+  registerShowHandlers();
   registerReceiptHandlers();
   registerAutoRestock();
   registerProximityButton();

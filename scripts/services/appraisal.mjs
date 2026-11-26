@@ -9,7 +9,7 @@ import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
 import { postCheckCard } from "./haggle.mjs";
 import { expectRoll, registerRollKind } from "./rolls.mjs";
-import { appraisalView, checkAccess, currentDay, resolvePair, sessionAt } from "./session.mjs";
+import { appraisalView, checkVisit, currentDay, resolvePair, sessionAt } from "./session.mjs";
 import { MESSAGES, onRequest } from "./socket.mjs";
 
 /** @import { ExpectedRoll } from "./rolls.mjs"; */
@@ -36,7 +36,7 @@ export function offersScrap(item) {
 async function startAppraisal({ merchant: merchantUuid, customer: customerUuid, itemId, skill }, sender) {
   const { merchant, customer } = await resolvePair(merchantUuid, customerUuid, sender);
   if (sessionAt(merchant.uuid)?.customer !== customer.uuid) throw new TradeError("KT.Error.NotInSession");
-  if (!sender.isGM) checkAccess(merchant, customer);
+  checkVisit(merchant, customer, sender);
   if (!feature("appraisal")) throw new TradeError("KT.Appraise.Off");
   const item = customer.items.get(itemId);
   if (!item || !offersScrap(item)) throw new TradeError("KT.Appraise.NotScrap");

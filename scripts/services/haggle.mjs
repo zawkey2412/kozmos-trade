@@ -9,7 +9,7 @@ import { getArchetypes } from "./archetypes.mjs";
 import { attitudeValue, recordAttitude } from "./attitude.mjs";
 import { TradeError } from "./errors.mjs";
 import { expectRoll, registerRollKind } from "./rolls.mjs";
-import { checkAccess, haggleView, resolvePair, sessionAt } from "./session.mjs";
+import { checkVisit, haggleView, resolvePair, sessionAt } from "./session.mjs";
 import { MESSAGES, onRequest } from "./socket.mjs";
 
 /** @import { ExpectedRoll } from "./rolls.mjs"; */
@@ -51,7 +51,7 @@ export function haggleChoices(customer, archetypeId) {
 async function startHaggle({ merchant: merchantUuid, customer: customerUuid, ask, check, helped }, sender) {
   const { merchant, customer } = await resolvePair(merchantUuid, customerUuid, sender);
   if (sessionAt(merchant.uuid)?.customer !== customer.uuid) throw new TradeError("KT.Error.NotInSession");
-  if (!sender.isGM) checkAccess(merchant, customer);
+  checkVisit(merchant, customer, sender);
   if (!feature("haggle")) throw new TradeError("KT.Haggle.Off");
   const view = haggleView(merchant, customer);
   if (view.locked) throw new TradeError("KT.Haggle.Locked", { name: merchant.name });

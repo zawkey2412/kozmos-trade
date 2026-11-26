@@ -13,7 +13,7 @@ import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
 import { buyQuote, sellQuote } from "./offer.mjs";
 import { attitudeTables, attitudeValue, recordAttitude } from "./attitude.mjs";
-import { appraisedIds, checkAccess, haggleDiscount, resolvePair, sessionAt, soldToday, updateSold, useHaggle, visibleShelf } from "./session.mjs";
+import { appraisedIds, checkVisit, haggleDiscount, resolvePair, sessionAt, soldToday, updateSold, useHaggle, visibleShelf } from "./session.mjs";
 import { recordTrade } from "./receipts.mjs";
 import { shelf } from "./shop.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
@@ -133,7 +133,7 @@ export async function runTrade(payload, sender, { requireBalance = true } = {}) 
 export async function prepareTrade(payload, sender, { requireBalance = true } = {}) {
   const { merchant, customer } = await resolvePair(payload.merchant, payload.customer, sender);
   if (!sender.isGM) {
-    checkAccess(merchant, customer);
+    checkVisit(merchant, customer, sender);
     if (sessionAt(merchant.uuid)?.customer !== customer.uuid) throw new TradeError("KT.Error.NotInSession");
   }
   const tables = getTables();
