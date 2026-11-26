@@ -1,0 +1,21 @@
+<header class="kt-barter-header">
+  <div class="kt-party kt-party-customer">
+    <img class="kt-portrait" src="{{header.mine.img}}" alt="">
+    <div class="kt-party-text">
+      <h2>{{header.mine.name}}</h2>
+      <span class="kt-muted"><i class="fa-solid fa-coins" inert></i> {{header.coins}}</span>
+    </div>
+  </div>
+
+  <div class="kt-header-middle">
+    <span class="kt-muted"><i class="{{header.icon}}" inert></i> {{header.heading}}</span>
+  </div>
+
+  <div class="kt-party kt-party-merchant">
+    <div class="kt-party-text">
+      <h2>{{header.other.name}}</h2>
+      {{#if header.other.note}}<span class="kt-muted">{{header.other.note}}</span>{{/if}}
+    </div>
+    <img class="kt-portrait" src="{{header.other.img}}" alt="">
+  </div>
+</header>

@@ -32,6 +32,12 @@ export const MESSAGES = Object.freeze({
   SHOW_SHOP: "shop.show",
   SHOP_SHOWN: "shop.shown",
   MARKET_LIST: "market.list",
+  PLAYER_OPEN: "player.open",
+  PLAYER_OFFER: "player.offer",
+  PLAYER_ACCEPT: "player.accept",
+  PLAYER_CLOSE: "player.close",
+  PLAYER_STATE: "player.state",
+  PLAYER_CLOSED: "player.closed",
 });
 
 /** @type {Map<string, RequestHandler>} */

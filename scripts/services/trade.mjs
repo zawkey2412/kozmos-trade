@@ -65,6 +65,20 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  * @property {string[]} customerCreated
  */
 
+/**
+ * @typedef {object} Move
+ * @property {any} from
+ * @property {any} to
+ * @property {TradeLine[]} lines
+ */
+
+// A change made after the items move, with its undo.
+/**
+ * @typedef {object} ExtraStep
+ * @property {() => Promise<unknown>} apply
+ * @property {() => Promise<unknown>} undo
+ */
+
 export function registerTradeHandlers() {
   onRequest(MESSAGES.TRADE_REQUEST, instantTrade, { queueKey: (payload) => payload?.merchant });
 }
@@ -204,27 +218,49 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
   return { merchant, customer, give, take, boughtBack, coinsGive, coinsTake, result, coins, context };
 }
 
-// Moves coins and items in steps, and undoes the finished steps if one fails.
+// Swaps both sides of a merchant trade.
 /**
  * @param {Pick<PreparedTrade, "merchant" | "customer" | "give" | "take"> & { coins: Pick<CoinPlan, "customerAfter" | "merchantAfter"> }} trade
  * @returns {Promise<TradeRecord>}
  */
 export async function applyTrade(trade) {
   const { merchant, customer } = trade;
-  const toMerchant = trade.give.map((line) => transferData(line.item, line.quantity, line.restoreFlags));
-  const toCustomer = trade.take.map((line) => transferData(line.item, line.quantity));
+  const [merchantCreated, customerCreated] = await moveAll({
+    currency: [
+      [customer, trade.coins.customerAfter],
+      [merchant, trade.coins.merchantAfter],
+    ],
+    moves: [
+      { from: customer, to: merchant, lines: trade.give },
+      { from: merchant, to: customer, lines: trade.take },
+    ],
+  });
+  return { merchantCreated, customerCreated };
+}
+
+// Moves coins and items between any actors, and undoes the finished steps if one fails.
+/**
+ * @param {{ currency: [any, Record<string, number>][], moves: Move[], steps?: ExtraStep[] }} plan
+ * @returns {Promise<string[][]>}
+ */
+export async function moveAll({ currency, moves, steps = [] }) {
+  const data = moves.map((move) => move.lines.map((line) => transferData(line.item, line.quantity, line.restoreFlags)));
+  /** @type {Map<any, TradeLine[]>} */
+  const leaving = new Map();
+  for (const move of moves) leaving.set(move.from, [...(leaving.get(move.from) ?? []), ...move.lines]);
   /** @type {(() => Promise<unknown>)[]} */
   const undo = [];
-  /** @type {TradeRecord} */
-  const record = { merchantCreated: [], customerCreated: [] };
   try {
-    await setCurrency(customer, trade.coins.customerAfter, undo);
-    await setCurrency(merchant, trade.coins.merchantAfter, undo);
-    await removeLines(customer, trade.give, undo);
-    await removeLines(merchant, trade.take, undo);
-    record.merchantCreated = await deliver(merchant, trade.give, toMerchant, undo);
-    record.customerCreated = await deliver(customer, trade.take, toCustomer, undo);
-    return record;
+    for (const [actor, coins] of currency) await setCurrency(actor, coins, undo);
+    for (const [actor, lines] of leaving) await removeLines(actor, lines, undo);
+    /** @type {string[][]} */
+    const created = [];
+    for (const [index, move] of moves.entries()) created.push(await deliver(move.to, move.lines, data[index], undo));
+    for (const step of steps) {
+      await step.apply();
+      undo.push(step.undo);
+    }
+    return created;
   } catch (error) {
     console.error("Kozmos Trade | Trade failed, undoing", error);
     for (const step of undo.reverse()) {

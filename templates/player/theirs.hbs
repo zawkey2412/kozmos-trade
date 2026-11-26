@@ -1,0 +1,19 @@
+<section class="kt-tray kt-their-tray" data-side="theirs">
+  <h3>{{theirs.title}}</h3>
+  {{#if theirs.rows.length}}
+  <ol class="kt-tray-list plain">
+    {{#each theirs.rows as |row|}}
+    <li class="kt-line kt-line-plain" aria-label="{{row.name}}">
+      <img src="{{row.img}}" alt="">
+      <span class="kt-line-name">{{row.name}}</span>
+      <span class="kt-line-total">{{row.quantity}}</span>
+    </li>
+    {{/each}}
+  </ol>
+  {{else}}
+  <p class="kt-empty kt-tray-hint">{{localize "KT.PlayerTrade.NothingYet"}}</p>
+  {{/if}}
+  {{#if theirs.coins}}
+  <p class="kt-their-coins"><i class="fa-solid fa-coins" inert></i> {{theirs.coins}}</p>
+  {{/if}}
+</section>

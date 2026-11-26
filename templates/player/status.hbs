@@ -1,0 +1,13 @@
+<section class="kt-balance kt-player-status{{#if status.ready}} even{{/if}}" aria-live="polite">
+  <i class="fa-solid fa-handshake kt-scale" inert></i>
+  <ul class="kt-accepts plain">
+    {{#each status.sides as |side|}}
+    <li class="{{#if side.accepted}}accepted{{/if}}">
+      <i class="{{#if side.accepted}}fa-solid fa-circle-check{{else}}fa-regular fa-circle{{/if}}" inert></i>
+      <span>{{side.name}}</span>
+      <strong>{{side.word}}</strong>
+    </li>
+    {{/each}}
+  </ul>
+  <p class="kt-change">{{localize "KT.PlayerTrade.Rule"}}</p>
+</section>

@@ -31,6 +31,7 @@
     </label>
     {{/each}}
   </div>
+  {{#unless noTools}}
   <div class="kt-tray-tools">
     <button type="button" data-action="autoBalance" data-side="{{side}}">
       <i class="fa-solid fa-scale-unbalanced" inert></i> <span>{{localize "KT.Barter.AutoBalance"}}</span>
@@ -42,4 +43,5 @@
     </label>
     {{/if}}
   </div>
+  {{/unless}}
 </section>

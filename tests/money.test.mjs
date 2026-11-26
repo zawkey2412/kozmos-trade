@@ -1,9 +1,19 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { TABLES } from "../scripts/data/tables.mjs";
-import { coinsToCopper, formatCopper, payFrom, splitCopper, toCopper } from "../scripts/engine/money.mjs";
+import { coinsToCopper, formatCoins, formatCopper, payFrom, splitCopper, toCopper } from "../scripts/engine/money.mjs";
 
 const tolerance = TABLES.money.changeTolerance;
+
+describe("showing coins as they are", () => {
+  it("keeps each coin, largest first, and leaves out empty ones", () => {
+    assert.equal(formatCoins({ cp: 3, ep: 5, gp: 0, pp: 1 }, { locale: "en" }), "1 pp 5 ep 3 cp");
+  });
+
+  it("shows nothing for no coins", () => {
+    assert.equal(formatCoins({ gp: 0 }, { locale: "en" }), "");
+  });
+});
 
 describe("copper conversion", () => {
   it("converts each coin to copper", () => {

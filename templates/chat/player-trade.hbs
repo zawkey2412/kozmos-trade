@@ -1,0 +1,17 @@
+<div class="kozmos-trade kt-chat kt-player-receipt">
+  <header class="kt-chat-title">
+    <i class="fa-solid fa-handshake" inert></i>
+    <strong>{{localize "KT.PlayerTrade.Card"}}</strong>
+  </header>
+  <p>{{localize "KT.PlayerTrade.Who" first=first second=second}}</p>
+  <div class="kt-chat-sides">
+    <div>
+      <h4>{{localize "KT.Proposal.Gives" name=first}}</h4>
+      <ul class="plain">{{#each firstGives as |line|}}<li>{{line}}</li>{{else}}<li class="kt-muted">{{localize "KT.Proposal.Nothing"}}</li>{{/each}}</ul>
+    </div>
+    <div>
+      <h4>{{localize "KT.Proposal.Gives" name=second}}</h4>
+      <ul class="plain">{{#each secondGives as |line|}}<li>{{line}}</li>{{else}}<li class="kt-muted">{{localize "KT.Proposal.Nothing"}}</li>{{/each}}</ul>
+    </div>
+  </div>
+</div>

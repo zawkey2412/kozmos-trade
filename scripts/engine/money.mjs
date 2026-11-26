@@ -81,6 +81,18 @@ export function formatCopper(copper, { locale, labels = {}, denominations = READ
   return shown.map(([denomination, count]) => `${number.format(count)} ${labels[denomination] ?? denomination}`).join(" ");
 }
 
+// Coins as they are, largest first, without empty coins.
+/**
+ * @param {Record<string, number>} coins
+ * @param {{ locale?: string, labels?: Record<string, string>, rates?: Record<string, number> }} [options]
+ */
+export function formatCoins(coins, { locale, labels = {}, rates = COPPER } = {}) {
+  const number = new Intl.NumberFormat(locale);
+  return byValue(Object.keys(coins).filter((coin) => coins[coin] > 0), rates)
+    .map((coin) => `${number.format(coins[coin])} ${labels[coin] ?? coin}`)
+    .join(" ");
+}
+
 /** @param {number} copper */
 function assertCopper(copper) {
   if (!Number.isInteger(copper) || copper < 0) throw new Error(`${copper} is not a whole number of copper`);

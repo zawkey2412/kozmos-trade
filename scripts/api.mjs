@@ -3,6 +3,7 @@ import MarketList from "./apps/market-list.mjs";
 import { registerArchetype } from "./services/archetypes.mjs";
 import { PARTY_KEY, setAttitude } from "./services/attitude.mjs";
 import { openTrade } from "./services/open-trade.mjs";
+import { tradeWithPlayer } from "./services/player-trade.mjs";
 import { setTrueValue } from "./services/shop.mjs";
 import { generateStock, restock } from "./services/stock.mjs";
 
@@ -10,12 +11,24 @@ export function createApi() {
   return Object.freeze({
     openTrade,
     openMarket: () => MarketList.toggle(),
+    openPlayerTrade: apiOpenPlayerTrade,
     registerArchetype,
     generateStock,
     restock,
     setAttitude: apiSetAttitude,
     setTrueValue: apiSetTrueValue,
   });
+}
+
+// Takes two characters or their UUIDs: the user's own first.
+/**
+ * @param {any | string} from
+ * @param {any | string} to
+ */
+async function apiOpenPlayerTrade(from, to) {
+  const first = typeof from === "string" ? await foundry.utils.fromUuid(from) : from;
+  const second = typeof to === "string" ? await foundry.utils.fromUuid(to) : to;
+  return tradeWithPlayer(first, second);
 }
 
 // Takes an item or its UUID, and gold or null.

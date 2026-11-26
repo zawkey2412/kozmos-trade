@@ -1,7 +1,7 @@
 // The barter window: both inventories, both offer trays and the balance between them.
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
-import { coinLabels, combatStats, holdingFacts, itemDescription, itemFacts, locale, purse, rarityLabel, rollCheck, skillLabel } from "../adapter/dnd5e.mjs";
+import { coinLabels, combatStats, holdingFacts, itemDescription, itemFacts, locale, purse, rollCheck, skillLabel } from "../adapter/dnd5e.mjs";
 import { appraisalDC } from "../engine/appraisal.mjs";
 import { situationOf } from "../engine/reactions.mjs";
 import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
@@ -28,6 +28,7 @@ import { MESSAGES, request } from "../services/socket.mjs";
 import { getTables } from "../settings.mjs";
 import ConfigureShop from "./configure-shop.mjs";
 import { HandlebarsApplication } from "./base.mjs";
+import { card, loadTradePartials, rarityTag, tag } from "./cards.mjs";
 
 /** @import { Snapshot } from "../services/session.mjs"; */
 /** @import { PriceContext } from "../services/offer.mjs"; */
@@ -75,9 +76,6 @@ export default class BarterWindow extends HandlebarsApplication {
     footer: { template: template("footer") },
   };
 
-  /** @type {Promise<void> | null} */
-  static #partials = null;
-
   /**
    * @param {Snapshot} snapshot
    * @param {any} customer
@@ -94,14 +92,7 @@ export default class BarterWindow extends HandlebarsApplication {
   }
 
   static #loadPartials() {
-    BarterWindow.#partials ??= foundry.applications.handlebars
-      .loadTemplates({
-        "kt-card": `modules/${MODULE_ID}/templates/components/card.hbs`,
-        "kt-inventory": `modules/${MODULE_ID}/templates/components/inventory.hbs`,
-        "kt-tray": `modules/${MODULE_ID}/templates/components/tray.hbs`,
-      })
-      .then(() => {});
-    return BarterWindow.#partials;
+    return loadTradePartials();
   }
 
   // The GM's copy of a proposal, where only the merchant's side can change.
@@ -1087,7 +1078,6 @@ export default class BarterWindow extends HandlebarsApplication {
  * @param {string} merchant
  * @param {string} customer
  */
-
 export function windowId(merchant, customer) {
   return `kt-barter-${merchant}-${customer}`.replace(/[^A-Za-z0-9-]/g, "-");
 }
@@ -1100,45 +1090,4 @@ function trayOf(side) {
 /** @param {string} tray */
 function sideOf(tray) {
   return tray === "give" ? "customer" : tray === "take" ? "merchant" : tray;
-}
-
-/**
- * @param {string} id
- * @param {string} side
- * @param {string} name
- * @param {string} img
- * @param {{ type: string, subtype?: string, rarity?: string, magical?: boolean }} facts
- * @param {number} quantity
- * @param {number} staged
- */
-function card(id, side, name, img, facts, quantity, staged) {
-  return {
-    id,
-    side,
-    name,
-    img,
-    type: facts.type,
-    subtype: facts.subtype ?? "",
-    rarity: facts.rarity ?? "",
-    magical: Boolean(facts.magical || facts.rarity),
-    quantity,
-    available: quantity - staged,
-    staged: staged > 0,
-    tooltip: `<h4>${foundry.utils.escapeHTML(name)}</h4>`,
-    disabled: false,
-    dim: false,
-  };
-}
-
-/**
- * @param {string} key
- * @param {string} icon
- */
-function tag(key, icon) {
-  return { key, icon, label: game.i18n.localize(`KT.Tag.${key}`) };
-}
-
-/** @param {string | undefined} rarity */
-function rarityTag(rarity) {
-  return rarity ? { key: `rarity rarity-${rarity}`, icon: null, label: rarityLabel(rarity) } : null;
 }

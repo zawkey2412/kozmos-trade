@@ -1,0 +1,63 @@
+/* Player trade and joined trade windows, on top of the barter window's layout. */
+.kt-barter.kt-player-trade .window-content {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--kt-balance-width) minmax(0, 1fr);
+}
+
+.kt-barter.kt-join .window-content {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--kt-panel-width);
+}
+
+/* Read-only lines: picture, name and quantity. */
+.kt-barter .kt-line.kt-line-plain {
+  grid-template-columns: var(--kt-icon) minmax(0, 1fr) auto;
+  grid-template-areas: "icon name total";
+}
+
+.kt-barter .kt-line .kt-line-owner {
+  color: var(--kt-text-muted);
+  font-size: var(--kt-font-small);
+}
+
+.kt-barter .kt-their-coins {
+  margin: 0;
+  text-align: center;
+}
+
+/* Who has accepted. */
+.kt-barter .kt-accepts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-small);
+  margin: 0;
+  font-size: var(--kt-font-small);
+}
+
+.kt-barter .kt-accepts li {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space-small);
+  color: var(--kt-text-muted);
+}
+
+.kt-barter .kt-accepts li.accepted {
+  color: var(--kt-even);
+}
+
+.kt-barter .kt-accepts strong {
+  margin-left: auto;
+}
+
+/* The panel beside a joined trade. */
+.kt-barter .kt-join-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space);
+  padding: var(--kt-space);
+  border: var(--kt-border);
+  border-radius: var(--kt-radius);
+  background: var(--kt-surface);
+}
+
+.kt-barter .kt-join-panel p {
+  margin: 0;
+}

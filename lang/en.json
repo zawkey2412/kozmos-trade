@@ -74,7 +74,14 @@
       "NoArchetype": "There is no archetype called {name}.",
       "NoRoll": "The roll did not reach the GM. Try again.",
       "NoRemote": "{name} only trades in person.",
-      "NotMet": "Visit {name} in person first."
+      "NotMet": "Visit {name} in person first.",
+      "PlayersOnly": "Player trades are between two players' characters.",
+      "PlayerBusy": "{name} is already in another trade.",
+      "OwnBoth": "You play {name} too. Move items between their sheets instead.",
+      "PartnerAway": "Nobody playing {name} is online.",
+      "PlayerTradeGone": "That trade has ended.",
+      "OfferChanged": "The offer changed. Check it and accept again.",
+      "CoinsGone": "{name} no longer has those coins."
     },
     "Shop": {
       "Control": "Shop"
@@ -534,6 +541,21 @@
           "Next round is on me."
         ]
       }
+    },
+    "PlayerTrade": {
+      "Title": "{first} and {second}",
+      "Heading": "Trade between players",
+      "TheyOffer": "{name} offers",
+      "NothingYet": "Nothing yet.",
+      "Accepted": "Accepted",
+      "NotYet": "Not yet",
+      "Rule": "Both of you must accept. Any change to either offer resets both.",
+      "Waiting": "Waiting for {name} to accept.",
+      "Invited": "{name} wants to trade with you.",
+      "Closed": "{name} ended the trade.",
+      "Left": "{name} left, so the trade ended.",
+      "Card": "Trade between players",
+      "Who": "{first} and {second}"
     },
     "Market": {
       "Title": "Shops",
