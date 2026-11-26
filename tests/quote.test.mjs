@@ -20,6 +20,8 @@ describe("the balance", () => {
   it("counts kept change as sweetening once it reaches 5%", () => {
     assert.equal(settle({ ...base, takeItems: 1000, coinsGive: 1040, keepChange: true }).state, "even");
     assert.equal(settle({ ...base, takeItems: 1000, coinsGive: 1050, keepChange: true }).state, "generous");
+    assert.equal(settle({ ...base, takeItems: 1, coinsGive: 2, keepChange: true, sweetenMin: 200 }).state, "even");
+    assert.equal(settle({ ...base, takeItems: 1, coinsGive: 201, keepChange: true, sweetenMin: 200 }).state, "generous");
   });
 
   it("never returns change for goods, only for coins", () => {

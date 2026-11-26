@@ -62,7 +62,7 @@ export function attitudeMod(value, tables) {
   return Math.sign(mod) * Math.round(Math.abs(mod));
 }
 
-// Attitude gain for overpaying, in whole steps of the trade's value.
+// Attitude gain for overpaying, in whole steps of the trade's value, and never more than the overpay pays for.
 /**
  * @param {number} overpay
  * @param {number} tradeValue
@@ -71,7 +71,8 @@ export function attitudeMod(value, tables) {
 export function sweetenGain(overpay, tradeValue, tables) {
   if (overpay <= 0 || tradeValue <= 0) return 0;
   const steps = Math.floor(overpay / tradeValue / tables.sweeten.step + 1e-9);
-  return Math.min(steps * tables.sweeten.perStep, tables.sweeten.maxPerTrade);
+  const paidFor = Math.floor(overpay / (tables.sweeten.minPerPoint || 1));
+  return Math.min(steps * tables.sweeten.perStep, paidFor, tables.sweeten.maxPerTrade);
 }
 
 // Attitude after decay and a list of events.

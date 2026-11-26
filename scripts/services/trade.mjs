@@ -188,6 +188,7 @@ export async function prepareTrade(payload, sender, { requireBalance = true } = 
     coinsTake: coinsToCopper(coinsTake),
     keepChange: Boolean(payload.keepChange),
     sweetenStep: tables.attitude.sweeten.step,
+    sweetenMin: tables.attitude.sweeten.minPerPoint,
   });
   if (requireBalance && result.state === "short") throw new TradeError("KT.Error.Short");
 

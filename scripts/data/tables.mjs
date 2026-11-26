@@ -152,6 +152,8 @@ export const TABLES = {
       step: 0.05,
       perStep: 1,
       maxPerTrade: 5,
+      // Least overpay, in copper, for each point, so tiny trades cannot farm attitude.
+      minPerPoint: 2 * GP,
     },
     dailyGainCap: 10,
     decay: {

@@ -26,9 +26,10 @@ export function linesTotal(lines) {
  * @param {number} offer.coinsTake
  * @param {boolean} [offer.keepChange]
  * @param {number} offer.sweetenStep
+ * @param {number} [offer.sweetenMin]
  * @returns {Settlement}
  */
-export function settle({ giveItems, takeItems, coinsGive, coinsTake, keepChange = false, sweetenStep }) {
+export function settle({ giveItems, takeItems, coinsGive, coinsTake, keepChange = false, sweetenStep, sweetenMin = 0 }) {
   const customerGives = giveItems + coinsGive;
   const merchantGives = takeItems + coinsTake;
   const net = customerGives - merchantGives;
@@ -36,6 +37,6 @@ export function settle({ giveItems, takeItems, coinsGive, coinsTake, keepChange 
   const overpay = Math.max(0, net - change);
   let state = /** @type {Settlement["state"]} */ ("even");
   if (net < 0) state = "short";
-  else if (merchantGives > 0 && overpay >= merchantGives * sweetenStep) state = "generous";
+  else if (merchantGives > 0 && overpay >= Math.max(merchantGives * sweetenStep, sweetenMin)) state = "generous";
   return { customerGives, merchantGives, net, change, overpay, state };
 }

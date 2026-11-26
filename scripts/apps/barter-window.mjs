@@ -536,6 +536,7 @@ export default class BarterWindow extends HandlebarsApplication {
       coinsTake: values.coinsTake,
       keepChange: this.offer.keepChange,
       sweetenStep: getTables().attitude.sweeten.step,
+      sweetenMin: getTables().attitude.sweeten.minPerPoint,
     });
   }
 

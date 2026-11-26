@@ -96,23 +96,33 @@ describe("attitude events", () => {
 });
 
 describe("sweetening", () => {
+  const steps = { ...tables, sweeten: { ...tables.sweeten, minPerPoint: 1 } };
+
   it("gives +1 for each full 5% overpaid", () => {
-    assert.equal(sweetenGain(4, 100, tables), 0);
-    assert.equal(sweetenGain(5, 100, tables), 1);
-    assert.equal(sweetenGain(15, 100, tables), 3);
+    assert.equal(sweetenGain(4, 100, steps), 0);
+    assert.equal(sweetenGain(5, 100, steps), 1);
+    assert.equal(sweetenGain(15, 100, steps), 3);
   });
 
   it("gives at most +5 per trade", () => {
-    assert.equal(sweetenGain(90, 100, tables), 5);
+    assert.equal(sweetenGain(90, 100, steps), 5);
   });
 
   it("gives nothing for 1 cp on a large trade", () => {
-    assert.equal(sweetenGain(1, 100_000, tables), 0);
+    assert.equal(sweetenGain(1, 100_000, steps), 0);
     assert.equal(sweetenGain(0, 0, tables), 0);
   });
 
   it("counts as a gain toward the daily cap", () => {
     assert.equal(change(withValue(0), [{ gain: 5 }, "wanted", "wanted"]).change, 10);
+  });
+
+  it("needs real coin for each point, so a 1 cp tip on a 1 cp item earns nothing", () => {
+    assert.equal(sweetenGain(1, 1, tables), 0);
+    assert.equal(sweetenGain(199, 1, tables), 0);
+    assert.equal(sweetenGain(200, 1, tables), 1);
+    assert.equal(sweetenGain(1_000, 1, tables), 5);
+    assert.equal(sweetenGain(600, 10_000, tables), 1);
   });
 });
 
