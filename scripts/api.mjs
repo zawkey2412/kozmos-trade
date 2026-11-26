@@ -1,4 +1,5 @@
 // The public API at game.modules.get("kozmos-trade").api.
+import MarketList from "./apps/market-list.mjs";
 import { registerArchetype } from "./services/archetypes.mjs";
 import { PARTY_KEY, setAttitude } from "./services/attitude.mjs";
 import { openTrade } from "./services/open-trade.mjs";
@@ -8,6 +9,7 @@ import { generateStock, restock } from "./services/stock.mjs";
 export function createApi() {
   return Object.freeze({
     openTrade,
+    openMarket: () => MarketList.toggle(),
     registerArchetype,
     generateStock,
     restock,

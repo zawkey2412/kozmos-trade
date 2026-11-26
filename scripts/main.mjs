@@ -2,10 +2,12 @@ import { createApi } from "./api.mjs";
 import { registerArchetypeMenu } from "./apps/archetype-editor.mjs";
 import { registerFeatureMenu } from "./apps/feature-toggles.mjs";
 import BarterWindow from "./apps/barter-window.mjs";
+import MarketList from "./apps/market-list.mjs";
 import { MODULE_ID } from "./constants.mjs";
 import { registerApprovalHandlers, registerProposalCards, setCounterWindow } from "./services/approval.mjs";
 import { registerAppraisalHandlers } from "./services/appraisal.mjs";
 import { registerHaggleHandlers } from "./services/haggle.mjs";
+import { registerMarketListHandlers } from "./services/market-list.mjs";
 import { registerRollHandlers } from "./services/rolls.mjs";
 import { setTradeWindow } from "./services/open-trade.mjs";
 import { registerShowHandlers } from "./services/show.mjs";
@@ -20,12 +22,14 @@ import { registerGmControls } from "./ui/gm-controls.mjs";
 import { registerDragTrade } from "./ui/drag-trade.mjs";
 import { registerTradeLinks } from "./ui/enricher.mjs";
 import { registerProximityButton } from "./ui/proximity.mjs";
+import { registerSceneControls } from "./ui/scene-controls.mjs";
 
 Hooks.once("init", () => {
   registerSettings();
   registerArchetypeMenu();
   registerFeatureMenu();
   registerGmControls();
+  registerSceneControls();
   setTradeWindow((snapshot, customer) => BarterWindow.show(snapshot, customer));
   setCounterWindow((message) => BarterWindow.openCounter(message));
   registerProposalCards();
@@ -45,11 +49,15 @@ Hooks.once("ready", () => {
   registerAppraisalHandlers();
   registerShowHandlers();
   registerReceiptHandlers();
+  registerMarketListHandlers();
   registerAutoRestock();
   registerProximityButton();
   registerDragTrade();
   onBroadcast(MESSAGES.TRADE_DONE, ({ merchant }) => BarterWindow.refreshFor(merchant));
-  onBroadcast(MESSAGES.SHOP_CHANGED, ({ merchant }) => BarterWindow.refreshFor(merchant));
+  onBroadcast(MESSAGES.SHOP_CHANGED, ({ merchant }) => {
+    BarterWindow.refreshFor(merchant);
+    MarketList.refreshAll();
+  });
   onBroadcast(MESSAGES.PROPOSAL_RESULT, (result) => BarterWindow.onProposalResult(result));
   listen();
 });

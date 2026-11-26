@@ -4,6 +4,7 @@
     <div class="kt-party-text">
       <h2>{{header.customer.name}}</h2>
       <span class="kt-muted"><i class="fa-solid fa-coins" inert></i> {{header.customer.coins}}</span>
+      {{#if header.remote}}<span class="kt-muted"><i class="fa-solid fa-store" inert></i> {{localize "KT.Barter.Remote"}}</span>{{/if}}
     </div>
   </div>
 

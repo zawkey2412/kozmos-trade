@@ -1,0 +1,36 @@
+<section class="kt-market">
+  <div class="kt-market-tools">
+    <p class="hint">{{localize (ifThen gm "KT.Market.HintGM" "KT.Market.Hint")}}</p>
+    <button type="button" class="inline-control icon fa-solid fa-rotate" data-action="reload"
+            data-tooltip aria-label="{{localize "KT.Market.Reload"}}"></button>
+  </div>
+  {{#if rows.length}}
+  <ol class="kt-market-rows plain">
+    {{#each rows as |row|}}
+    <li class="kt-market-row{{#unless row.open}} disabled{{/unless}}" data-uuid="{{row.uuid}}">
+      <img src="{{row.img}}" alt="">
+      <div class="kt-market-text">
+        <strong>{{row.name}}</strong>
+        <span class="kt-muted">{{row.archetype}}{{#if row.scene}}, {{row.scene}}{{/if}}</span>
+        <span class="kt-muted">
+          <i class="fa-solid {{#if row.open}}fa-door-open{{else}}fa-door-closed{{/if}}" inert></i> {{row.status}}
+          <i class="fa-regular fa-calendar" inert></i> {{row.visited}}
+        </span>
+        {{#if row.note}}<span class="kt-muted kt-market-note">{{row.note}}</span>{{/if}}
+      </div>
+      <div class="kt-market-actions">
+        {{#if row.canTrade}}
+        <button type="button" data-action="trade"><i class="fa-solid fa-scale-balanced" inert></i> {{localize "KT.Market.Trade"}}</button>
+        {{/if}}
+        {{#if @root.gm}}
+        <button type="button" class="inline-control icon fa-solid fa-sliders" data-action="configure"
+                data-tooltip aria-label="{{localize "KT.Barter.Configure"}}"></button>
+        {{/if}}
+      </div>
+    </li>
+    {{/each}}
+  </ol>
+  {{else}}
+  <p class="kt-empty">{{empty}}</p>
+  {{/if}}
+</section>

@@ -13,6 +13,7 @@ import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
 import { shelf } from "./shop.mjs";
 import { MESSAGES, onRequest } from "./socket.mjs";
+import { metByParty, recordVisit } from "./visits.mjs";
 
 /**
  * @typedef {object} Session
@@ -22,6 +23,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {{ id: string, from?: string, price: number, quantity: number, day: number }[]} sold
  * @property {{ discount: number }} haggle
  * @property {boolean} shown
+ * @property {boolean} remote
  */
 
 /**
@@ -66,6 +68,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @typedef {object} Snapshot
  * @property {{ uuid: string, name: string, img: string, archetype: string, tier: string, executionMode: string, purse: number | null }} merchant
  * @property {string} customer
+ * @property {boolean} remote
  * @property {{ on: boolean, band: string, adjustment: number }} attitude
  * @property {HaggleView} haggle
  * @property {{ on: boolean, items: Record<string, "appraised" | "failed"> }} appraisal
@@ -118,16 +121,18 @@ export function sessionAt(merchant) {
 }
 
 /**
- * @param {{ merchant: string, customer: string }} payload
+ * @param {{ merchant: string, customer: string, remote?: boolean }} payload
  * @param {any} sender
  * @returns {Promise<Snapshot>}
  */
-async function openSession({ merchant, customer }, sender) {
+async function openSession({ merchant, customer, remote: fromAfar }, sender) {
   const pair = await resolvePair(merchant, customer, sender);
   const current = sessions.get(pair.merchant.uuid);
   const sameCustomer = current?.customer === pair.customer.uuid;
-  const shown = takeGrant(pair.merchant.uuid, sender.id) || Boolean(sameCustomer && current.shown && current.userId === sender.id);
-  if (!sender.isGM && !shown) checkAccess(pair.merchant, pair.customer);
+  const ownVisit = Boolean(sameCustomer && current.userId === sender.id);
+  const shown = takeGrant(pair.merchant.uuid, sender.id) || Boolean(ownVisit && current.shown);
+  const remote = (Boolean(fromAfar) && remoteAllowed(pair.merchant, sender)) || Boolean(ownVisit && current.remote);
+  if (!sender.isGM && !shown) checkAccess(pair.merchant, pair.customer, { distance: !remote });
   if (current && !sameCustomer && game.users.get(current.userId)?.active) {
     throw new TradeError("KT.Error.Busy", { name: current.customerName });
   }
@@ -139,8 +144,22 @@ async function openSession({ merchant, customer }, sender) {
     sold: sameCustomer ? current.sold : [],
     haggle: sameCustomer ? current.haggle : { discount: 0 },
     shown,
+    remote,
   });
+  if (!sameCustomer) await recordVisit(pair.merchant, pair.customer).catch((error) => console.error("Kozmos Trade | Visit failed", error));
   return snapshot(pair.merchant, pair.customer);
+}
+
+// A trade from the Shops list: only where the GM allows it, and only once the party has met the merchant.
+/**
+ * @param {any} merchant
+ * @param {any} sender
+ */
+function remoteAllowed(merchant, sender) {
+  if (sender.isGM) return true;
+  if (!merchantFlags(merchant).remoteTrade) throw new TradeError("KT.Error.NoRemote", { name: merchant.name });
+  if (!metByParty(merchant)) throw new TradeError("KT.Error.NotMet", { name: merchant.name });
+  return true;
 }
 
 /**
@@ -319,18 +338,20 @@ export async function resolvePair(merchantUuid, customerUuid, sender) {
 export function checkVisit(merchant, customer, sender) {
   if (sender.isGM) return;
   const session = sessions.get(merchant.uuid);
-  if (session?.customer === customer.uuid && session.shown) return;
-  checkAccess(merchant, customer);
+  const own = session?.customer === customer.uuid;
+  if (own && session.shown) return;
+  checkAccess(merchant, customer, { distance: !(own && session.remote) });
 }
 
 /**
  * @param {any} merchant
  * @param {any} customer
+ * @param {{ distance?: boolean }} [options]
  */
-export function checkAccess(merchant, customer) {
+export function checkAccess(merchant, customer, { distance = true } = {}) {
   const flags = merchantFlags(merchant);
   const tables = getTables();
-  const proximity = game.settings.get(MODULE_ID, SETTINGS.PROXIMITY);
+  const proximity = distance && game.settings.get(MODULE_ID, SETTINGS.PROXIMITY);
   const problem = accessProblem({
     enabled: flags.enabled,
     open: flags.open,
@@ -357,6 +378,7 @@ export function snapshot(merchant, customer) {
   const value = attitudeValue(merchant, customer);
   const band = attitudeBand(value, attitudeTables());
   const purseTop = tables.tiers[flags.tier]?.purse[1] ?? 1;
+  const session = sessions.get(merchant.uuid);
   return {
     merchant: {
       uuid: merchant.uuid,
@@ -368,6 +390,7 @@ export function snapshot(merchant, customer) {
       purse: feature("purseLimit") ? Math.min(1, coinsToCopper(purse(merchant)) / purseTop) : null,
     },
     customer: customer.uuid,
+    remote: Boolean(session?.customer === customer.uuid && session.remote),
     haggle: haggleView(merchant, customer),
     appraisal: appraisalView(merchant, customer),
     wanted: wantedView(merchant),

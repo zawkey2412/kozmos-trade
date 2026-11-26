@@ -31,6 +31,7 @@ export const MESSAGES = Object.freeze({
   ROLL_REPORT: "roll.report",
   SHOW_SHOP: "shop.show",
   SHOP_SHOWN: "shop.shown",
+  MARKET_LIST: "market.list",
 });
 
 /** @type {Map<string, RequestHandler>} */

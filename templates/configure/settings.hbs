@@ -9,6 +9,14 @@
     </div>
     <p class="hint">{{localize "KT.Configure.Open.Hint"}}</p>
   </div>
+
+  <div class="form-group">
+    <label for="{{rootId}}-remote">{{localize "KT.Configure.Remote.Label"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" id="{{rootId}}-remote" name="remoteTrade" {{checked shop.remoteTrade}}>
+    </div>
+    <p class="hint">{{localize "KT.Configure.Remote.Hint"}}</p>
+  </div>
   {{/if}}
 
   <div class="form-group">

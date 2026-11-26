@@ -116,6 +116,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     const shop = {
       enabled: true,
       open: enabled ? Boolean(data.open) : true,
+      remoteTrade: enabled ? Boolean(data.remoteTrade) : false,
       archetype: data.archetype,
       tier: data.tier,
       executionMode: data.executionMode,

@@ -44,6 +44,12 @@ describe("merchant flags", () => {
     assert.throws(() => cleanFlags(MerchantFlags, { wanted: [{ category: "weapon", uuid: "", multiplier: 0 }] }));
   });
 
+  it("keeps each character's last visit, and starts with none", () => {
+    assert.deepEqual(merchantFlags({}).visits, {});
+    assert.deepEqual(merchantFlags(withFlags({ visits: { abc: { last: 7200 } } })).visits, { abc: { last: 7200 } });
+    assert.equal(merchantFlags({}).remoteTrade, false);
+  });
+
   it("keeps attitude inside -50 to +50", () => {
     const clean = cleanFlags(MerchantFlags, { attitude: { abc: { ...attitude, value: 90 } } });
     assert.equal(clean.attitude.abc.value, 50);

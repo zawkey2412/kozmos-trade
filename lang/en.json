@@ -72,7 +72,9 @@
       "RevertCoins": "The coins from that trade have been spent, so it can't be reverted.",
       "SoldOut": "That item is no longer available.",
       "NoArchetype": "There is no archetype called {name}.",
-      "NoRoll": "The roll did not reach the GM. Try again."
+      "NoRoll": "The roll did not reach the GM. Try again.",
+      "NoRemote": "{name} only trades in person.",
+      "NotMet": "Visit {name} in person first."
     },
     "Shop": {
       "Control": "Shop"
@@ -83,6 +85,10 @@
       "Open": {
         "Label": "Open",
         "Hint": "Players can trade here only while the shop is open."
+      },
+      "Remote": {
+        "Label": "Trade from the Shops list",
+        "Hint": "Once the party has visited, players can trade here from the Shops list in the token controls, without walking up."
       },
       "Archetype": "Archetype",
       "Tier": "Wealth",
@@ -164,6 +170,7 @@
       "Proposed": "Proposal sent to the GM.",
       "CounterTitle": "Counter offer",
       "ToggleMode": "Switch between Instant Trade and GM Approval",
+      "Remote": "Trading from the Shops list",
       "Tab": {
         "shelf": "Shelf",
         "buyback": "Buy back"
@@ -527,6 +534,23 @@
           "Next round is on me."
         ]
       }
+    },
+    "Market": {
+      "Title": "Shops",
+      "Hint": "Merchants your party has visited. Some also trade from afar.",
+      "HintGM": "Every shop in the world. Players see only the ones their party has visited.",
+      "Reload": "Check again",
+      "Trade": "Trade",
+      "Open": "Open",
+      "Closed": "Closed",
+      "InPerson": "Trades in person only.",
+      "RemoteOn": "Players can trade from this list.",
+      "NotVisited": "Not visited yet",
+      "VisitedToday": "Visited today",
+      "VisitedYesterday": "Visited yesterday",
+      "VisitedDays": "Visited {days} days ago",
+      "Empty": "Your party has not visited any merchants yet.",
+      "EmptyGM": "No shops yet. Use the scales button on an NPC's token to make one."
     },
     "Show": {
       "Control": "Show to players",

@@ -263,7 +263,7 @@ export default class BarterWindow extends HandlebarsApplication {
 
   async refreshSnapshot() {
     try {
-      const snapshot = await request(MESSAGES.SESSION_OPEN, { merchant: this.snapshot.merchant.uuid, customer: this.customer.uuid });
+      const snapshot = await request(MESSAGES.SESSION_OPEN, { merchant: this.snapshot.merchant.uuid, customer: this.customer.uuid, remote: this.snapshot.remote });
       this.updateSnapshot(snapshot);
       this.purseCheck = null;
       if (this.rendered) this.render({ parts: ["header", ...OFFER_PARTS] });
@@ -304,6 +304,7 @@ export default class BarterWindow extends HandlebarsApplication {
       mode: game.i18n.localize(`KT.ExecutionMode.${merchant.executionMode}`),
       modeIcon: merchant.executionMode === "approval" ? "fa-solid fa-user-check" : "fa-solid fa-bolt",
       counter: Boolean(this.counter),
+      remote: this.snapshot.remote,
     };
   }
 

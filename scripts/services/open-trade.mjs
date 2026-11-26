@@ -13,18 +13,20 @@ export function setTradeWindow(open) {
   showWindow = open;
 }
 
+// A remote trade skips the distance check, where the shop allows it.
 /**
  * @param {any | string | null | undefined} customer
  * @param {any | string} merchant
+ * @param {{ remote?: boolean }} [options]
  */
-export async function openTrade(customer, merchant) {
+export async function openTrade(customer, merchant, { remote = false } = {}) {
   try {
     if (typeof customer === "string") customer = await foundry.utils.fromUuid(customer);
     customer ??= await pickCustomer();
     if (!customer) return null;
     const merchantUuid = typeof merchant === "string" ? merchant : merchant?.uuid;
     /** @type {Snapshot} */
-    const snapshot = await request(MESSAGES.SESSION_OPEN, { merchant: merchantUuid, customer: customer.uuid });
+    const snapshot = await request(MESSAGES.SESSION_OPEN, { merchant: merchantUuid, customer: customer.uuid, remote });
     return showWindow ? showWindow(snapshot, customer) : snapshot;
   } catch (error) {
     warn(error);
