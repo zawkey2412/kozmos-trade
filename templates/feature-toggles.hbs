@@ -1,13 +1,42 @@
 <section class="kt-feature-list">
-  <p class="hint">{{intro}}</p>
-  {{#each features as |feature|}}
-  <div class="form-group">
-    <label for="{{@root.rootId}}-{{feature.name}}">{{localize feature.label}}</label>
-    <div class="form-fields">
-      <span class="kt-preset{{#if feature.changed}} kt-changed{{/if}}">{{feature.preset}}</span>
-      <input type="checkbox" id="{{@root.rootId}}-{{feature.name}}" name="{{feature.name}}" {{checked feature.checked}}>
+  <fieldset>
+    <legend>{{localize "KT.Settings.Mode.Name"}}</legend>
+    <div class="form-group">
+      <label for="{{@root.rootId}}-mode">{{localize "KT.Features.Preset"}}</label>
+      <div class="form-fields">
+        <select id="{{@root.rootId}}-mode" name="mode">
+          {{selectOptions modes selected=mode localize=true}}
+        </select>
+      </div>
+      <p class="hint">{{intro}}</p>
     </div>
-    <p class="hint">{{localize feature.hint}}</p>
-  </div>
-  {{/each}}
+  </fieldset>
+
+  <fieldset>
+    <legend>{{localize "KT.Features.Legend"}}</legend>
+    {{#each features as |feature|}}
+    <div class="form-group">
+      <label for="{{@root.rootId}}-{{feature.name}}">{{localize feature.label}}</label>
+      <div class="form-fields">
+        <span class="kt-preset{{#if feature.changed}} kt-changed{{/if}}">{{feature.preset}}</span>
+        <input type="checkbox" id="{{@root.rootId}}-{{feature.name}}" name="features.{{feature.name}}" {{checked feature.checked}}>
+      </div>
+      <p class="hint">{{localize feature.hint}}</p>
+    </div>
+    {{#if feature.rules.length}}
+    <div class="kt-feature-rules" data-rules-for="{{feature.name}}">
+      {{#each feature.rules as |rule|}}
+      {{> "kt-rule-field" rule}}
+      {{/each}}
+    </div>
+    {{/if}}
+    {{/each}}
+  </fieldset>
+
+  <fieldset>
+    <legend>{{localize "KT.Features.Trading"}}</legend>
+    {{#each trading as |rule|}}
+    {{> "kt-rule-field" rule}}
+    {{/each}}
+  </fieldset>
 </section>

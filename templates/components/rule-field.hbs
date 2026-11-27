@@ -1,0 +1,13 @@
+<div class="form-group">
+  <label for="{{id}}">{{localize label}}</label>
+  <div class="form-fields">
+    {{#if choices}}
+    <select id="{{id}}" name="{{name}}">
+      {{selectOptions choices selected=value localize=true}}
+    </select>
+    {{else}}
+    <input type="checkbox" id="{{id}}" name="{{name}}" {{checked value}}>
+    {{/if}}
+  </div>
+  <p class="hint">{{localize hint}}</p>
+</div>

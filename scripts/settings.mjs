@@ -12,7 +12,7 @@ export function registerSettings() {
     name: "KT.Settings.Mode.Name",
     hint: "KT.Settings.Mode.Hint",
     scope: "world",
-    config: true,
+    config: false,
     type: new foundry.data.fields.StringField({
       required: true,
       blank: false,
@@ -29,7 +29,7 @@ export function registerSettings() {
     name: "KT.Settings.Proximity.Name",
     hint: "KT.Settings.Proximity.Hint",
     scope: "world",
-    config: true,
+    config: false,
     type: new foundry.data.fields.BooleanField({ initial: false }),
   });
 
@@ -37,7 +37,7 @@ export function registerSettings() {
     name: "KT.Settings.NoCombat.Name",
     hint: "KT.Settings.NoCombat.Hint",
     scope: "world",
-    config: true,
+    config: false,
     type: new foundry.data.fields.BooleanField({ initial: true }),
   });
 
@@ -45,7 +45,7 @@ export function registerSettings() {
     name: "KT.Settings.AttitudeScope.Name",
     hint: "KT.Settings.AttitudeScope.Hint",
     scope: "world",
-    config: true,
+    config: false,
     type: new foundry.data.fields.StringField({
       required: true,
       blank: false,
@@ -58,7 +58,7 @@ export function registerSettings() {
     name: "KT.Settings.AttitudeDecay.Name",
     hint: "KT.Settings.AttitudeDecay.Hint",
     scope: "world",
-    config: true,
+    config: false,
     type: new foundry.data.fields.BooleanField({ initial: false }),
   });
 
@@ -66,7 +66,7 @@ export function registerSettings() {
     name: "KT.Settings.Reactions.Name",
     hint: "KT.Settings.Reactions.Hint",
     scope: "world",
-    config: true,
+    config: false,
     type: new foundry.data.fields.BooleanField({ initial: true }),
   });
 
@@ -74,7 +74,7 @@ export function registerSettings() {
     name: "KT.Settings.Greeting.Name",
     hint: "KT.Settings.Greeting.Hint",
     scope: "world",
-    config: true,
+    config: false,
     type: new foundry.data.fields.BooleanField({ initial: false }),
   });
 
@@ -82,7 +82,7 @@ export function registerSettings() {
     name: "KT.Settings.TheftApproval.Name",
     hint: "KT.Settings.TheftApproval.Hint",
     scope: "world",
-    config: true,
+    config: false,
     type: new foundry.data.fields.StringField({
       required: true,
       blank: false,

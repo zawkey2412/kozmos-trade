@@ -3,7 +3,7 @@
     "Settings": {
       "Mode": {
         "Name": "Complexity",
-        "Hint": "How much rules weight a trade carries. Each feature can still be turned on or off on its own.",
+        "Hint": "How much rules weight a trade carries.",
         "Simple": "Simple",
         "Standard": "Standard",
         "Crunchy": "Crunchy"
@@ -430,10 +430,10 @@
       "Tooltip": "Trade with {name}"
     },
     "Features": {
-      "Title": "Feature toggles",
+      "Title": "Features",
       "Open": "Choose features",
-      "Hint": "Turn single features on or off on top of the complexity preset.",
-      "Intro": "Toggles start from the {mode} preset. Changes are kept for each complexity, so switching back finds them again.",
+      "Hint": "Pick a complexity preset, turn single features on or off, and set the rules for every trade.",
+      "Intro": "{mode} turns the features below on or off. Your changes are kept for each preset, so switching back finds them again.",
       "PresetOn": "{mode}: on",
       "PresetOff": "{mode}: off",
       "Reset": "Back to preset",
@@ -467,8 +467,11 @@
       },
       "market": {
         "Name": "Market modifiers",
-        "Hint": "Temporary price rules for a scene or the whole world."
-      }
+        "Hint": "Temporary price rules for a scene or the whole world. Edit them from the Shops window."
+      },
+      "Preset": "Preset",
+      "Legend": "Features",
+      "Trading": "Every trade"
     },
     "Haggle": {
       "Button": "Haggle",
@@ -704,10 +707,9 @@
       "EmptyGM": "No shops yet. Select an NPC token on the map to set it up as a shop.",
       "Rules": {
         "Title": "Market rules",
-        "Open": "Edit market rules",
         "Hint": "Temporary price changes for the whole world or one scene, such as war or a festival.",
         "Intro": "Each rule changes prices both ways for the goods it names, until its end date. Players see every rule in force under the balance.",
-        "Off": "Market modifiers are off in this world, so these rules do nothing. Turn them on in Feature toggles.",
+        "Off": "Market modifiers are off in this world, so these rules do nothing. Turn them on in Features.",
         "Empty": "No market rules yet.",
         "World": "Whole world",
         "ThisScene": "This scene: {name}",

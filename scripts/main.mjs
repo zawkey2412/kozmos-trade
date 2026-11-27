@@ -4,7 +4,6 @@ import { registerFeatureMenu } from "./apps/feature-toggles.mjs";
 import BarterWindow from "./apps/barter-window.mjs";
 import JoinWindow from "./apps/join-window.mjs";
 import MarketList from "./apps/market-list.mjs";
-import { registerMarketRulesMenu } from "./apps/market-rules.mjs";
 import PlayerTradeWindow from "./apps/player-trade.mjs";
 import { MODULE_ID } from "./constants.mjs";
 import { registerApprovalHandlers, registerProposalCards, setCounterWindow } from "./services/approval.mjs";
@@ -35,7 +34,6 @@ Hooks.once("init", () => {
   registerSettings();
   registerArchetypeMenu();
   registerFeatureMenu();
-  registerMarketRulesMenu();
   registerGmControls();
   registerSceneControls();
   setTradeWindow((snapshot, customer) => BarterWindow.show(snapshot, customer));

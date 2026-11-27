@@ -8,3 +8,13 @@
 .kt-feature-toggles .kt-preset.kt-changed {
   color: var(--kt-info);
 }
+/* A feature's own rules, set in under it. */
+.kt-feature-toggles .kt-feature-rules {
+  margin-left: var(--kt-space-large);
+  padding-left: var(--kt-space);
+  border-left: var(--kt-border);
+}
+
+.kt-feature-toggles .window-content > .kt-feature-list {
+  overflow-y: auto;
+}

@@ -111,14 +111,3 @@ function endsLabel(until, now) {
   if (days === 0) return game.i18n.localize("KT.Market.Rules.EndsToday");
   return game.i18n.localize("KT.Market.Rules.EndsIn", { days: new Intl.NumberFormat(game.i18n.lang).format(days) });
 }
-
-export function registerMarketRulesMenu() {
-  game.settings.registerMenu(MODULE_ID, "marketRules", {
-    name: "KT.Market.Rules.Title",
-    label: "KT.Market.Rules.Open",
-    hint: "KT.Market.Rules.Hint",
-    icon: "fa-solid fa-chart-line",
-    type: /** @type {any} */ (MarketRules),
-    restricted: true,
-  });
-}
