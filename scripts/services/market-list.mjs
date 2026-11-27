@@ -4,7 +4,6 @@ import { clock } from "../adapter/dnd5e.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { daysSince } from "../engine/visits.mjs";
 import { archetypeLabel } from "./archetypes.mjs";
-import { identityOf } from "./identity.mjs";
 import { MESSAGES, onRequest } from "./socket.mjs";
 import { allShops } from "./stock.mjs";
 import { partyLastVisit } from "./visits.mjs";
@@ -19,7 +18,6 @@ import { partyLastVisit } from "./visits.mjs";
  * @property {boolean} open
  * @property {boolean} remote
  * @property {number | null} days
- * @property {"unique" | "generic"} kind
  * @property {{ scene: string, token: string } | null} place
  */
 
@@ -50,7 +48,6 @@ function listMarket(payload, sender) {
       open: flags.open,
       remote: flags.remoteTrade,
       days: last === null ? null : daysSince(last, now),
-      kind: identityOf(shop),
       place: sender.isGM && token ? { scene: token.parent.id, token: token.id } : null,
     });
   }

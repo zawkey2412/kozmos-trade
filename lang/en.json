@@ -683,20 +683,16 @@
     },
     "Market": {
       "Title": "Shops",
-      "Hint": "Merchants your party has visited. Some also trade from afar.",
-      "HintGM": "Every shop in the world. Players see only the shops their party has visited.",
-      "Reload": "Check again",
       "Trade": "Trade",
       "Open": "Open",
       "Closed": "Closed",
       "InPerson": "Trades in person only.",
-      "RemoteOn": "Players can trade from this list.",
       "NotVisited": "Not visited yet",
       "VisitedToday": "Visited today",
       "VisitedYesterday": "Visited yesterday",
       "VisitedDays": "Visited {days} days ago",
       "Empty": "Your party has not visited any merchants yet.",
-      "EmptyGM": "No shops yet. Select an NPC token on the map, then click Set up as a shop above.",
+      "EmptyGM": "No shops yet. Select an NPC token on the map to set it up as a shop.",
       "Rules": {
         "Title": "Market rules",
         "Open": "Edit market rules",
@@ -729,23 +725,26 @@
         "BadDays": "The length must be more than 0 days, or empty."
       },
       "ToolGM": "Shops: set up, open and manage shops",
-      "AllShops": "All shops",
       "Search": "Search shops",
       "NoMatch": "No shop matches that name.",
       "Find": "Show on the map",
-      "ToggleOpen": "Open or close this shop",
-      "Kind": {
-        "unique": "One person",
-        "generic": "A kind of merchant"
+      "Group": {
+        "here": "This scene",
+        "elsewhere": "Other scenes",
+        "nowhere": "Not on a map",
+        "visited": "Shops you've visited"
       },
-      "Selected": {
-        "Title": "Selected token",
-        "None": "Select an NPC token on the map to set it up as a shop, or to open or configure its shop.",
-        "Many": "Select only one token.",
-        "NotNpc": "Only NPCs can be shops. Select an NPC token.",
-        "Shop": "{archetype}, {state}, {kind}",
-        "NotShop": "Not a shop yet."
-      }
+      "SetUp": "{name} is not a shop yet.",
+      "RulesLine": {
+        "None": "No market rules in force.",
+        "One": "1 market rule in force.",
+        "Many": "{count} market rules in force.",
+        "Edit": "Edit"
+      },
+      "Remote": "Trades from afar",
+      "RowHint": "Configure shop. Right-click for more.",
+      "OpenHint": "Open. Click to close it.",
+      "ClosedHint": "Closed. Click to open it."
     },
     "Visit": {
       "TradedToday": "Your last trade here was today.",

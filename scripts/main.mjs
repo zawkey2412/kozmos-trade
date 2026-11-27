@@ -69,6 +69,7 @@ Hooks.once("ready", () => {
   registerDragTrade();
   onBroadcast(MESSAGES.TRADE_DONE, ({ merchant, burst }) => {
     BarterWindow.refreshFor(merchant);
+    MarketList.refreshAll();
     if (burst) coinBurst(merchant);
   });
   onBroadcast(MESSAGES.SHOP_CHANGED, ({ merchant }) => {
@@ -81,6 +82,9 @@ Hooks.once("ready", () => {
     JoinWindow.onPool(change);
   });
   onBroadcast(MESSAGES.SESSION_ENDED, (payload) => JoinWindow.ended(payload));
-  onBroadcast(MESSAGES.MARKET_CHANGED, () => BarterWindow.refreshAll());
+  onBroadcast(MESSAGES.MARKET_CHANGED, () => {
+    BarterWindow.refreshAll();
+    MarketList.refreshAll();
+  });
   listen();
 });

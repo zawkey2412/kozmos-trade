@@ -12,7 +12,7 @@ import { openTrade } from "../services/open-trade.mjs";
 import { ledgerOf, revertEntry } from "../services/receipts.mjs";
 import { postShopCard } from "../services/shop-card.mjs";
 import { showShop } from "../services/show.mjs";
-import { generateStock, importStock, rerollWanted } from "../services/stock.mjs";
+import { generateStock, importStock, rerollWanted, restock } from "../services/stock.mjs";
 import { wantedLabels, wantedView } from "../services/session.mjs";
 import { baseActorOf, IDENTITY_ICONS, identityOf, makeGeneric, makeUnique, uniqueOptions } from "../services/identity.mjs";
 import { removeShop, saveShop, shelf } from "../services/shop.mjs";
@@ -95,6 +95,23 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     await removeShop(actor, { forget: Boolean(data.forget) }).catch((error) => warn(error));
     ui.notifications.info(game.i18n.localize("KT.Configure.Removed", { name: actor.name }));
     return true;
+  }
+
+  // Asks before rolling a new shelf with the shop's own archetype and wealth.
+  /** @param {any} actor */
+  static async confirmRestock(actor) {
+    const ok = await foundry.applications.api.DialogV2.confirm(/** @type {any} */ ({
+      window: { title: "KT.Stock.Restock", icon: "fa-solid fa-dice" },
+      content: `<p>${game.i18n.localize("KT.Stock.RestockConfirm")}</p>`,
+      rejectClose: false,
+    }));
+    if (!ok) return false;
+    const done = await restock(actor).then(() => true, (error) => {
+      warn(error);
+      return false;
+    });
+    if (done) ui.notifications.info(game.i18n.localize("KT.Stock.Restocked", { name: actor.name }));
+    return done;
   }
 
   async _onRender(context, options) {

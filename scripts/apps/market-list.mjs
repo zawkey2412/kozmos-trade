@@ -1,19 +1,22 @@
-// The Shops window: for players, merchants the party has met. For the GM, every shop and the selected NPC token, in one place.
+// The Shops window: for players, merchants the party has met. For the GM, every shop by scene, and the selected NPC token.
 import { MODULE_ID } from "../constants.mjs";
+import { activeRules } from "../engine/market.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { warn } from "../services/errors.mjs";
-import { identityOf } from "../services/identity.mjs";
-import { openTrade, pickCustomer } from "../services/open-trade.mjs";
-import { archetypeLabel } from "../services/archetypes.mjs";
+import { openTrade } from "../services/open-trade.mjs";
+import { sceneRules, worldRules } from "../services/market-rules.mjs";
+import { postShopCard } from "../services/shop-card.mjs";
+import { showShop } from "../services/show.mjs";
 import { canBeShop, isShop, saveShop } from "../services/shop.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
+import { feature } from "../settings.mjs";
 import ConfigureShop from "./configure-shop.mjs";
 import MarketRules from "./market-rules.mjs";
 import { HandlebarsApplication } from "./base.mjs";
 
 /** @import { MarketRow } from "../services/market-list.mjs"; */
 
-const KIND_ICONS = { unique: "fa-user", generic: "fa-users" };
+const GM_GROUPS = ["here", "elsewhere", "nowhere"];
 
 export default class MarketList extends HandlebarsApplication {
   static DEFAULT_OPTIONS = {
@@ -26,16 +29,13 @@ export default class MarketList extends HandlebarsApplication {
       configure: MarketList.#onConfigure,
       find: MarketList.#onFind,
       toggleOpen: MarketList.#onToggleOpen,
-      tradeSelected: MarketList.#onTradeSelected,
-      configureSelected: MarketList.#onConfigureSelected,
-      reload: MarketList.#onReload,
+      setUp: MarketList.#onSetUp,
       rules: MarketList.#onRules,
     },
   };
 
   static PARTS = {
-    selected: { template: `modules/${MODULE_ID}/templates/market-selected.hbs` },
-    list: { template: `modules/${MODULE_ID}/templates/market-list.hbs`, scrollable: [".kt-market-rows"] },
+    list: { template: `modules/${MODULE_ID}/templates/market-list.hbs`, scrollable: [".kt-market-scroll"] },
   };
 
   static toggle() {
@@ -53,20 +53,19 @@ export default class MarketList extends HandlebarsApplication {
   constructor(options = {}) {
     super(options);
     this.search = "";
-    /** @type {number | null} */
-    this.selectionHook = null;
-    this.redrawSelected = foundry.utils.debounce(() => this.rendered && this.render({ parts: ["selected"] }), 100);
-  }
-
-  _configureRenderParts(options) {
-    const parts = super._configureRenderParts(options);
-    if (!game.user.isGM) delete parts.selected;
-    return parts;
+    /** @type {string | null} */
+    this.shownSelection = null;
+    /** @type {[string, number][]} */
+    this.hooks = [];
+    this.redraw = foundry.utils.debounce(() => this.rendered && this.render(), 100);
   }
 
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
-    if (game.user.isGM) this.selectionHook = Hooks.on("controlToken", () => this.redrawSelected());
+    if (game.user.isGM) {
+      for (const hook of ["controlToken", "canvasReady"]) this.hooks.push([hook, Hooks.on(hook, () => this.redraw())]);
+      new foundry.applications.ux.ContextMenu.implementation(this.element, ".kt-market-row", this.#rowMenu(), { jQuery: false, fixed: true });
+    }
     this.element.addEventListener("input", (event) => {
       const target = /** @type {HTMLInputElement} */ (event.target);
       if (!target.matches(".kt-market-search")) return;
@@ -78,64 +77,98 @@ export default class MarketList extends HandlebarsApplication {
   async _onRender(context, options) {
     await super._onRender(context, options);
     this.#applySearch();
+    const selected = /** @type {HTMLElement | null} */ (this.element.querySelector(".kt-market-row.active"));
+    const uuid = selected?.dataset.uuid ?? null;
+    if (selected && uuid !== this.shownSelection) selected.scrollIntoView({ block: "nearest" });
+    this.shownSelection = uuid;
   }
 
   async _onClose(options) {
     await super._onClose(options);
-    if (this.selectionHook !== null) Hooks.off("controlToken", this.selectionHook);
+    for (const [hook, id] of this.hooks) Hooks.off(hook, id);
+    this.hooks = [];
   }
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     /** @type {MarketRow[]} */
     let rows = [];
-    let problem = null;
     try {
       rows = await request(MESSAGES.MARKET_LIST);
     } catch (error) {
-      problem = error;
+      warn(error);
     }
-    if (problem) warn(problem);
     const gm = game.user.isGM;
+    const shown = rows.map((row) => this.#row(row));
     return Object.assign(context, {
       gm,
       search: this.search,
-      ...(gm ? this.#selectedContext() : {}),
-      rows: rows.map((row) => ({
-        ...row,
-        status: game.i18n.localize(row.open ? "KT.Market.Open" : "KT.Market.Closed"),
-        visited: visitedLabel(row.days),
-        kindIcon: KIND_ICONS[row.kind],
-        kindLabel: game.i18n.localize(`KT.Market.Kind.${row.kind}`),
-        canTrade: gm || (row.open && row.remote),
-        note: gm ? (row.remote ? game.i18n.localize("KT.Market.RemoteOn") : null) : row.open && !row.remote ? game.i18n.localize("KT.Market.InPerson") : null,
-      })),
+      setup: gm ? setupCandidate() : null,
+      rules: gm && feature("market") ? rulesLine() : null,
+      groups: gm ? this.#gmGroups(shown) : [{ id: "visited", label: game.i18n.localize("KT.Market.Group.visited"), rows: shown }],
+      any: shown.length > 0,
       empty: game.i18n.localize(gm ? "KT.Market.EmptyGM" : "KT.Market.Empty"),
     });
   }
 
-  // The one selected NPC token, or a hint about what to select.
-  #selectedContext() {
-    const actor = selectedActor();
-    if (!actor) {
-      const count = selectedTokens().length;
-      return { selected: null, selectedHint: game.i18n.localize(count > 1 ? "KT.Market.Selected.Many" : count ? "KT.Market.Selected.NotNpc" : "KT.Market.Selected.None") };
-    }
-    const shop = isShop(actor);
-    const flags = merchantFlags(actor);
-    const status = shop
-      ? game.i18n.localize("KT.Market.Selected.Shop", { archetype: archetypeLabel(flags.archetype), state: game.i18n.localize(flags.open ? "KT.Market.Open" : "KT.Market.Closed"), kind: game.i18n.localize(`KT.Market.Kind.${identityOf(actor)}`) })
-      : game.i18n.localize("KT.Market.Selected.NotShop");
-    return { selected: { name: actor.name, img: actor.img, shop, status } };
+  /** @param {MarketRow} row */
+  #row(row) {
+    const gm = game.user.isGM;
+    const scene = /** @type {any} */ (canvas)?.scene?.id ?? null;
+    return {
+      ...row,
+      status: game.i18n.localize(row.open ? "KT.Market.Open" : "KT.Market.Closed"),
+      openHint: game.i18n.localize(row.open ? "KT.Market.OpenHint" : "KT.Market.ClosedHint"),
+      visited: visitedLabel(row.days),
+      group: !row.place ? "nowhere" : row.place.scene === scene ? "here" : "elsewhere",
+      selected: gm && row.uuid === selectedShopUuid(),
+      canTrade: gm || (row.open && row.remote),
+      note: !gm && row.open && !row.remote ? game.i18n.localize("KT.Market.InPerson") : null,
+    };
+  }
+
+  // This scene's shops first, then other scenes, then shops with no token anywhere.
+  /** @param {(MarketRow & { group: string })[]} rows */
+  #gmGroups(rows) {
+    return GM_GROUPS.map((id) => ({ id, label: game.i18n.localize(`KT.Market.Group.${id}`), rows: rows.filter((row) => row.group === id), elsewhere: id === "elsewhere" })).filter((group) => group.rows.length);
+  }
+
+  // The right-click menu on a shop row.
+  #rowMenu() {
+    const actorOf = async (/** @type {HTMLElement} */ li) => /** @type {any} */ (await foundry.utils.fromUuid(li.dataset.uuid ?? ""));
+    const run = (/** @type {(actor: any) => unknown} */ act) => async (/** @type {Event} */ event, /** @type {HTMLElement} */ li) => {
+      const actor = await actorOf(li);
+      if (actor) await act(actor);
+    };
+    return [
+      { label: "KT.Shop.Configure", icon: "fa-solid fa-sliders", onClick: run((actor) => ConfigureShop.open(actor)) },
+      { label: "KT.Shop.Trade", icon: "fa-solid fa-scale-balanced", onClick: run((actor) => openTrade(null, actor, { remote: true })) },
+      { label: "KT.Show.Control", icon: "fa-solid fa-eye", onClick: run((actor) => showShop(actor)) },
+      {
+        label: "KT.Configure.PostCard",
+        icon: "fa-solid fa-bullhorn",
+        onClick: run(async (actor) => {
+          await postShopCard(actor);
+          ui.notifications.info("KT.Configure.CardPosted", { localize: true });
+        }),
+      },
+      { label: "KT.Stock.Restock", icon: "fa-solid fa-dice", onClick: run((actor) => ConfigureShop.confirmRestock(actor)) },
+      { label: "KT.Configure.Remove", icon: "fa-solid fa-store-slash", onClick: run((actor) => ConfigureShop.confirmRemove(actor)) },
+    ];
   }
 
   #applySearch() {
     const text = this.search.trim().toLocaleLowerCase();
     let shown = 0;
-    for (const row of this.element.querySelectorAll(".kt-market-row")) {
-      const match = !text || (/** @type {HTMLElement} */ (row).dataset.name ?? "").toLocaleLowerCase().includes(text);
-      row.classList.toggle("hidden", !match);
-      if (match) shown++;
+    for (const group of this.element.querySelectorAll(".kt-market-group")) {
+      let inGroup = 0;
+      for (const row of group.querySelectorAll(".kt-market-row")) {
+        const match = !text || (/** @type {HTMLElement} */ (row).dataset.name ?? "").toLocaleLowerCase().includes(text);
+        row.classList.toggle("hidden", !match);
+        if (match) inGroup++;
+      }
+      group.classList.toggle("hidden", inGroup === 0);
+      shown += inGroup;
     }
     this.element.querySelector(".kt-market-nomatch")?.classList.toggle("hidden", shown > 0);
   }
@@ -147,13 +180,7 @@ export default class MarketList extends HandlebarsApplication {
    */
   static async #onTrade(event, target) {
     const uuid = /** @type {HTMLElement} */ (target.closest("[data-uuid]")).dataset.uuid;
-    if (!game.user.isGM) return openTrade(null, uuid, { remote: true });
-    try {
-      const customer = await pickCustomer();
-      if (customer) await openTrade(customer, uuid, { remote: true });
-    } catch (error) {
-      warn(error);
-    }
+    return openTrade(null, uuid, { remote: true });
   }
 
   /**
@@ -198,26 +225,9 @@ export default class MarketList extends HandlebarsApplication {
   }
 
   /** @this {MarketList} */
-  static async #onTradeSelected() {
+  static #onSetUp() {
     const actor = selectedActor();
-    if (!actor) return;
-    try {
-      const customer = await pickCustomer();
-      if (customer) await openTrade(customer, actor);
-    } catch (error) {
-      warn(error);
-    }
-  }
-
-  /** @this {MarketList} */
-  static #onConfigureSelected() {
-    const actor = selectedActor();
-    if (actor) ConfigureShop.open(actor);
-  }
-
-  /** @this {MarketList} */
-  static #onReload() {
-    this.render();
+    if (actor && !isShop(actor)) ConfigureShop.open(actor);
   }
 
   /** @this {MarketList} */
@@ -226,16 +236,32 @@ export default class MarketList extends HandlebarsApplication {
   }
 }
 
-function selectedTokens() {
-  // The tokens layer has no generated types.
-  return /** @type {any[]} */ (/** @type {any} */ (canvas).tokens?.controlled ?? []);
-}
-
 // The NPC behind the one selected token.
 function selectedActor() {
-  const tokens = selectedTokens();
+  // The tokens layer has no generated types.
+  const tokens = /** @type {any[]} */ (/** @type {any} */ (canvas).tokens?.controlled ?? []);
   const actor = tokens.length === 1 ? tokens[0].actor : null;
   return actor && canBeShop(actor) ? actor : null;
+}
+
+function selectedShopUuid() {
+  const actor = selectedActor();
+  return actor && isShop(actor) ? actor.uuid : null;
+}
+
+// The selected NPC token, when it is not a shop yet.
+function setupCandidate() {
+  const actor = selectedActor();
+  if (!actor || isShop(actor)) return null;
+  return { name: actor.name, img: actor.img, text: game.i18n.localize("KT.Market.SetUp", { name: actor.name }) };
+}
+
+// How many market rules are in force for the world and the viewed scene.
+function rulesLine() {
+  const scene = /** @type {any} */ (canvas)?.scene ?? null;
+  const count = activeRules([...worldRules(), ...sceneRules(scene)], game.time.worldTime).length;
+  const key = count === 0 ? "None" : count === 1 ? "One" : "Many";
+  return { text: game.i18n.localize(`KT.Market.RulesLine.${key}`, { count: new Intl.NumberFormat(game.i18n.lang).format(count) }) };
 }
 
 /** @param {number | null} days */
