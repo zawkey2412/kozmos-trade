@@ -156,6 +156,20 @@ export const TABLES = {
     // Skill a merchant rolls to spot stolen goods, against the seller's passive skill.
     recognize: { merchant: "ins", seller: "dec" },
   },
+  effects: {
+    sounds: {
+      stage: "modules/kozmos-trade/sounds/coin.wav",
+      trade: "modules/kozmos-trade/sounds/coins.wav",
+    },
+    // Coin burst over the merchant's token: coin radius in pixels, particles, their life in milliseconds, speed in pixels a second, and size.
+    burst: {
+      radius: 8,
+      count: 36,
+      lifetime: [600, 1100],
+      speed: [140, 320],
+      scale: [0.12, 0.3],
+    },
+  },
   appraisal: {
     skills: ["inv", "arc", "nat"],
     dc: 12,

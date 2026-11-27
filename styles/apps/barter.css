@@ -354,6 +354,41 @@
   color: var(--kt-generous);
 }
 
+/* The scale swings when the balance changes state. */
+.kt-barter .kt-scale.tipping {
+  animation: kt-tip var(--kt-tip-duration) ease-out;
+}
+
+.kt-barter .kt-balance.short .kt-scale {
+  --kt-tip-from: calc(var(--kt-tip-angle) * -1);
+}
+
+.kt-barter .kt-balance.even .kt-scale,
+.kt-barter .kt-balance.generous .kt-scale {
+  --kt-tip-from: var(--kt-tip-angle);
+}
+
+@keyframes kt-tip {
+  0% {
+    rotate: var(--kt-tip-from, 0deg);
+  }
+  40% {
+    rotate: calc(var(--kt-tip-from, 0deg) * -0.6);
+  }
+  70% {
+    rotate: calc(var(--kt-tip-from, 0deg) * 0.3);
+  }
+  100% {
+    rotate: 0deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kt-barter .kt-scale.tipping {
+    animation: none;
+  }
+}
+
 .kt-barter .kt-readout {
   display: flex;
   flex-direction: column;

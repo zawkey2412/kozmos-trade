@@ -148,7 +148,7 @@ export async function runTrade(payload, sender, { requireBalance = true } = {}) 
   const events = [...tradeEvents(trade.result), ...Array.from({ length: delivered }, () => /** @type {AttitudeEvent} */ ("wanted"))];
   await recordAttitude(trade.merchant, trade.customer, events).catch((error) => console.error("Kozmos Trade | Attitude failed", error));
   Hooks.callAll("kozmosTrade.trade", trade, record);
-  broadcast(MESSAGES.TRADE_DONE, { merchant: trade.merchant.uuid, customer: trade.customer.uuid });
+  broadcast(MESSAGES.TRADE_DONE, { merchant: trade.merchant.uuid, customer: trade.customer.uuid, burst: true });
   return { paid: trade.coins.paid, change: trade.result.change, receipt: entry?.id ?? null };
 }
 

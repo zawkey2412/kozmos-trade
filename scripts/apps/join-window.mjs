@@ -5,6 +5,7 @@ import { coinsToCopper, formatCopper } from "../engine/money.mjs";
 import { warn } from "../services/errors.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
 import { distract } from "../services/theft.mjs";
+import { playCoins } from "../ui/effects.mjs";
 import { getTables } from "../settings.mjs";
 import { loadTradePartials } from "./cards.mjs";
 import OfferWindow from "./offer-window.mjs";
@@ -113,6 +114,7 @@ export default class JoinWindow extends OfferWindow {
       return;
     }
     if (traded) {
+      playCoins("trade");
       ui.notifications.info(game.i18n.localize("KT.Join.Traded", { name: this.join.lead.name }));
       this.prices = {};
     }

@@ -6,6 +6,7 @@ import { arrange, CATEGORIES } from "../engine/catalog.mjs";
 import { COPPER } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
 import { clampCoins, noCoins, setLine, stageAmount } from "../engine/tray.mjs";
+import { playCoins } from "../ui/effects.mjs";
 import { HandlebarsApplication } from "./base.mjs";
 import { card, rarityTag, tag } from "./cards.mjs";
 
@@ -139,6 +140,7 @@ export default class OfferWindow extends HandlebarsApplication {
     if (!amount) return;
     if (!staged && !(await this.#confirmWorn(id))) return;
     setLine(this.offer.items, id, staged + amount, available);
+    playCoins("stage");
     this.#changed();
   }
 

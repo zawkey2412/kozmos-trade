@@ -4,6 +4,7 @@ import { coinLabels, locale, purse } from "../adapter/dnd5e.mjs";
 import { coinsToCopper, formatCoins, formatCopper } from "../engine/money.mjs";
 import { warn } from "../services/errors.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
+import { playCoins } from "../ui/effects.mjs";
 import { loadTradePartials } from "./cards.mjs";
 import OfferWindow from "./offer-window.mjs";
 
@@ -81,8 +82,10 @@ export default class PlayerTradeWindow extends OfferWindow {
   static ended(id, reason, name) {
     const app = /** @type {any} */ (foundry.applications.instances.get(`kt-player-${id}`));
     if (!app) return;
-    if (reason === "done") ui.notifications.info("KT.Barter.Done", { localize: true });
-    else if (name && name !== app.actor.name) ui.notifications.warn(game.i18n.localize(reason === "left" ? "KT.PlayerTrade.Left" : "KT.PlayerTrade.Closed", { name }));
+    if (reason === "done") {
+      playCoins("trade");
+      ui.notifications.info("KT.Barter.Done", { localize: true });
+    } else if (name && name !== app.actor.name) ui.notifications.warn(game.i18n.localize(reason === "left" ? "KT.PlayerTrade.Left" : "KT.PlayerTrade.Closed", { name }));
     app.over = true;
     app.close();
   }

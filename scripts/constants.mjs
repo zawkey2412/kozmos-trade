@@ -26,6 +26,8 @@ export const SETTINGS = Object.freeze({
   GREETING: "greeting",
   MARKET: "market",
   THEFT_APPROVAL: "theftApproval",
+  SOUND_VOLUME: "soundVolume",
+  COIN_BURST: "coinBurst",
 });
 
 export const MODES = Object.freeze({

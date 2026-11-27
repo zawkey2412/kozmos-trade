@@ -5,6 +5,7 @@
   "description": "Development scripts only. The module has no runtime dependencies.",
   "scripts": {
     "test": "node --test \"tests/*.test.mjs\"",
+    "sounds": "node tools/make-sounds.mjs",
     "typecheck": "node ../../node_modules/typescript/bin/tsc -p jsconfig.json"
   }
 }

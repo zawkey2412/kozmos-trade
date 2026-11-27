@@ -21,6 +21,7 @@ import { APPRAISE_ROLL } from "../services/appraisal.mjs";
 import { reactionLine } from "../services/reactions.mjs";
 import { showShop } from "../services/show.mjs";
 import { pocket } from "../services/theft.mjs";
+import { playCoins } from "../ui/effects.mjs";
 import { HAGGLE_ROLL, haggleChoices } from "../services/haggle.mjs";
 import { rollFlags } from "../services/rolls.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
@@ -135,7 +136,10 @@ export default class BarterWindow extends HandlebarsApplication {
   /** @param {{ merchant: string, customer: string, status: string, counter: { take: [string, number][], coinsTake: Record<string, number> } | null }} result */
   static onProposalResult({ merchant, customer, status, counter }) {
     const app = /** @type {any} */ (foundry.applications.instances.get(windowId(merchant, customer)));
-    if (status === "approved") ui.notifications.info("KT.Proposal.Result.approved", { localize: true });
+    if (status === "approved") {
+      playCoins("trade");
+      ui.notifications.info("KT.Proposal.Result.approved", { localize: true });
+    }
     else if (status === "declined") ui.notifications.warn("KT.Proposal.Result.declined", { localize: true });
     else if (status === "countered") ui.notifications.info("KT.Proposal.Result.countered", { localize: true });
     if (!app) return;
@@ -269,6 +273,9 @@ export default class BarterWindow extends HandlebarsApplication {
   async _onRender(context, options) {
     await super._onRender(context, options);
     for (const side of ["customer", "merchant"]) this.#applySearch(side);
+    const state = context.balance?.state;
+    if (this.scaleState && state && state !== this.scaleState) this.element.querySelector(".kt-scale")?.classList.add("tipping");
+    if (state) this.scaleState = state;
   }
 
   async _onClose(options) {
@@ -459,6 +466,7 @@ export default class BarterWindow extends HandlebarsApplication {
     if (this.offer.services.has(key)) return;
     this.offer.services.set(key, 1);
     this.pending = false;
+    playCoins("stage");
     this.refresh();
   }
 
@@ -600,6 +608,7 @@ export default class BarterWindow extends HandlebarsApplication {
     if (side === "customer" && !staged && !(await this.#confirmWorn(id))) return;
     setLine(lines, id, staged + amount, available);
     this.pending = false;
+    playCoins("stage");
     this.refresh();
   }
 
@@ -644,6 +653,7 @@ export default class BarterWindow extends HandlebarsApplication {
     } else {
       this.offer.coinsTake = addCoins(this.offer.coinsTake, splitCopper(gap));
     }
+    playCoins("stage");
     this.refresh(["give", "balance", "take", "footer"]);
   }
 
@@ -1007,6 +1017,7 @@ export default class BarterWindow extends HandlebarsApplication {
       const coins = { ...this.offer[key], [target.dataset.coin]: Number(target.value) };
       this.offer[key] = clampCoins(coins, side === "give" ? purse(this.customer) : null);
       target.value = String(this.offer[key][target.dataset.coin] || "");
+      if (this.offer[key][target.dataset.coin]) playCoins("stage");
       return this.refresh(["balance", "footer"]);
     }
   }
@@ -1254,6 +1265,7 @@ export default class BarterWindow extends HandlebarsApplication {
         await request(MESSAGES.TRADE_REQUEST, this.#payload());
         this.offer = emptyOffer();
         this.confirmed.clear();
+        playCoins("trade");
         ui.notifications.info("KT.Barter.Done", { localize: true });
       }
     } catch (error) {

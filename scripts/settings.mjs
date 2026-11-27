@@ -83,6 +83,22 @@ export function registerSettings() {
     }),
   });
 
+  register(SETTINGS.SOUND_VOLUME, {
+    name: "KT.Settings.SoundVolume.Name",
+    hint: "KT.Settings.SoundVolume.Hint",
+    scope: "client",
+    config: true,
+    type: new foundry.data.fields.NumberField({ required: true, nullable: false, min: 0, max: 1, step: 0.05, initial: 0.5 }),
+  });
+
+  register(SETTINGS.COIN_BURST, {
+    name: "KT.Settings.CoinBurst.Name",
+    hint: "KT.Settings.CoinBurst.Hint",
+    scope: "client",
+    config: true,
+    type: new foundry.data.fields.BooleanField({ initial: false }),
+  });
+
   register(SETTINGS.COMPENDIUMS, {
     name: "KT.Settings.Compendiums.Name",
     hint: "KT.Settings.Compendiums.Hint",

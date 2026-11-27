@@ -26,6 +26,7 @@ import { registerTradeHandlers } from "./services/trade.mjs";
 import { registerSettings } from "./settings.mjs";
 import { registerGmControls } from "./ui/gm-controls.mjs";
 import { registerDragTrade } from "./ui/drag-trade.mjs";
+import { coinBurst } from "./ui/effects.mjs";
 import { registerTradeLinks } from "./ui/enricher.mjs";
 import { registerProximityButton } from "./ui/proximity.mjs";
 import { registerSceneControls } from "./ui/scene-controls.mjs";
@@ -66,7 +67,10 @@ Hooks.once("ready", () => {
   registerAutoRestock();
   registerProximityButton();
   registerDragTrade();
-  onBroadcast(MESSAGES.TRADE_DONE, ({ merchant }) => BarterWindow.refreshFor(merchant));
+  onBroadcast(MESSAGES.TRADE_DONE, ({ merchant, burst }) => {
+    BarterWindow.refreshFor(merchant);
+    if (burst) coinBurst(merchant);
+  });
   onBroadcast(MESSAGES.SHOP_CHANGED, ({ merchant }) => {
     BarterWindow.refreshFor(merchant);
     MarketList.refreshAll();

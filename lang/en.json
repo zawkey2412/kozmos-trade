@@ -42,6 +42,14 @@
         "Name": "Merchant greetings",
         "Hint": "A merchant greets a player in a speech bubble when their token comes close. Needs core chat bubbles."
       },
+      "SoundVolume": {
+        "Name": "Coin sounds",
+        "Hint": "How loud coins sound when you put something on offer and when a trade is done, on top of your interface volume. 0 turns them off. Only for you."
+      },
+      "CoinBurst": {
+        "Name": "Coin burst",
+        "Hint": "Coins spray from the merchant's token when a trade is done. Uses core's new particle effects, which may change in later Foundry versions. Only for you."
+      },
       "TheftApproval": {
         "Name": "Thefts need GM approval",
         "Hint": "When theft is on, a theft can wait for you to allow it before the player rolls.",
