@@ -12,6 +12,7 @@ import { settle } from "../engine/quote.mjs";
 import { percentOf } from "../engine/market.mjs";
 import { parseServiceKey, serviceKey } from "../engine/services.mjs";
 import { marketCategoryLabel } from "./market-rules.mjs";
+import { visitedLabel } from "./market-list.mjs";
 import { addCoins, clampCoins, emptyOffer, isEmpty, setLine, stageAmount } from "../engine/tray.mjs";
 import { proposalOf } from "../services/approval.mjs";
 import { archetypeLabel } from "../services/archetypes.mjs";
@@ -245,7 +246,7 @@ export default class BarterWindow extends HandlebarsApplication {
       gm: game.user.isGM,
       header: this.#header(budget),
       customerColumn: this.#column("customer", customerCards, budget),
-      merchantColumn: { ...this.#column("merchant", shown, budget), reaction: this.#reaction(result) },
+      merchantColumn: { ...this.#column("merchant", shown, budget), reaction: this.#reaction(result), note: this.#visitNote() },
       giveTray: this.#tray("give", customerCards, this.offer.coinsGive, held),
       takeTray: this.#tray("take", merchantCards, this.offer.coinsTake, null, buybackCards),
     });
@@ -765,6 +766,22 @@ export default class BarterWindow extends HandlebarsApplication {
       this.reaction = { situation, band, line: reactionLine(this.snapshot.merchant.archetype, situation, band) };
     }
     return this.reaction.line;
+  }
+
+  // The Last visited note: when the customer came last, and what they sold and bought on their last trade here.
+  #visitNote() {
+    const note = this.snapshot.lastVisit;
+    if (!note || this.counter) return null;
+    const list = new Intl.ListFormat(locale(), { type: "conjunction" });
+    const items = (/** @type {{ name: string, quantity: number }[]} */ lines) => list.format(lines.map((line) => (line.quantity > 1 ? game.i18n.localize("KT.Ledger.Item", { quantity: line.quantity, name: line.name }) : line.name)));
+    const lines = [`${visitedLabel(note.days)}.`];
+    if (note.tradedDays !== null && note.tradedDays !== note.days) {
+      const key = note.tradedDays === 0 ? "KT.Visit.TradedToday" : note.tradedDays === 1 ? "KT.Visit.TradedYesterday" : "KT.Visit.TradedDays";
+      lines.push(game.i18n.localize(key, { days: new Intl.NumberFormat(locale()).format(note.tradedDays) }));
+    }
+    if (note.sold.length) lines.push(game.i18n.localize("KT.Visit.Sold", { items: items(note.sold) }));
+    if (note.bought.length) lines.push(game.i18n.localize("KT.Visit.Bought", { items: items(note.bought) }));
+    return lines;
   }
 
   // The Haggle button, or why haggling is closed.

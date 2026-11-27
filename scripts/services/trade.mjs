@@ -18,6 +18,7 @@ import { recordTrade } from "./receipts.mjs";
 import { shelf } from "./shop.mjs";
 import { postServiceNotes, serviceLines, serviceSteps } from "./shop-services.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
+import { recordTraded } from "./visits.mjs";
 
 /** @import { PriceContext } from "./offer.mjs"; */
 /** @import { ServiceLine } from "./shop-services.mjs"; */
@@ -138,6 +139,7 @@ export async function runTrade(payload, sender, { requireBalance = true } = {}) 
   });
   const sold = trade.give.map((line, index) => ({ id: record.merchantCreated[index], from: line.item.id, price: line.unit, quantity: line.quantity }));
   updateSold(trade.merchant.uuid, trade.customer.uuid, sold, trade.boughtBack);
+  await rememberTrade(trade).catch((error) => console.error("Kozmos Trade | Visit failed", error));
   if (trade.take.length || trade.services.length) useHaggle(trade.merchant.uuid, trade.customer.uuid);
   if (trade.pool.length) clearPool(trade.merchant.uuid, trade.customer.uuid);
   await postServiceNotes(trade.services, trade.merchant, trade.customer).catch((error) => console.error("Kozmos Trade | Service note failed", error));
@@ -426,6 +428,21 @@ export function transferData(item, quantity, restoreFlags, stolenAs) {
   delete data.flags[MODULE_ID];
   if (stolen || restoreFlags) data.flags[MODULE_ID] = { ...(restoreFlags ?? {}), ...(stolen ? { stolen } : {}) };
   return data;
+}
+
+// What each character sold and bought goes on their visit record, for the Last visited note.
+/** @param {PreparedTrade} trade */
+async function rememberTrade(trade) {
+  const session = sessionAt(trade.merchant.uuid);
+  const traded = session?.customer === trade.customer.uuid ? session.traded : [];
+  const names = (/** @type {TradeLine[]} */ lines) => lines.map((line) => ({ name: line.item.name, quantity: line.quantity }));
+  const services = trade.services.map((line) => ({ name: line.target ? `${line.service.label} (${line.target.name})` : line.service.label, quantity: 1 }));
+  const parts = [
+    { actor: trade.customer, sold: names(trade.give), bought: [...names(trade.take), ...services] },
+    ...trade.pool.map((part) => ({ actor: part.actor, sold: names(part.give), bought: [] })),
+  ].map((part) => ({ ...part, fresh: !traded.includes(part.actor.uuid) }));
+  await recordTraded(trade.merchant, parts);
+  if (session?.customer === trade.customer.uuid) for (const part of parts) if (!traded.includes(part.actor.uuid)) traded.push(part.actor.uuid);
 }
 
 // Named Wanted items in the trade come off the board. Answers how many.

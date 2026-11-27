@@ -533,3 +533,24 @@
 .kt-barter .kt-reaction i {
   color: var(--kt-text-subtle);
 }
+
+/* Last visited note under the reaction line. */
+.kt-barter .kt-visit-note {
+  display: flex;
+  gap: var(--kt-space-small);
+  align-items: baseline;
+  padding: var(--kt-space-small);
+  border: var(--kt-border);
+  border-radius: var(--kt-radius);
+  background: var(--kt-surface);
+  font-size: var(--kt-font-small);
+  color: var(--kt-text-muted);
+}
+
+.kt-barter .kt-visit-note p {
+  margin: 0;
+}
+
+.kt-barter .kt-visit-note i {
+  color: var(--kt-text-subtle);
+}

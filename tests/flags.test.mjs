@@ -46,7 +46,7 @@ describe("merchant flags", () => {
 
   it("keeps each character's last visit, and starts with none", () => {
     assert.deepEqual(merchantFlags({}).visits, {});
-    assert.deepEqual(merchantFlags(withFlags({ visits: { abc: { last: 7200 } } })).visits, { abc: { last: 7200 } });
+    assert.deepEqual(merchantFlags(withFlags({ visits: { abc: { last: 7200 } } })).visits, { abc: { last: 7200, tradedAt: null, sold: [], bought: [] } });
     assert.equal(merchantFlags({}).remoteTrade, false);
   });
 

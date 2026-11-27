@@ -698,6 +698,13 @@
         "BadDays": "The length must be more than 0 days, or empty."
       }
     },
+    "Visit": {
+      "TradedToday": "Your last trade here was today.",
+      "TradedYesterday": "Your last trade here was yesterday.",
+      "TradedDays": "Your last trade here was {days} days ago.",
+      "Sold": "You sold {items}.",
+      "Bought": "You bought {items}."
+    },
     "Theft": {
       "Title": "Theft",
       "Button": "Try to steal this",

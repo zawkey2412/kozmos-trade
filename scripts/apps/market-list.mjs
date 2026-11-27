@@ -103,7 +103,7 @@ export default class MarketList extends HandlebarsApplication {
 }
 
 /** @param {number | null} days */
-function visitedLabel(days) {
+export function visitedLabel(days) {
   if (days === null) return game.i18n.localize("KT.Market.NotVisited");
   if (days === 0) return game.i18n.localize("KT.Market.VisitedToday");
   if (days === 1) return game.i18n.localize("KT.Market.VisitedYesterday");

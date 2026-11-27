@@ -106,6 +106,10 @@ export const TABLES = {
       namedChance: 0.35,
     },
   },
+  visits: {
+    // Different items the Last visited note keeps for each list.
+    remember: 10,
+  },
   access: {
     // Grid squares between the customer's and the merchant's tokens.
     proximity: 2,

@@ -4,6 +4,7 @@ import { TABLES } from "./tables.mjs";
 
 /** @import { AttitudeState } from "../engine/attitude.mjs"; */
 /** @import { MarketRule } from "../engine/market.mjs"; */
+/** @import { VisitRecord } from "../engine/visits.mjs"; */
 
 /**
  * @typedef {object} MerchantFlagData
@@ -16,7 +17,7 @@ import { TABLES } from "./tables.mjs";
  * @property {Record<string, number>} haggleLock
  * @property {Record<string, { day: number, success: boolean }>} appraisals
  * @property {Record<string, number>} banned
- * @property {Record<string, { last: number }>} visits
+ * @property {Record<string, VisitRecord>} visits
  * @property {{ category: string, uuid: string, name: string, multiplier: number }[]} wanted
  * @property {number | null} lastRestock
  * @property {object[]} ledger
@@ -85,7 +86,14 @@ export class MerchantFlags extends foundry.abstract.DataModel {
         }),
       ),
       banned: new TypedObjectField(new NumberField({ required: true, nullable: false })),
-      visits: new TypedObjectField(new SchemaField({ last: new NumberField({ required: true, nullable: false, initial: 0 }) })),
+      visits: new TypedObjectField(
+        new SchemaField({
+          last: new NumberField({ required: true, nullable: false, initial: 0 }),
+          tradedAt: new NumberField({ nullable: true, initial: null }),
+          sold: new ArrayField(visitLine()),
+          bought: new ArrayField(visitLine()),
+        }),
+      ),
       wanted: new ArrayField(
         new SchemaField({
           category: new StringField({ required: true, blank: true }),
@@ -153,6 +161,15 @@ export class CharacterFlags extends foundry.abstract.DataModel {
       ),
     };
   }
+}
+
+// One item a character traded on a visit.
+function visitLine() {
+  const { NumberField, SchemaField, StringField } = foundry.data.fields;
+  return new SchemaField({
+    name: new StringField({ required: true, blank: true }),
+    quantity: new NumberField({ required: true, nullable: false, integer: true, min: 0, initial: 1 }),
+  });
 }
 
 // One market rule, for a scene's flags and the world setting.

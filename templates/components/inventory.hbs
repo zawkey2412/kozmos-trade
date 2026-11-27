@@ -9,6 +9,12 @@
   {{#if reaction}}
   <p class="kt-reaction" aria-live="polite"><i class="fa-solid fa-comment" inert></i> <q>{{reaction}}</q></p>
   {{/if}}
+  {{#if note}}
+  <div class="kt-visit-note">
+    <i class="fa-solid fa-clock-rotate-left" inert></i>
+    <p>{{#each note as |line|}}<span>{{line}}</span> {{/each}}</p>
+  </div>
+  {{/if}}
   {{#if wanted.length}}
   <div class="kt-wanted" data-tooltip-text="{{localize "KT.Wanted.Hint"}}">
     <span class="kt-wanted-title"><i class="fa-solid fa-bullhorn" inert></i> {{localize "KT.Wanted.Title"}}</span>

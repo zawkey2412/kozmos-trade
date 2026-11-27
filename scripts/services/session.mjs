@@ -20,11 +20,12 @@ import { marketRulesFor } from "./market-rules.mjs";
 import { sellLine, sellQuote } from "./offer.mjs";
 import { shelf } from "./shop.mjs";
 import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
-import { metByParty, recordVisit } from "./visits.mjs";
+import { metByParty, noteFor, recordVisit } from "./visits.mjs";
 
 /** @import { PriceContext } from "./offer.mjs"; */
 /** @import { MarketRule } from "../engine/market.mjs"; */
 /** @import { PocketSize } from "../engine/theft.mjs"; */
+/** @import { VisitNote } from "../engine/visits.mjs"; */
 
 /**
  * @typedef {object} PoolEntry
@@ -46,6 +47,8 @@ import { metByParty, recordVisit } from "./visits.mjs";
  * @property {boolean} remote
  * @property {PoolEntry[]} pool
  * @property {{ by: string | null, tried: string[] }} distraction
+ * @property {VisitNote | null} note
+ * @property {string[]} traded
  */
 
 /**
@@ -110,6 +113,7 @@ import { metByParty, recordVisit } from "./visits.mjs";
  * @property {ServiceView[]} services
  * @property {MarketRule[]} market
  * @property {{ on: boolean, distracted: string | null }} theft
+ * @property {VisitNote | null} lastVisit
  */
 
 /**
@@ -249,6 +253,8 @@ async function openSession({ merchant, customer, remote: fromAfar }, sender) {
     remote,
     pool: sameCustomer ? current.pool : [],
     distraction: sameCustomer ? current.distraction : { by: null, tried: [] },
+    note: sameCustomer ? current.note : noteFor(pair.merchant, pair.customer),
+    traded: sameCustomer ? current.traded : [],
   });
   if (!sameCustomer) {
     await applyGrudge(pair.merchant, pair.customer).catch((error) => console.error("Kozmos Trade | Attitude failed", error));
@@ -634,6 +640,7 @@ export function snapshot(merchant, customer) {
     },
     pool: poolView(merchant, customer),
     market: marketRulesFor(merchant),
+    lastVisit: session?.customer === customer.uuid ? session.note : null,
     theft: {
       on: theftOpen(merchant, customer),
       distracted: session?.customer === customer.uuid && session.distraction.by ? (session.pool.find((entry) => entry.actor === session.distraction.by)?.name ?? null) : null,
