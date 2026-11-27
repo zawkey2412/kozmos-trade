@@ -72,36 +72,11 @@
   gap: var(--kt-space);
 }
 
-.kt-barter .kt-mode-toggle {
-  flex: none;
-  width: auto;
-}
-
-/* The GM's tools in the header: small labelled buttons under a quiet label. */
-.kt-barter .kt-gm-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: var(--kt-space-small);
-  max-width: var(--kt-gm-tools-width);
-}
-
-.kt-barter .kt-gm-tools button {
-  flex: none;
-  width: auto;
-  height: auto;
-  padding: var(--kt-space-tight) var(--kt-space);
+/* The trade mode, shown to the GM while trades wait for approval. */
+.kt-barter .kt-mode-label {
+  color: var(--kt-text-muted);
   font-size: var(--kt-font-small);
-}
-
-.kt-barter .kt-gm-label {
-  flex: 0 0 100%;
-  text-align: center;
-  font-size: var(--kt-font-tiny);
-  letter-spacing: var(--kt-letter-spacing);
-  text-transform: uppercase;
-  color: var(--kt-text-subtle);
+  white-space: nowrap;
 }
 
 .kt-barter .kt-counter-label {

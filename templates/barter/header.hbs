@@ -11,25 +11,8 @@
   <div class="kt-header-middle">
     {{#if header.counter}}
     <span class="kt-counter-label"><i class="fa-solid fa-pen" inert></i> {{localize "KT.Barter.CounterTitle"}}</span>
-    {{else if gm}}
-    <div class="kt-gm-tools" role="toolbar" aria-label="{{localize "KT.Barter.GMTools"}}">
-      <span class="kt-gm-label">{{localize "KT.Barter.GMTools"}}</span>
-      <button type="button" class="kt-mode-toggle" data-action="toggleMode" data-tooltip-text="{{localize "KT.Barter.ToggleMode"}}">
-        <i class="{{header.modeIcon}}" inert></i> <span>{{header.mode}}</span>
-      </button>
-      <button type="button" data-action="showPlayers" data-tooltip-text="{{localize "KT.Show.Hint"}}">
-        <i class="fa-solid fa-eye" inert></i> <span>{{localize "KT.Barter.Show"}}</span>
-      </button>
-      <button type="button" data-action="restock" data-tooltip-text="{{localize "KT.Stock.RestockConfirm"}}">
-        <i class="fa-solid fa-dice" inert></i> <span>{{localize "KT.Stock.Restock"}}</span>
-      </button>
-      <button type="button" data-action="revertLast" data-tooltip-text="{{localize "KT.Receipt.RevertBody"}}">
-        <i class="fa-solid fa-rotate-left" inert></i> <span>{{localize "KT.Barter.Undo"}}</span>
-      </button>
-      <button type="button" data-action="configure" data-tooltip-text="{{localize "KT.Shop.Configure"}}">
-        <i class="fa-solid fa-sliders" inert></i> <span>{{localize "KT.Shop.Configure"}}</span>
-      </button>
-    </div>
+    {{else if header.approval}}
+    <span class="kt-mode-label"><i class="fa-solid fa-user-check" inert></i> {{localize "KT.ExecutionMode.approval"}}</span>
     {{/if}}
   </div>
 

@@ -27,10 +27,9 @@ import { HAGGLE_ROLL, haggleChoices } from "../services/haggle.mjs";
 import { rollFlags } from "../services/rolls.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
 import { buyQuote, sellQuote } from "../services/offer.mjs";
-import { ledgerOf, revertEntry } from "../services/receipts.mjs";
 import { snapshot as shelfSnapshot, wantedLabels } from "../services/session.mjs";
 import { saveShop } from "../services/shop.mjs";
-import { importStock, restock } from "../services/stock.mjs";
+import { importStock } from "../services/stock.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
 import { getTables } from "../settings.mjs";
 import ConfigureShop from "./configure-shop.mjs";
@@ -65,7 +64,6 @@ export default class BarterWindow extends HandlebarsApplication {
       empty: BarterWindow.#onEmpty,
       accept: BarterWindow.#onAccept,
       toggleMode: BarterWindow.#onToggleMode,
-      revertLast: BarterWindow.#onRevertLast,
       merchantTab: BarterWindow.#onTab,
       restock: BarterWindow.#onRestock,
       haggle: BarterWindow.#onHaggle,
@@ -180,6 +178,20 @@ export default class BarterWindow extends HandlebarsApplication {
 
   get title() {
     return game.i18n.localize("KT.Barter.Title", { merchant: this.snapshot.merchant.name, customer: this.customer.name });
+  }
+
+  // The GM's shop tools in the window menu.
+  _getHeaderControls() {
+    const controls = super._getHeaderControls();
+    if (!game.user.isGM || this.counter) return controls;
+    const approval = this.snapshot.merchant.executionMode === "approval";
+    return [
+      ...controls,
+      { action: "configure", icon: "fa-solid fa-sliders", label: "KT.Shop.Configure" },
+      { action: "restock", icon: "fa-solid fa-dice", label: "KT.Stock.Restock" },
+      { action: "showPlayers", icon: "fa-solid fa-eye", label: "KT.Show.Control" },
+      { action: "toggleMode", icon: approval ? "fa-solid fa-bolt" : "fa-solid fa-user-check", label: approval ? "KT.Barter.UseInstant" : "KT.Barter.UseApproval" },
+    ];
   }
 
   /** @returns {PriceContext} */
@@ -347,8 +359,7 @@ export default class BarterWindow extends HandlebarsApplication {
       attitude: attitude.on
         ? { label: game.i18n.localize(`KT.Attitude.${attitude.band}`), icon: ATTITUDE_ICONS[attitude.band], band: attitude.band }
         : null,
-      mode: game.i18n.localize(`KT.ExecutionMode.${merchant.executionMode}`),
-      modeIcon: merchant.executionMode === "approval" ? "fa-solid fa-user-check" : "fa-solid fa-bolt",
+      approval: game.user.isGM && merchant.executionMode === "approval",
       counter: Boolean(this.counter),
       remote: this.snapshot.remote,
     };
@@ -1297,23 +1308,7 @@ export default class BarterWindow extends HandlebarsApplication {
   /** @this {BarterWindow} */
   static async #onRestock() {
     const actor = /** @type {any} */ (foundry.utils.fromUuidSync(this.snapshot.merchant.uuid));
-    if (!actor || !game.user.isGM) return;
-    const ok = await foundry.applications.api.DialogV2.confirm(/** @type {any} */ ({
-      window: { title: "KT.Stock.Restock" },
-      content: `<p>${game.i18n.localize("KT.Stock.RestockConfirm")}</p>`,
-      rejectClose: false,
-    }));
-    if (!ok) return;
-    await restock(actor).catch((error) => warn(error));
-    ui.notifications.info(game.i18n.localize("KT.Stock.Restocked", { name: actor.name }));
-  }
-
-  /** @this {BarterWindow} */
-  static async #onRevertLast() {
-    const actor = foundry.utils.fromUuidSync(this.snapshot.merchant.uuid);
-    const last = actor ? ledgerOf(actor).find((entry) => !entry.reverted) : null;
-    if (!last) return ui.notifications.info("KT.Ledger.Empty", { localize: true });
-    await revertEntry(this.snapshot.merchant.uuid, last.id);
+    if (actor && game.user.isGM) await ConfigureShop.confirmRestock(actor);
   }
 
   /** @this {BarterWindow} */

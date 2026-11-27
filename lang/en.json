@@ -228,16 +228,14 @@
       "CounterSent": "Counter offer sent.",
       "Proposed": "Proposal sent to the GM.",
       "CounterTitle": "Counter offer",
-      "ToggleMode": "Switch between Instant Trade and GM Approval",
       "Remote": "Trading from the Shops list",
       "Tab": {
         "shelf": "Shelf",
         "buyback": "Buy back",
         "services": "Services"
       },
-      "GMTools": "GM tools",
-      "Show": "Show",
-      "Undo": "Undo last"
+      "UseApproval": "Switch to GM Approval",
+      "UseInstant": "Switch to Instant Trade"
     },
     "Attitude": {
       "hostile": "Hostile",
