@@ -45,6 +45,8 @@ export const MESSAGES = Object.freeze({
   PLAYER_CLOSE: "player.close",
   PLAYER_STATE: "player.state",
   PLAYER_CLOSED: "player.closed",
+  PLAYER_INVITE: "player.invite",
+  PLAYER_ANSWER: "player.answer",
   THEFT_START: "theft.start",
   THEFT_ANSWER: "theft.answer",
   THEFT_GO: "theft.go",

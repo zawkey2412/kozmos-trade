@@ -113,6 +113,8 @@ export const TABLES = {
   access: {
     // Grid squares between the customer's and the merchant's tokens.
     proximity: 2,
+    // Seconds a player has to answer another player's trade invite.
+    inviteSeconds: 60,
   },
   market: {
     // Smallest and largest price change a market rule may make, in percent.

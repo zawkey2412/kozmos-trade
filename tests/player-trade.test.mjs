@@ -1,9 +1,22 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { acceptOffer, bothAccepted, changeOffer, cleanPlayerOffer, emptyPlayerOffer, offerIsEmpty, resetAccepts, sideIndex, startPlayerTrade } from "../scripts/engine/player-trade.mjs";
+import { acceptOffer, answerInvite, bothAccepted, changeOffer, cleanPlayerOffer, emptyPlayerOffer, offerIsEmpty, resetAccepts, sideIndex, startPlayerTrade } from "../scripts/engine/player-trade.mjs";
 
 const coins = (values) => ({ pp: 0, gp: 0, ep: 0, sp: 0, cp: 0, ...values });
-const start = () => startPlayerTrade("t1", { actor: "Actor.aria", userId: "u1" }, { actor: "Actor.bram", userId: "u2" });
+const start = () => answerInvite(startPlayerTrade("t1", { actor: "Actor.aria", userId: "u1" }, { actor: "Actor.bram", userId: "u2" }));
+
+describe("player trade invites", () => {
+  it("starts as an invite the other player has not answered", () => {
+    const trade = startPlayerTrade("t1", { actor: "Actor.aria", userId: "u1" }, { actor: "Actor.bram", userId: "u2" });
+    assert.equal(trade.invited, true);
+  });
+
+  it("opens for offers once the other player says yes", () => {
+    const trade = start();
+    assert.equal(trade.invited, false);
+    assert.equal(trade.version, 0);
+  });
+});
 
 describe("player trade offers", () => {
   it("starts with nothing on either side and nobody accepted", () => {

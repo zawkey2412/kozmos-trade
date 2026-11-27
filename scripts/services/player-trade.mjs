@@ -1,11 +1,12 @@
-// Trades between two players' characters on the active GM: no prices, no haggle, no attitude, and both must accept.
+// Trades between two players' characters on the active GM: an invite first, then no prices, no haggle, no attitude, and both must accept.
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID } from "../constants.mjs";
 import { coinLabels, holdingFacts, itemFacts, locale, purse } from "../adapter/dnd5e.mjs";
 import { COPPER, formatCoins } from "../engine/money.mjs";
-import { acceptOffer, bothAccepted, changeOffer, cleanPlayerOffer, offerIsEmpty, resetAccepts, sideIndex, startPlayerTrade } from "../engine/player-trade.mjs";
+import { acceptOffer, answerInvite, bothAccepted, changeOffer, cleanPlayerOffer, offerIsEmpty, resetAccepts, sideIndex, startPlayerTrade } from "../engine/player-trade.mjs";
 import { tradeable } from "../engine/shelf.mjs";
 import { addCoins } from "../engine/tray.mjs";
+import { getTables } from "../settings.mjs";
 import { TradeError, warn } from "./errors.mjs";
 import { broadcast, MESSAGES, onBroadcast, onRequest, request } from "./socket.mjs";
 import { moveAll } from "./trade.mjs";
@@ -34,13 +35,21 @@ import { moveAll } from "./trade.mjs";
 /**
  * @typedef {object} PlayerTradeWindows
  * @property {(view: PlayerTradeView) => Promise<any>} sync
- * @property {(id: string, reason: string, name: string) => void} ended
+ * @property {(id: string, reason: string, name: string, asker: string) => void} ended
+ * @property {(id: string, name: string) => Promise<boolean | null>} invite
  */
 
 const TEMPLATE = `modules/${MODULE_ID}/templates/chat/player-trade.hbs`;
 
 /** @type {Map<string, PlayerTrade>} */
 const trades = new Map();
+
+/** @type {Map<string, ReturnType<typeof setTimeout>>} */
+const expiries = new Map();
+
+// Items dragged onto a character, staged once the trade opens.
+/** @type {Map<string, string>} */
+const pendingStage = new Map();
 
 /** @type {PlayerTradeWindows | null} */
 let windows = null;
@@ -55,8 +64,13 @@ export function registerPlayerTradeHandlers() {
   onRequest(MESSAGES.PLAYER_OFFER, changePlayerOffer, { queueKey: (payload) => payload?.id });
   onRequest(MESSAGES.PLAYER_ACCEPT, acceptPlayerOffer, { queueKey: (payload) => payload?.id });
   onRequest(MESSAGES.PLAYER_CLOSE, closePlayerTrade, { queueKey: (payload) => payload?.id });
-  onBroadcast(MESSAGES.PLAYER_STATE, (view) => windows?.sync(view));
-  onBroadcast(MESSAGES.PLAYER_CLOSED, ({ id, reason, name }) => windows?.ended(id, reason, name));
+  onRequest(MESSAGES.PLAYER_ANSWER, answerPlayerTrade, { queueKey: (payload) => payload?.id });
+  onBroadcast(MESSAGES.PLAYER_STATE, (view) => showState(view));
+  onBroadcast(MESSAGES.PLAYER_INVITE, ({ id, name }) => answerInvitation(id, name));
+  onBroadcast(MESSAGES.PLAYER_CLOSED, ({ id, reason, name, asker }) => {
+    pendingStage.delete(id);
+    windows?.ended(id, reason, name, asker);
+  });
   Hooks.on("userConnected", (user, connected) => {
     if (connected) return;
     for (const trade of [...trades.values()]) {
@@ -66,7 +80,7 @@ export function registerPlayerTradeHandlers() {
   });
 }
 
-// Opens a trade with another player's character, with one item already on offer.
+// Invites another player's character to trade, with one item to put on offer once they say yes.
 /**
  * @param {any} from
  * @param {any} to
@@ -74,15 +88,42 @@ export function registerPlayerTradeHandlers() {
  */
 export async function tradeWithPlayer(from, to, itemId = null) {
   try {
-    /** @type {PlayerTradeView} */
-    const view = await request(MESSAGES.PLAYER_OPEN, { from: from.uuid, to: to.uuid });
-    const app = await windows?.sync(view);
-    if (itemId && app?.stage) await app.stage("customer", itemId);
-    return app ?? view;
+    /** @type {PlayerTradeView | { invited: true, id: string, name: string }} */
+    const result = await request(MESSAGES.PLAYER_OPEN, { from: from.uuid, to: to.uuid });
+    if ("invited" in result) {
+      if (itemId) pendingStage.set(result.id, itemId);
+      ui.notifications.info(game.i18n.localize("KT.PlayerTrade.Asked", { name: result.name }));
+      return result;
+    }
+    if (itemId) pendingStage.set(result.id, itemId);
+    return showState(result);
   } catch (error) {
     warn(error);
     return null;
   }
+}
+
+// Opens or updates this user's window, then stages a dragged item.
+/** @param {PlayerTradeView} view */
+async function showState(view) {
+  const app = await windows?.sync(view);
+  const itemId = pendingStage.get(view.id);
+  if (itemId && app?.stage) {
+    pendingStage.delete(view.id);
+    await app.stage("customer", itemId);
+  }
+  return app ?? view;
+}
+
+// The invited player says yes or not now.
+/**
+ * @param {string} id
+ * @param {string} name
+ */
+async function answerInvitation(id, name) {
+  const yes = await windows?.invite(id, name);
+  if (yes === null || yes === undefined) return;
+  await request(MESSAGES.PLAYER_ANSWER, { id, yes }).catch((error) => warn(error));
 }
 
 /**
@@ -98,14 +139,56 @@ async function openPlayerTrade({ from, to }, sender) {
   if (!first.testUserPermission(sender, "OWNER")) throw new TradeError("KT.Error.NotYours");
   const open = [...trades.values()];
   const same = open.find((trade) => sideIndex(trade, first.uuid) >= 0 && sideIndex(trade, second.uuid) >= 0);
-  if (same) return publish(same);
+  if (same && !same.invited) return publish(same);
+  if (same && same.sides[1].userId === sender.id) {
+    answerPlayerTrade({ id: same.id, yes: true }, sender);
+    return viewOf(/** @type {PlayerTrade} */ (trades.get(same.id)));
+  }
+  if (same) return invite(same, first, second);
   for (const actor of [first, second]) {
     if (open.some((trade) => sideIndex(trade, actor.uuid) >= 0)) throw new TradeError("KT.Error.PlayerBusy", { name: actor.name });
   }
   const partner = partnerOf(second, sender);
   const trade = startPlayerTrade(foundry.utils.randomID(), { actor: first.uuid, userId: sender.id }, { actor: second.uuid, userId: partner.id });
   trades.set(trade.id, trade);
-  return publish(trade);
+  return invite(trade, first, second);
+}
+
+// Asks the second player, and ends the invite if nobody answers in time.
+/**
+ * @param {PlayerTrade} trade
+ * @param {any} first
+ * @param {any} second
+ */
+function invite(trade, first, second) {
+  clearTimeout(expiries.get(trade.id));
+  const seconds = getTables().access.inviteSeconds;
+  expiries.set(trade.id, setTimeout(() => {
+    const current = trades.get(trade.id);
+    if (current?.invited) end(current, "expired", second.name);
+  }, seconds * 1000));
+  broadcast(MESSAGES.PLAYER_INVITE, { id: trade.id, name: first.name }, { users: [trade.sides[1].userId] });
+  return { invited: true, id: trade.id, name: second.name };
+}
+
+/**
+ * @param {{ id: string, yes: boolean }} payload
+ * @param {any} sender
+ */
+function answerPlayerTrade({ id, yes }, sender) {
+  const trade = trades.get(id);
+  if (!trade?.invited) throw new TradeError("KT.Error.PlayerTradeGone");
+  if (trade.sides[1].userId !== sender.id) throw new TradeError("KT.Error.NotYours");
+  if (!yes) {
+    end(trade, "declined", nameOf(trade.sides[1].actor));
+    return true;
+  }
+  clearTimeout(expiries.get(id));
+  expiries.delete(id);
+  const opened = answerInvite(trade);
+  trades.set(id, opened);
+  publish(opened);
+  return true;
 }
 
 /**
@@ -222,7 +305,7 @@ function partnerOf(actor, sender) {
  */
 function sideFor(id, actor, sender) {
   const trade = trades.get(id);
-  if (!trade) throw new TradeError("KT.Error.PlayerTradeGone");
+  if (!trade || trade.invited) throw new TradeError("KT.Error.PlayerTradeGone");
   const index = sideIndex(trade, actor);
   if (index < 0 || trade.sides[index].userId !== sender.id) throw new TradeError("KT.Error.NotYours");
   return { trade, index };
@@ -242,7 +325,9 @@ function publish(trade) {
  */
 function end(trade, reason, name) {
   trades.delete(trade.id);
-  broadcast(MESSAGES.PLAYER_CLOSED, { id: trade.id, reason, name }, { users: trade.sides.map((side) => side.userId) });
+  clearTimeout(expiries.get(trade.id));
+  expiries.delete(trade.id);
+  broadcast(MESSAGES.PLAYER_CLOSED, { id: trade.id, reason, name, asker: trade.sides[0].userId }, { users: trade.sides.map((side) => side.userId) });
 }
 
 // What both players see: names, pictures and quantities only.

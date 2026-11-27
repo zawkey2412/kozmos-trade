@@ -187,3 +187,11 @@
   font-style: italic;
   text-align: center;
 }
+
+.kt-market-list .kt-party-group {
+  flex: none;
+}
+
+.kt-market-list .kt-party-group .kt-empty {
+  margin: 0;
+}

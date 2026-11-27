@@ -677,7 +677,13 @@
       "Closed": "{name} ended the trade.",
       "Left": "{name} left, so the trade ended.",
       "Card": "Trade between players",
-      "Who": "{first} and {second}"
+      "Who": "{first} and {second}",
+      "InviteTitle": "Trade with {name}?",
+      "Yes": "Trade",
+      "No": "Not now",
+      "Asked": "You asked {name} to trade. Waiting for an answer.",
+      "Declined": "{name} doesn't want to trade right now.",
+      "Expired": "{name} did not answer, so the invite ended."
     },
     "Market": {
       "Title": "Shops",
@@ -730,7 +736,8 @@
         "here": "This scene",
         "elsewhere": "Other scenes",
         "nowhere": "Not on a map",
-        "visited": "Shops you've visited"
+        "visited": "Shops you've visited",
+        "party": "Trade with your party"
       },
       "SetUp": "{name} is not a shop yet.",
       "RulesLine": {
@@ -742,7 +749,9 @@
       "Remote": "Trades from afar",
       "RowHint": "Configure shop. Right-click for more.",
       "OpenHint": "Open. Click to close it.",
-      "ClosedHint": "Closed. Click to open it."
+      "ClosedHint": "Closed. Click to open it.",
+      "PartyEmpty": "Nobody else in your party is online.",
+      "Played": "Played by {name}"
     },
     "Visit": {
       "TradedToday": "Your last trade here was today.",

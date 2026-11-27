@@ -1,4 +1,4 @@
-// Trades between two characters: each side's offer, and both Accepts, which any change resets.
+// Trades between two characters: an invite the second side answers, each side's offer, and both Accepts, which any change resets.
 import { COPPER } from "./money.mjs";
 
 /**
@@ -20,6 +20,7 @@ import { COPPER } from "./money.mjs";
  * @property {string} id
  * @property {PlayerSide[]} sides
  * @property {number} version
+ * @property {boolean} invited
  */
 
 /** @returns {PlayerOffer} */
@@ -35,7 +36,13 @@ export function emptyPlayerOffer() {
  */
 export function startPlayerTrade(id, first, second) {
   const side = (/** @type {{ actor: string, userId: string }} */ who) => ({ actor: who.actor, userId: who.userId, offer: emptyPlayerOffer(), accepted: false });
-  return { id, sides: [side(first), side(second)], version: 0 };
+  return { id, sides: [side(first), side(second)], version: 0, invited: true };
+}
+
+// The second side said yes, so both can make offers.
+/** @param {PlayerTrade} trade */
+export function answerInvite(trade) {
+  return { ...trade, invited: false };
 }
 
 /**

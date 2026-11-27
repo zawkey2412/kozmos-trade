@@ -1,9 +1,10 @@
-// The Shops window: for players, merchants the party has met. For the GM, every shop by scene, and the selected NPC token.
+// The Shops window: for players, the party to trade with and merchants the party has met. For the GM, every shop by scene, and the selected NPC token.
 import { MODULE_ID } from "../constants.mjs";
 import { activeRules } from "../engine/market.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { warn } from "../services/errors.mjs";
-import { openTrade } from "../services/open-trade.mjs";
+import { openTrade, pickCustomer } from "../services/open-trade.mjs";
+import { tradeWithPlayer } from "../services/player-trade.mjs";
 import { sceneRules, worldRules } from "../services/market-rules.mjs";
 import { postShopCard } from "../services/shop-card.mjs";
 import { showShop } from "../services/show.mjs";
@@ -26,6 +27,7 @@ export default class MarketList extends HandlebarsApplication {
     position: { width: 540, height: 640 },
     actions: {
       trade: MarketList.#onTrade,
+      tradePlayer: MarketList.#onTradePlayer,
       configure: MarketList.#onConfigure,
       find: MarketList.#onFind,
       toggleOpen: MarketList.#onToggleOpen,
@@ -62,6 +64,7 @@ export default class MarketList extends HandlebarsApplication {
 
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
+    for (const hook of ["userConnected", "updateUser"]) this.hooks.push([hook, Hooks.on(hook, () => this.redraw())]);
     if (game.user.isGM) {
       for (const hook of ["controlToken", "canvasReady"]) this.hooks.push([hook, Hooks.on(hook, () => this.redraw())]);
       new foundry.applications.ux.ContextMenu.implementation(this.element, ".kt-market-row", this.#rowMenu(), { jQuery: false, fixed: true });
@@ -104,6 +107,8 @@ export default class MarketList extends HandlebarsApplication {
       gm,
       search: this.search,
       setup: gm ? setupCandidate() : null,
+      partyOn: !gm,
+      party: gm ? [] : partyRows(),
       rules: gm && feature("market") ? rulesLine() : null,
       groups: gm ? this.#gmGroups(shown) : [{ id: "visited", label: game.i18n.localize("KT.Market.Group.visited"), rows: shown }],
       any: shown.length > 0,
@@ -224,6 +229,24 @@ export default class MarketList extends HandlebarsApplication {
     await saveShop(actor, { shop: { open: !merchantFlags(actor).open } }).catch((error) => warn(error));
   }
 
+  // Invites another player's character, trading as the user's own.
+  /**
+   * @this {MarketList}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static async #onTradePlayer(event, target) {
+    const to = await foundry.utils.fromUuid(/** @type {HTMLElement} */ (target.closest("[data-uuid]")).dataset.uuid ?? "");
+    if (!to) return;
+    try {
+      const own = /** @type {any} */ (game.user).character;
+      const from = own?.isOwner ? own : await pickCustomer();
+      if (from) await tradeWithPlayer(from, to);
+    } catch (error) {
+      warn(error);
+    }
+  }
+
   /** @this {MarketList} */
   static #onSetUp() {
     const actor = selectedActor();
@@ -247,6 +270,13 @@ function selectedActor() {
 function selectedShopUuid() {
   const actor = selectedActor();
   return actor && isShop(actor) ? actor.uuid : null;
+}
+
+// Other online players' characters.
+function partyRows() {
+  return /** @type {any[]} */ (game.users.contents)
+    .filter((user) => user.active && !user.isGM && !user.isSelf && user.character?.type === "character" && !user.character.isOwner)
+    .map((user) => ({ uuid: user.character.uuid, name: user.character.name, img: user.character.img, player: game.i18n.localize("KT.Market.Played", { name: user.name }) }));
 }
 
 // The selected NPC token, when it is not a shop yet.

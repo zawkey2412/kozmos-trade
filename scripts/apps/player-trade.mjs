@@ -67,21 +67,55 @@ export default class PlayerTradeWindow extends OfferWindow {
     const actor = await foundry.utils.fromUuid(view.sides[mine].actor);
     if (!actor) return null;
     await loadTradePartials();
-    if (mine === 1) ui.notifications.info(game.i18n.localize("KT.PlayerTrade.Invited", { name: view.sides[0].name }));
     const app = new PlayerTradeWindow({ id, actor, state: view, mine });
     await app.render({ force: true });
     return app;
   }
 
-  // The GM ended the trade: done, closed by one side, or a player left.
+  // Asks the invited player, and answers null when the invite ends first.
+  /**
+   * @param {string} id
+   * @param {string} name
+   * @returns {Promise<boolean | null>}
+   */
+  static async invite(id, name) {
+    const answer = await foundry.applications.api.DialogV2.wait(/** @type {any} */ ({
+      id: `kt-invite-${id}`,
+      window: { title: game.i18n.localize("KT.PlayerTrade.InviteTitle", { name }), icon: "fa-solid fa-handshake" },
+      content: `<p>${game.i18n.localize("KT.PlayerTrade.Invited", { name: foundry.utils.escapeHTML(name) })}</p>`,
+      buttons: [
+        { action: "yes", label: "KT.PlayerTrade.Yes", icon: "fa-solid fa-handshake", default: true },
+        { action: "no", label: "KT.PlayerTrade.No" },
+      ],
+      rejectClose: false,
+    }));
+    if (PlayerTradeWindow.#gone.delete(id)) return null;
+    return answer === "yes";
+  }
+
+  /** @type {Set<string>} */
+  static #gone = new Set();
+
+  // The GM ended the trade: done, closed by one side, a player left, or the invite was turned down or ran out.
   /**
    * @param {string} id
    * @param {string} reason
    * @param {string} name
+   * @param {string} asker
    */
-  static ended(id, reason, name) {
+  static ended(id, reason, name, asker) {
+    const question = foundry.applications.instances.get(`kt-invite-${id}`);
+    if (question) {
+      PlayerTradeWindow.#gone.add(id);
+      question.close();
+    }
     const app = /** @type {any} */ (foundry.applications.instances.get(`kt-player-${id}`));
-    if (!app) return;
+    if (!app) {
+      if (asker === game.user.id && (reason === "declined" || reason === "expired")) {
+        ui.notifications.warn(game.i18n.localize(reason === "declined" ? "KT.PlayerTrade.Declined" : "KT.PlayerTrade.Expired", { name }));
+      }
+      return;
+    }
     if (reason === "done") {
       playCoins("trade");
       ui.notifications.info("KT.Barter.Done", { localize: true });

@@ -7,6 +7,32 @@
   </div>
   {{/if}}
 
+  {{#if partyOn}}
+  <section class="kt-party-group">
+    <h3 class="kt-market-heading">{{localize "KT.Market.Group.party"}}</h3>
+    {{#if party.length}}
+    <ol class="kt-market-rows plain">
+      {{#each party as |row|}}
+      <li class="kt-market-row" data-uuid="{{row.uuid}}">
+        <div class="kt-row-main">
+          <img src="{{row.img}}" alt="">
+          <span class="kt-market-text">
+            <strong>{{row.name}}</strong>
+            <span class="kt-muted">{{row.player}}</span>
+          </span>
+        </div>
+        <div class="kt-market-actions">
+          <button type="button" data-action="tradePlayer"><i class="fa-solid fa-handshake" inert></i> {{localize "KT.Market.Trade"}}</button>
+        </div>
+      </li>
+      {{/each}}
+    </ol>
+    {{else}}
+    <p class="kt-empty">{{localize "KT.Market.PartyEmpty"}}</p>
+    {{/if}}
+  </section>
+  {{/if}}
+
   {{#if any}}
   <input type="search" class="kt-market-search" placeholder="{{localize "KT.Market.Search"}}" aria-label="{{localize "KT.Market.Search"}}" value="{{search}}">
   {{/if}}

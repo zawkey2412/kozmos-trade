@@ -41,7 +41,11 @@ Hooks.once("init", () => {
   setTradeWindow((snapshot, customer) => BarterWindow.show(snapshot, customer));
   setJoinWindow((view, customer) => JoinWindow.show(view, customer));
   setCounterWindow((message) => BarterWindow.openCounter(message));
-  setPlayerTradeWindow({ sync: (view) => PlayerTradeWindow.sync(view), ended: (id, reason, name) => PlayerTradeWindow.ended(id, reason, name) });
+  setPlayerTradeWindow({
+    sync: (view) => PlayerTradeWindow.sync(view),
+    ended: (id, reason, name, asker) => PlayerTradeWindow.ended(id, reason, name, asker),
+    invite: (id, name) => PlayerTradeWindow.invite(id, name),
+  });
   registerProposalCards();
   registerReceiptCards();
   registerShopCards();
