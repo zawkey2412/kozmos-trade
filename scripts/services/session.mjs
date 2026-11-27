@@ -8,6 +8,7 @@ import { attitudeAdjustment, attitudeBand } from "../engine/attitude.mjs";
 import { applyGrudge, attitudeTables, attitudeValue } from "./attitude.mjs";
 import { pocketSize } from "../engine/theft.mjs";
 import { notorietyAt } from "./notoriety.mjs";
+import { stockForToken } from "./identity.mjs";
 import { appraisalKey, appraisalState } from "../engine/appraisal.mjs";
 import { haggleDC, isLocked } from "../engine/haggle.mjs";
 import { coinsToCopper, COPPER, payFrom } from "../engine/money.mjs";
@@ -257,6 +258,7 @@ async function openSession({ merchant, customer, remote: fromAfar }, sender) {
     traded: sameCustomer ? current.traded : [],
   });
   if (!sameCustomer) {
+    await stockForToken(pair.merchant).catch((error) => console.error("Kozmos Trade | Stock failed", error));
     await applyGrudge(pair.merchant, pair.customer).catch((error) => console.error("Kozmos Trade | Attitude failed", error));
     await recordVisit(pair.merchant, pair.customer).catch((error) => console.error("Kozmos Trade | Visit failed", error));
   }

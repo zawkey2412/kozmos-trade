@@ -27,6 +27,8 @@ import { TABLES } from "./tables.mjs";
  * @property {boolean} theftProof
  * @property {{ actor: string, name: string, item: string, time: number }[]} thefts
  * @property {Record<string, number>} grudges
+ * @property {boolean} freshStock
+ * @property {string | null} stockedToken
  */
 
 /**
@@ -117,6 +119,8 @@ export class MerchantFlags extends foundry.abstract.DataModel {
         }),
       ),
       grudges: new TypedObjectField(new NumberField({ required: true, nullable: false, integer: true })),
+      freshStock: new BooleanField(),
+      stockedToken: new StringField({ required: true, nullable: true, blank: false, initial: null }),
     };
   }
 }

@@ -83,7 +83,7 @@ export async function generateStock(merchant, { archetype, tier } = {}) {
   const created = data.length ? await merchant.createEmbeddedDocuments("Item", data) : [];
   await merchant.update({ "system.currency": { pp: 0, ep: 0, ...splitCopper(result.purse) } });
   const wanted = feature("wanted") ? rollWanted(pool, { archetype: definition, tier: options.tier, tables, random, exclude: result.picks.map((pick) => pick.uuid) }) : [];
-  await saveShop(merchant, { shop: { ...options, wanted, lastRestock: game.time.worldTime } });
+  await saveShop(merchant, { shop: { ...options, wanted, lastRestock: game.time.worldTime, stockedToken: merchant.isToken ? merchant.token.id : null } });
   const summary = { ...options, items: created.map((item) => item.id), purse: result.purse };
   Hooks.callAll("kozmosTrade.generateStock", merchant, summary);
   return summary;

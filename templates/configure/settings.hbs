@@ -1,4 +1,26 @@
 <section class="tab kt-configure-setup{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+  <fieldset>
+    <legend>{{localize "KT.Identity.Legend"}}</legend>
+    <div class="form-group">
+      <label for="{{rootId}}-identity">{{localize "KT.Identity.Label"}}</label>
+      <div class="form-fields">
+        <select id="{{rootId}}-identity" name="identity">
+          {{selectOptions identity.options selected=identity.value localize=true}}
+        </select>
+      </div>
+      <p class="hint">{{identity.hint}}</p>
+    </div>
+    {{#if identity.template}}
+    <div class="form-group kt-fresh-row{{#if (eq identity.value "unique")}} hidden{{/if}}">
+      <label for="{{rootId}}-fresh">{{localize "KT.Identity.Fresh.Label"}}</label>
+      <div class="form-fields">
+        <input type="checkbox" id="{{rootId}}-fresh" name="freshStock" {{checked shop.freshStock}}>
+      </div>
+      <p class="hint">{{localize "KT.Identity.Fresh.Hint"}}</p>
+    </div>
+    {{/if}}
+  </fieldset>
+
   {{#if shop.enabled}}
   <fieldset>
     <legend>{{localize "KT.Configure.Status"}}</legend>

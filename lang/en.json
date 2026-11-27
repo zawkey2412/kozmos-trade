@@ -108,7 +108,10 @@
       "SetUp": "Set up as a shop",
       "Trade": "Open the shop",
       "RightClick": "Right-click to configure it.",
-      "Configure": "Configure shop"
+      "Configure": "Configure shop",
+      "OpenSelected": "Open the selected shop",
+      "ConfigureSelected": "Configure the selected shop",
+      "SelectOne": "Select one NPC token first."
     },
     "Configure": {
       "Title": "Shop: {name}",
@@ -838,6 +841,31 @@
       "Ok": "Show",
       "NoPlayers": "No players are online.",
       "Done": "{name} shown to {count} players."
+    },
+    "Identity": {
+      "Legend": "Who is this merchant?",
+      "Label": "Merchant",
+      "unique": "One person: one shop on every map",
+      "generic": "A kind of merchant: a shop per token",
+      "Hint": {
+        "unique": "Every token of {name} is the same shop, with the same stock, purse and memory of customers, on every map.",
+        "generic": "Each token of {name} you place from now on becomes its own shop, starting as a copy of this one.",
+        "token": "This token is its own shop, kept on the token only. Deleting the token deletes the shop. Choose One person to move this shop onto {name}, so it follows them to every map."
+      },
+      "Fresh": {
+        "Label": "Roll new stock for each token",
+        "Hint": "Each token rolls its own shelf and purse the first time someone trades there."
+      },
+      "Move": {
+        "Title": "Make this merchant one person?",
+        "Body": "{name} in the Actors sidebar takes this token's items, purse and shop records. Every token of {name} then shares this one shop, on every map."
+      },
+      "Choose": {
+        "Title": "{name} is already a shop",
+        "Body": "{name} already runs a shop through another token. Use that shop here too, and drop this token's own shelf? Or make this token a separate person with an actor of its own?",
+        "Link": "Use the existing shop",
+        "Copy": "Make a separate person"
+      }
     }
   }
 }
