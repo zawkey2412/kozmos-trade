@@ -94,7 +94,7 @@ export default class PlayerTradeWindow extends OfferWindow {
   constructor({ state, mine, ...options }) {
     super(options);
     /** @type {PlayerTradeView} */
-    this.state = state;
+    this.trade = state;
     this.mineIndex = mine;
     this.dirty = false;
     this.busy = false;
@@ -104,11 +104,11 @@ export default class PlayerTradeWindow extends OfferWindow {
   }
 
   get mine() {
-    return this.state.sides[this.mineIndex];
+    return this.trade.sides[this.mineIndex];
   }
 
   get other() {
-    return this.state.sides[1 - this.mineIndex];
+    return this.trade.sides[1 - this.mineIndex];
   }
 
   get title() {
@@ -121,7 +121,7 @@ export default class PlayerTradeWindow extends OfferWindow {
 
   /** @param {PlayerTradeView} view */
   applyState(view) {
-    this.state = view;
+    this.trade = view;
     if (!this.dirty) this.#loadMine();
     if (this.rendered && !this.over) this.render({ parts: ["inventory", "tray", "status", "theirs", "footer"] });
   }
@@ -142,19 +142,19 @@ export default class PlayerTradeWindow extends OfferWindow {
     const offer = { items: [...this.offer.items], coins: this.offer.coins };
     try {
       /** @type {PlayerTradeView} */
-      const view = await request(MESSAGES.PLAYER_OFFER, { id: this.state.id, actor: this.mine.actor, offer });
-      if (this.dirty) this.state = view;
+      const view = await request(MESSAGES.PLAYER_OFFER, { id: this.trade.id, actor: this.mine.actor, offer });
+      if (this.dirty) this.trade = view;
       else this.applyState(view);
     } catch (error) {
       warn(error);
       this.dirty = false;
-      this.applyState(this.state);
+      this.applyState(this.trade);
     }
   }
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const both = this.state.sides;
+    const both = this.trade.sides;
     return Object.assign(context, {
       header: {
         mine: { name: this.mine.name, img: this.mine.img },
@@ -190,7 +190,7 @@ export default class PlayerTradeWindow extends OfferWindow {
 
   async _onClose(options) {
     await super._onClose(options);
-    if (!this.over) request(MESSAGES.PLAYER_CLOSE, { id: this.state.id }).catch(() => false);
+    if (!this.over) request(MESSAGES.PLAYER_CLOSE, { id: this.trade.id }).catch(() => false);
   }
 
   /** @this {PlayerTradeWindow} */
@@ -200,7 +200,7 @@ export default class PlayerTradeWindow extends OfferWindow {
     this.render({ parts: ["footer"] });
     try {
       if (this.dirty) await this.send();
-      const result = await request(MESSAGES.PLAYER_ACCEPT, { id: this.state.id, actor: this.mine.actor, version: this.state.version });
+      const result = await request(MESSAGES.PLAYER_ACCEPT, { id: this.trade.id, actor: this.mine.actor, version: this.trade.version });
       if (!result?.done) this.applyState(result);
     } catch (error) {
       warn(error);
