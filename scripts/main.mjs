@@ -25,6 +25,7 @@ import { listen, MESSAGES, onBroadcast } from "./services/socket.mjs";
 import { registerTradeHandlers } from "./services/trade.mjs";
 import { registerSettings } from "./settings.mjs";
 import { registerGmControls } from "./ui/gm-controls.mjs";
+import { registerInfoHints } from "./ui/info.mjs";
 import { registerDragTrade } from "./ui/drag-trade.mjs";
 import { coinBurst } from "./ui/effects.mjs";
 import { registerTradeLinks } from "./ui/enricher.mjs";
@@ -36,6 +37,7 @@ Hooks.once("init", () => {
   registerArchetypeMenu();
   registerFeatureMenu();
   registerGmControls();
+  registerInfoHints();
   registerSceneControls();
   setTradeWindow((snapshot, customer) => BarterWindow.show(snapshot, customer));
   setJoinWindow((view, customer) => JoinWindow.show(view, customer));

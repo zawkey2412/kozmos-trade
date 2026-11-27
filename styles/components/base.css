@@ -155,20 +155,13 @@
   white-space: nowrap;
 }
 
-/* A question mark that shows a hint on hover or focus. */
+/* A question mark in a circle that shows a hint on hover or focus. */
 .kozmos-trade .kt-info {
-  display: inline-flex;
-  flex: none;
-  width: auto;
-  height: auto;
-  min-height: 0;
-  margin: 0 0 0 var(--kt-space-tight);
-  padding: 0 var(--kt-space-tight);
-  border: none;
-  background: none;
-  box-shadow: none;
+  display: inline-block;
+  margin-inline-start: var(--kt-space-tight);
   color: var(--kt-text-subtle);
   font-size: var(--kt-font-small);
+  font-weight: normal;
   line-height: 1;
   vertical-align: baseline;
   cursor: help;
@@ -177,5 +170,5 @@
 .kozmos-trade .kt-info:hover,
 .kozmos-trade .kt-info:focus-visible {
   color: var(--kt-text);
-  box-shadow: none;
+  outline: none;
 }
