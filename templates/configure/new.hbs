@@ -1,0 +1,30 @@
+<section class="kt-configure-new">
+  <p class="hint">{{localize "KT.Configure.New.Hint" name=document.name}}</p>
+  <div class="form-group">
+    <label for="{{rootId}}-archetype">{{localize "KT.Configure.Archetype"}}</label>
+    <div class="form-fields">
+      <select id="{{rootId}}-archetype" name="archetype">
+        {{selectOptions archetypes selected=shop.archetype}}
+      </select>
+    </div>
+    <p class="hint">{{localize "KT.Configure.ArchetypeHint"}}</p>
+  </div>
+  <div class="form-group">
+    <label for="{{rootId}}-tier">{{localize "KT.Configure.Tier"}}</label>
+    <div class="form-fields">
+      <select id="{{rootId}}-tier" name="tier">
+        {{selectOptions tiers selected=shop.tier localize=true}}
+      </select>
+    </div>
+    <p class="hint">{{localize "KT.Configure.TierHint"}}</p>
+  </div>
+  <div class="form-group kt-identity">
+    <label>{{localize "KT.Identity.Legend"}}</label>
+    <div class="form-fields">
+      <span class="kt-identity-value"><i class="fa-solid {{identity.icon}}" inert></i> {{identity.label}}</span>
+      <button type="button" data-action="changeIdentity"><i class="fa-solid fa-pen" inert></i> {{localize "KT.Identity.Change"}}</button>
+    </div>
+    <p class="hint">{{identity.hint}}</p>
+  </div>
+  <p class="kt-carries">{{carries}}</p>
+</section>

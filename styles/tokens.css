@@ -23,7 +23,6 @@
   --kt-price-width: 7rem;
   --kt-value-width: 6rem;
   --kt-pin-width: 2rem;
-  --kt-list-height: 24rem;
   --kt-ledger-height: 12rem;
   --kt-editor-list-width: 13rem;
   --kt-json-height: 9rem;
@@ -47,7 +46,6 @@
   --kt-letter-spacing: 0.08em;
   --kt-transition: 150ms ease;
   --kt-ring: 0 0 0 1px var(--kt-highlight) inset;
-  --kt-action-width: 13rem;
   --kt-gm-tools-width: 34rem;
   --kt-tip-duration: 600ms;
   --kt-tip-angle: 14deg;

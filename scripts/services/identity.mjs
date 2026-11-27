@@ -8,6 +8,8 @@ import { generateStock } from "./stock.mjs";
 /** @typedef {"unique" | "generic"} Identity */
 /** @typedef {"move" | "link" | "copy"} UniqueMode */
 
+export const IDENTITY_ICONS = Object.freeze({ unique: "fa-user", generic: "fa-users" });
+
 // One person when its tokens share the actor, a kind of merchant when each token keeps its own.
 /**
  * @param {any} actor

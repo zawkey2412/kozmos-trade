@@ -1,0 +1,43 @@
+<section class="tab kt-configure-customers{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+  {{#if attitudeOn}}
+  <fieldset class="kt-configure-attitude">
+    <legend>{{localize "KT.Attitude.Title"}}</legend>
+    <p class="hint">{{localize "KT.Attitude.Hint"}}</p>
+    {{#each attitudes as |row|}}
+    <div class="form-group">
+      <label for="{{@root.rootId}}-attitude-{{row.key}}">{{row.name}}</label>
+      <div class="form-fields">
+        <span class="kt-attitude {{row.band}}"><i class="{{row.icon}}" inert></i> {{row.label}}</span>
+        <input type="number" id="{{@root.rootId}}-attitude-{{row.key}}" name="attitude.{{row.key}}" value="{{row.value}}" min="{{@root.attitudeRange.min}}" max="{{@root.attitudeRange.max}}" step="1">
+      </div>
+    </div>
+    {{else}}
+    <p class="kt-empty">{{localize "KT.Attitude.Nobody"}}</p>
+    {{/each}}
+  </fieldset>
+  {{/if}}
+
+  <fieldset class="kt-configure-ledger">
+    <legend>{{localize "KT.Ledger.Label"}}</legend>
+    <p class="hint">{{localize "KT.Ledger.Hint"}}</p>
+    {{#if ledger.length}}
+    <ol class="kt-ledger-list plain">
+      {{#each ledger as |entry|}}
+      <li class="kt-ledger-row{{#if entry.reverted}} reverted{{/if}}">
+        <span class="kt-ledger-who">{{entry.customer}}</span>
+        <span class="kt-ledger-what">{{entry.summary}}</span>
+        {{#if entry.reverted}}
+        <span class="kt-muted">{{localize "KT.Receipt.RevertedNote"}}</span>
+        {{else}}
+        <button type="button" class="kt-ledger-revert" data-action="revert" data-entry="{{entry.id}}">
+          <i class="fa-solid fa-rotate-left" inert></i> {{localize "KT.Receipt.Revert"}}
+        </button>
+        {{/if}}
+      </li>
+      {{/each}}
+    </ol>
+    {{else}}
+    <p class="kt-empty">{{localize "KT.Ledger.Empty"}}</p>
+    {{/if}}
+  </fieldset>
+</section>

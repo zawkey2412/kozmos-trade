@@ -27,60 +27,45 @@
 }
 
 /* First screen for an NPC that is not a shop yet. */
-.kt-configure-shop .kt-configure-intro {
+.kt-configure-shop .kt-configure-new {
   display: flex;
-  gap: var(--kt-space-large);
-  align-items: flex-start;
-  padding: var(--kt-space);
-  border: var(--kt-border);
-  border-radius: var(--kt-radius);
-  background: var(--kt-surface);
-}
-
-.kt-configure-shop .kt-intro-icon {
-  font-size: var(--kt-icon);
-  color: var(--kt-text-muted);
-}
-
-.kt-configure-shop .kt-configure-intro h3 {
-  margin: 0 0 var(--kt-space-small);
-  border: none;
-  font-size: var(--kt-font-large);
-}
-
-.kt-configure-shop .kt-intro-steps {
-  margin: 0;
-  padding-left: var(--kt-space-large);
-  color: var(--kt-text-muted);
-  font-size: var(--kt-font-body);
-}
-
-.kt-configure-shop .kt-intro-steps li + li {
-  margin-top: var(--kt-space-tight);
-}
-
-/* A button with what it does beside it. */
-.kt-configure-shop .kt-action-row {
-  display: grid;
-  grid-template-columns: var(--kt-action-width) 1fr;
-  align-items: center;
+  flex-direction: column;
   gap: var(--kt-space);
 }
 
-.kt-configure-shop .kt-action-row + .kt-action-row {
-  margin-top: var(--kt-space-small);
-}
-
-.kt-configure-shop .kt-action-row .hint {
+.kt-configure-shop .kt-configure-new > .hint,
+.kt-configure-shop .kt-carries {
   margin: 0;
 }
 
-.kt-configure-shop .kt-danger {
-  border-color: var(--kt-short);
+.kt-configure-shop .kt-carries {
+  color: var(--kt-text-muted);
+  font-size: var(--kt-font-small);
+  font-style: italic;
 }
 
-.kt-configure-shop .kt-danger legend {
-  color: var(--kt-short);
+/* Who the merchant is, with its Change button. */
+.kt-configure-shop .kt-identity .form-fields {
+  align-items: center;
+}
+
+.kt-configure-shop .kt-identity-value {
+  flex: 1;
+}
+
+.kt-configure-shop .kt-identity button {
+  flex: none;
+  width: auto;
+}
+
+.kt-identity-dialog .kt-identity-choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-tight);
+}
+
+.kt-identity-dialog .kt-identity-choices .hint {
+  margin: 0 0 var(--kt-space-small) var(--kt-space-large);
 }
 
 .kt-configure-shop .kt-configure-stock.active {
@@ -109,10 +94,6 @@
   min-height: 0;
   overflow-y: auto;
   margin: 0;
-}
-
-.kt-configure-shop:not(:has(.sheet-tabs)) .kt-stock-list {
-  max-height: var(--kt-list-height);
 }
 
 .kt-configure-shop .kt-stock-row {
@@ -204,9 +185,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--kt-space-small);
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   margin: 0;
 }
 
@@ -250,7 +228,12 @@
   width: auto;
 }
 
-/* Wanted board rows and their reroll button. */
+/* The Wanted board under the shelf. */
+.kt-configure-shop .kt-configure-wanted {
+  flex: none;
+  margin: 0;
+}
+
 .kt-configure-wanted .kt-wanted-rows li {
   display: flex;
   align-items: center;
@@ -266,9 +249,4 @@
 
 .kt-configure-wanted .kt-wanted-rows span {
   flex: 1;
-}
-
-.kt-configure-wanted .kt-wanted-tools {
-  display: flex;
-  justify-content: flex-end;
 }

@@ -8,12 +8,13 @@ import { EXECUTION_MODES, merchantFlags, TIERS } from "../data/flags.mjs";
 import { coinsToCopper, COPPER, formatCopper, toCopper } from "../engine/money.mjs";
 import { coinLabels, locale } from "../adapter/dnd5e.mjs";
 import { warn } from "../services/errors.mjs";
+import { openTrade } from "../services/open-trade.mjs";
 import { ledgerOf, revertEntry } from "../services/receipts.mjs";
 import { postShopCard } from "../services/shop-card.mjs";
 import { showShop } from "../services/show.mjs";
 import { generateStock, importStock, rerollWanted } from "../services/stock.mjs";
 import { wantedLabels, wantedView } from "../services/session.mjs";
-import { baseActorOf, identityOf, makeGeneric, makeUnique, uniqueOptions } from "../services/identity.mjs";
+import { baseActorOf, IDENTITY_ICONS, identityOf, makeGeneric, makeUnique, uniqueOptions } from "../services/identity.mjs";
 import { removeShop, saveShop, shelf } from "../services/shop.mjs";
 
 /** @import { UniqueMode } from "../services/identity.mjs"; */
@@ -30,25 +31,25 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     window: { icon: "fa-solid fa-scale-balanced", contentClasses: ["standard-form"], resizable: true },
     form: { handler: ConfigureShop.#onSubmit, closeOnSubmit: false, submitOnChange: false },
     actions: {
+      trade: ConfigureShop.#onTrade,
       removeShop: ConfigureShop.#onRemoveShop,
       revert: ConfigureShop.#onRevert,
       postCard: ConfigureShop.#onPostCard,
       generate: ConfigureShop.#onGenerate,
       rollWanted: ConfigureShop.#onRollWanted,
       showPlayers: ConfigureShop.#onShowPlayers,
+      changeIdentity: ConfigureShop.#onChangeIdentity,
     },
     sheetConfig: false,
     ownershipConfig: false,
   };
 
   static PARTS = {
-    intro: { template: template("intro") },
+    new: { template: template("new") },
     tabs: { template: "templates/generic/tab-navigation.hbs" },
     setup: { template: template("settings"), scrollable: [""] },
     stock: { template: template("stock"), scrollable: [".kt-stock-list"] },
-    attitude: { template: template("attitude"), scrollable: [""] },
-    wanted: { template: template("wanted"), scrollable: [""] },
-    ledger: { template: template("ledger"), scrollable: [".kt-ledger-list"] },
+    customers: { template: template("customers"), scrollable: [""] },
     footer: { template: "templates/generic/form-footer.hbs" },
   };
 
@@ -57,9 +58,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
       tabs: [
         { id: "setup", icon: "fa-solid fa-store" },
         { id: "stock", icon: "fa-solid fa-boxes-stacked" },
-        { id: "attitude", icon: "fa-regular fa-face-smile" },
-        { id: "wanted", icon: "fa-solid fa-bullhorn" },
-        { id: "ledger", icon: "fa-solid fa-book" },
+        { id: "customers", icon: "fa-solid fa-users" },
       ],
       initial: "setup",
       labelPrefix: "KT.Configure.Tab",
@@ -100,8 +99,6 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
 
   async _onRender(context, options) {
     await super._onRender(context, options);
-    const identity = this.element.querySelector("select[name='identity']");
-    identity?.addEventListener("change", () => this.element.querySelector(".kt-fresh-row")?.classList.toggle("hidden", identity.value === "unique"));
     const zone = this.element.querySelector(".kt-configure-stock");
     if (!zone || zone.dataset.dropReady) return;
     zone.dataset.dropReady = "true";
@@ -123,26 +120,29 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     return merchantFlags(this.document).enabled;
   }
 
-  _configureRenderParts(options) {
-    const parts = super._configureRenderParts(options);
-    if (this.enabled) delete parts.intro;
-    else for (const id of ["tabs", "attitude", "wanted", "ledger"]) delete parts[id];
-    if (!feature("attitude")) delete parts.attitude;
-    if (!feature("wanted")) delete parts.wanted;
-    return parts;
+  // Shop-wide actions in the window menu, for a shop that is set up.
+  _getHeaderControls() {
+    const controls = super._getHeaderControls();
+    const shop = () => this.enabled;
+    return [
+      ...controls,
+      { action: "trade", icon: "fa-solid fa-scale-balanced", label: "KT.Shop.Trade", visible: shop },
+      { action: "showPlayers", icon: "fa-solid fa-eye", label: "KT.Show.Control", visible: shop },
+      { action: "postCard", icon: "fa-solid fa-bullhorn", label: "KT.Configure.PostCard", visible: shop },
+      { action: "removeShop", icon: "fa-solid fa-store-slash", label: "KT.Configure.Remove", visible: shop },
+    ];
   }
 
-  _getTabsConfig(group) {
-    const config = super._getTabsConfig(group);
-    if (!config) return config;
-    const hidden = new Set([...(feature("attitude") ? [] : ["attitude"]), ...(feature("wanted") ? [] : ["wanted"])]);
-    return { ...config, tabs: config.tabs.filter((tab) => !hidden.has(tab.id)) };
+  _configureRenderParts(options) {
+    const parts = super._configureRenderParts(options);
+    if (this.enabled) delete parts.new;
+    else for (const id of ["tabs", "setup", "stock", "customers"]) delete parts[id];
+    return parts;
   }
 
   async _preparePartContext(partId, context, options) {
     const partContext = await super._preparePartContext(partId, context, options);
-    if (!this.enabled) partContext.tab = { id: partId, group: "primary", active: true };
-    else if (partContext.tabs && partId in partContext.tabs) partContext.tab = partContext.tabs[partId];
+    if (partContext.tabs && partId in partContext.tabs) partContext.tab = partContext.tabs[partId];
     return partContext;
   }
 
@@ -150,7 +150,8 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     const context = await super._prepareContext(options);
     const flags = merchantFlags(this.document);
     const money = { locale: locale(), labels: coinLabels() };
-    const rows = shelf(this.document).map(({ item, holding, flags: itemFlagData, value, price }) => ({
+    const entries = shelf(this.document);
+    const rows = entries.map(({ item, holding, flags: itemFlagData, value, price }) => ({
       id: item.id,
       name: item.name,
       img: item.img,
@@ -170,13 +171,17 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
       summary: game.i18n.localize("KT.Ledger.Summary", { gets: names(entry.received, entry.paid), gives: names(entry.given, entry.coinsGive) }),
     }));
     const tables = attitudeTables();
+    const forSale = entries.filter((entry) => entry.value.forSale).length;
     return Object.assign(context, {
       ledger,
-      attitudes: flags.enabled ? attitudeRows(this.document) : [],
+      attitudeOn: feature("attitude"),
+      attitudes: flags.enabled && feature("attitude") ? attitudeRows(this.document) : [],
+      wantedOn: feature("wanted"),
       wanted: wantedLabels(wantedView(this.document)),
       attitudeRange: { min: tables.min, max: tables.max },
       theftOn: feature("theft"),
       identity: this.#identityContext(),
+      carries: game.i18n.localize(forSale ? "KT.Configure.New.Carries" : "KT.Configure.New.Nothing", { name: this.document.name, count: forSale }),
       shop: { ...flags, archetype: flags.archetype || DEFAULT_ARCHETYPE },
       archetypes: Object.fromEntries(Object.keys(getArchetypes()).map((id) => [id, archetypeLabel(id)])),
       tiers: Object.fromEntries(TIERS.map((id) => [id, `KT.Tier.${id}`])),
@@ -191,23 +196,21 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     });
   }
 
-  // The identity choice, with a hint that says where this shop lives now.
+  // Who the merchant is now, and where its shop lives.
   #identityContext() {
     const actor = this.document;
     const value = identityOf(actor);
-    const base = baseActorOf(actor);
-    const name = base?.name ?? actor.name;
-    let key = value === "unique" ? "KT.Identity.Hint.unique" : "KT.Identity.Hint.generic";
-    if (actor.isToken) key = "KT.Identity.Hint.token";
+    const name = baseActorOf(actor)?.name ?? actor.name;
+    const hint = game.i18n.localize(`KT.Identity.Hint.${actor.isToken ? "token" : value}`, { name });
+    const fresh = !actor.isToken && value === "generic" && merchantFlags(actor).freshStock;
     return {
-      value,
-      options: { unique: "KT.Identity.unique", generic: "KT.Identity.generic" },
-      hint: game.i18n.localize(key, { name }),
-      template: !actor.isToken,
+      icon: IDENTITY_ICONS[value],
+      label: game.i18n.localize(`KT.Identity.Short.${value}`),
+      hint: fresh ? `${hint} ${game.i18n.localize("KT.Identity.Hint.fresh")}` : hint,
     };
   }
 
-  // Applies a change of identity first. Answers the actor that holds the shop afterward, or null when the GM backs out.
+  // Applies a change of identity. Answers the actor that holds the shop afterward, or null when the GM backs out.
   /** @param {string | undefined} choice */
   async #applyIdentity(choice) {
     const actor = this.document;
@@ -253,16 +256,10 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
   static async #onSubmit(event, form, formData) {
     // Form data has no static shape.
     const data = /** @type {any} */ (foundry.utils.expandObject(formData.object));
-    const actor = await this.#applyIdentity(data.identity);
-    if (!actor) return;
-    if (actor !== this.document) {
-      await this.#saveOn(actor, data);
-      return this.#reopen(actor, merchantFlags(actor).enabled ? "setup" : "stock");
-    }
-    const enabled = merchantFlags(actor).enabled;
-    await this.#saveOn(actor, data);
+    const enabled = this.enabled;
+    await this.#saveOn(this.document, data);
     if (!enabled) return this.#becameShop("stock");
-    ui.notifications.info(game.i18n.localize("KT.Configure.Saved", { name: actor.name }));
+    ui.notifications.info(game.i18n.localize("KT.Configure.Saved", { name: this.document.name }));
   }
 
   // Writes the form's shop settings, prices, pins and attitude to an actor.
@@ -273,15 +270,15 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
   async #saveOn(actor, data) {
     const current = merchantFlags(actor);
     const enabled = current.enabled;
+    const keep = (/** @type {string} */ key, /** @type {any} */ value) => (data[key] === undefined ? value : data[key]);
     const shop = {
       enabled: true,
-      open: enabled ? Boolean(data.open) : true,
-      remoteTrade: enabled ? Boolean(data.remoteTrade) : false,
-      theftProof: data.theftProof === undefined ? current.theftProof : Boolean(data.theftProof),
-      freshStock: data.freshStock === undefined ? current.freshStock : Boolean(data.freshStock),
-      archetype: data.archetype,
-      tier: data.tier,
-      executionMode: data.executionMode,
+      open: enabled ? Boolean(keep("open", current.open)) : true,
+      remoteTrade: enabled ? Boolean(keep("remoteTrade", current.remoteTrade)) : false,
+      theftProof: Boolean(keep("theftProof", current.theftProof)),
+      archetype: keep("archetype", current.archetype),
+      tier: keep("tier", current.tier),
+      executionMode: keep("executionMode", current.executionMode),
     };
     const items = Object.fromEntries(
       Object.entries(data.items ?? {}).map(([id, row]) => [
@@ -312,7 +309,56 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     const { left, top } = this.position;
     await this.close();
     const app = /** @type {any} */ (await ConfigureShop.open(actor, { tab }));
-    app?.setPosition({ left, top, height: SHOP_HEIGHT });
+    app?.setPosition({ left, top, ...(merchantFlags(actor).enabled ? { height: SHOP_HEIGHT } : {}) });
+  }
+
+  /** @this {ConfigureShop} */
+  static #onTrade() {
+    return openTrade(null, this.document);
+  }
+
+  // Asks who the merchant is, and applies the answer at once.
+  /** @this {ConfigureShop} */
+  static async #onChangeIdentity() {
+    const actor = this.document;
+    const current = identityOf(actor);
+    const name = baseActorOf(actor)?.name ?? actor.name;
+    const safe = foundry.utils.escapeHTML(name);
+    const choice = (/** @type {"unique" | "generic"} */ value) => {
+      const hint = game.i18n.localize(`KT.Identity.Hint.${value === "generic" && actor.isToken ? "token" : value}`, { name: safe });
+      return `<label class="checkbox"><input type="radio" name="identity" value="${value}"${value === current ? " checked" : ""}> ${game.i18n.localize(`KT.Identity.${value}`)}</label><p class="hint">${hint}</p>`;
+    };
+    const { createCheckboxInput, createFormGroup } = foundry.applications.fields;
+    const fresh = actor.isToken
+      ? ""
+      : createFormGroup({
+          label: game.i18n.localize("KT.Identity.Fresh.Label"),
+          input: createCheckboxInput({ name: "freshStock", value: merchantFlags(actor).freshStock }),
+          hint: game.i18n.localize("KT.Identity.Fresh.Hint"),
+          classes: ["kt-fresh-row"],
+        }).outerHTML;
+    const data = /** @type {any} */ (await foundry.applications.api.DialogV2.input(/** @type {any} */ ({
+      window: { title: game.i18n.localize("KT.Identity.ChangeTitle", { name }), icon: "fa-solid fa-user" },
+      classes: ["kozmos-trade", "kt-identity-dialog"],
+      content: `<p class="hint">${game.i18n.localize("KT.Identity.ChangeHint")}</p><div class="kt-identity-choices">${choice("unique")}${choice("generic")}</div>${fresh}`,
+      render: (/** @type {Event} */ event, /** @type {any} */ dialog) => {
+        const form = /** @type {HTMLElement} */ (dialog.element);
+        const sync = () => form.querySelector(".kt-fresh-row")?.classList.toggle("hidden", /** @type {HTMLInputElement | null} */ (form.querySelector("input[name='identity']:checked"))?.value !== "generic");
+        form.addEventListener("change", sync);
+        sync();
+      },
+      ok: { label: "KT.Configure.Save", icon: "fa-solid fa-floppy-disk" },
+      rejectClose: false,
+    })));
+    if (!data) return;
+    const target = await this.#applyIdentity(data.identity);
+    if (!target) return;
+    const flags = merchantFlags(target);
+    if (!target.isToken && data.freshStock !== undefined && Boolean(data.freshStock) !== flags.freshStock) {
+      await saveShop(target, { shop: { freshStock: Boolean(data.freshStock), enabled: flags.enabled } }).catch((error) => warn(error));
+    }
+    if (target !== actor) return this.#reopen(target, "setup");
+    this.render();
   }
 
   /**
@@ -329,34 +375,29 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
   static async #onGenerate() {
     // Form data has no static shape.
     const data = /** @type {any} */ (new foundry.applications.ux.FormDataExtended(this.element)).object;
-    const unpinned = shelf(this.document).filter((entry) => !entry.flags.pinned).length;
+    const actor = this.document;
+    const unpinned = shelf(actor).filter((entry) => !entry.flags.pinned).length;
     if (unpinned) {
       const ok = await foundry.applications.api.DialogV2.confirm(/** @type {any} */ ({
-        window: { title: "KT.Configure.Generate" },
+        window: { title: "KT.Stock.Restock" },
         content: `<p>${game.i18n.localize("KT.Configure.GenerateConfirm", { count: unpinned })}</p>`,
         rejectClose: false,
       }));
       if (!ok) return;
     }
-    const actor = await this.#applyIdentity(data.identity);
-    if (!actor) return;
     const isNew = !merchantFlags(actor).enabled;
-    if (isNew) {
-      const freshStock = data.freshStock === undefined ? false : Boolean(data.freshStock);
-      await saveShop(actor, { shop: { open: true, archetype: data.archetype, tier: data.tier, executionMode: data.executionMode, freshStock } });
-    }
+    if (isNew) await saveShop(actor, { shop: { open: true, archetype: data.archetype, tier: data.tier } });
     const result = await generateStock(actor, { archetype: data.archetype, tier: data.tier }).catch((error) => warn(error));
     if (!result) return;
     const purse = formatCopper(result.purse, { locale: locale(), labels: coinLabels() });
     ui.notifications.info(game.i18n.localize("KT.Configure.Generated", { count: result.items.length, purse }));
-    if (actor !== this.document) return this.#reopen(actor, "stock");
     if (isNew) return this.#becameShop("stock");
   }
 
   /** @this {ConfigureShop} */
   static async #onRollWanted() {
     await rerollWanted(this.document).catch((error) => warn(error));
-    this.render({ parts: ["wanted"] });
+    this.render({ parts: ["stock"] });
   }
 
   /** @this {ConfigureShop} */

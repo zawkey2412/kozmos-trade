@@ -1,9 +1,7 @@
 <section class="tab kt-configure-stock{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
   <div class="kt-stock-tools">
     <p class="hint">{{localize "KT.Configure.Stock.Hint"}}</p>
-    {{#if shop.enabled}}
     <button type="button" data-action="generate"><i class="fa-solid fa-dice" inert></i> {{localize "KT.Configure.Generate"}}</button>
-    {{/if}}
   </div>
 
   {{#if rows.length}}
@@ -37,5 +35,24 @@
   </ol>
   {{else}}
   <p class="kt-empty">{{localize "KT.Configure.Stock.Empty"}}</p>
+  {{/if}}
+
+  {{#if wantedOn}}
+  <fieldset class="kt-configure-wanted">
+    <legend>{{localize "KT.Wanted.Title"}}</legend>
+    <div class="kt-stock-tools">
+      <p class="hint">{{localize "KT.Wanted.ConfigureHint"}}</p>
+      <button type="button" data-action="rollWanted"><i class="fa-solid fa-dice" inert></i> {{localize "KT.Wanted.Roll"}}</button>
+    </div>
+    {{#if wanted.length}}
+    <ul class="kt-wanted-rows plain">
+      {{#each wanted as |entry|}}
+      <li>{{#if entry.img}}<img src="{{entry.img}}" alt="">{{/if}}<span>{{entry.label}}</span> <strong>{{localize "KT.Wanted.Pays" rate=entry.rate}}</strong></li>
+      {{/each}}
+    </ul>
+    {{else}}
+    <p class="kt-empty">{{localize "KT.Wanted.Empty"}}</p>
+    {{/if}}
+  </fieldset>
   {{/if}}
 </section>
