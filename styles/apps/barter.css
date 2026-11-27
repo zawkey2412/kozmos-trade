@@ -1,9 +1,9 @@
-/* Barter window layout. */
+/* Barter window layout: inventories are wider than the trays, the balance sits between the trays. */
 .kt-barter .window-content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--kt-balance-width) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) var(--kt-balance-width) minmax(0, 1fr) minmax(0, 1.25fr);
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: var(--kt-space);
+  gap: var(--kt-space) var(--kt-space-large);
   padding: var(--kt-space);
   overflow: hidden;
 }
@@ -15,9 +15,9 @@
 
 /* Header. */
 .kt-barter .kt-barter-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: var(--kt-space-large);
   padding-bottom: var(--kt-space);
   border-bottom: var(--kt-border);
@@ -31,13 +31,14 @@
 }
 
 .kt-barter .kt-party-merchant {
+  justify-content: flex-end;
   text-align: right;
 }
 
 .kt-barter .kt-party-text {
   display: flex;
   flex-direction: column;
-  gap: var(--kt-space-small);
+  gap: var(--kt-space-tight);
   min-width: 0;
 }
 
@@ -46,6 +47,7 @@
 }
 
 .kt-barter .kt-party h2 {
+  max-width: 100%;
   margin: 0;
   border: none;
   font-size: var(--kt-font-large);
@@ -61,18 +63,12 @@
   border-radius: var(--kt-radius);
 }
 
-.kt-barter .kt-muted {
-  color: var(--kt-text-muted);
-  font-size: var(--kt-font-small);
-}
-
 .kt-barter .kt-header-middle {
   display: flex;
   align-items: center;
-  gap: var(--kt-space);
+  justify-content: center;
 }
 
-/* The trade mode, shown to the GM while trades wait for approval. */
 .kt-barter .kt-mode-label {
   color: var(--kt-text-muted);
   font-size: var(--kt-font-small);
@@ -82,10 +78,11 @@
 .kt-barter .kt-counter-label {
   color: var(--kt-generous);
   font-weight: bold;
+  white-space: nowrap;
 }
 
 .kt-barter .kt-attitude {
-  margin-left: var(--kt-space);
+  margin-left: var(--kt-space-small);
   white-space: nowrap;
 }
 
@@ -110,7 +107,7 @@
 .kt-barter .kt-inventory {
   display: flex;
   flex-direction: column;
-  gap: var(--kt-space-small);
+  gap: var(--kt-space);
   min-height: 0;
 }
 
@@ -119,27 +116,18 @@
 }
 
 .kt-barter .kt-tray {
-  padding: var(--kt-space-small);
+  padding: var(--kt-space);
   border: var(--kt-border);
   border-radius: var(--kt-radius);
   background: var(--kt-surface);
 }
 
-.kt-barter .kt-tray h3 {
+.kt-barter .kt-tray .kt-heading {
   margin: 0;
-  border: none;
-  font-size: var(--kt-font-body);
-  text-align: center;
 }
 
 .kt-barter .kt-inventory-tools {
-  display: flex;
-  gap: var(--kt-space-small);
-}
-
-.kt-barter .kt-inventory-tools .kt-search {
-  flex: 1;
-  min-width: 0;
+  flex-wrap: nowrap;
 }
 
 .kt-barter .kt-inventory-tools .kt-sort {
@@ -192,20 +180,24 @@
   min-height: 0;
 }
 
-.kt-barter .kt-empty {
-  color: var(--kt-text-muted);
+/* The merchant's lines above the shelf. */
+.kt-barter .kt-reaction {
   font-style: italic;
-  text-align: center;
-  margin: var(--kt-space-large) var(--kt-space);
+}
+
+.kt-barter .kt-wanted > span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kt-space-tight) var(--kt-space);
+}
+
+.kt-barter .kt-wanted > span > strong {
+  color: var(--kt-generous);
 }
 
 /* Tray lines and coins. */
 .kt-barter .kt-tray-list {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--kt-space-small);
-  margin: 0;
   overflow-y: auto;
   min-height: 0;
 }
@@ -219,7 +211,7 @@
   grid-template-columns: var(--kt-icon) minmax(0, 1fr) auto;
   grid-template-areas: "icon name remove" "icon stepper total";
   align-items: center;
-  gap: var(--kt-space-small);
+  gap: var(--kt-space-tight) var(--kt-space-small);
   padding: var(--kt-space-small);
   border: var(--kt-border-clear);
   border-radius: var(--kt-radius);
@@ -236,6 +228,7 @@
   width: var(--kt-icon);
   height: var(--kt-icon);
   border: none;
+  border-radius: var(--kt-radius);
 }
 
 .kt-barter .kt-line [data-action="unstage"] {
@@ -244,9 +237,6 @@
 
 .kt-barter .kt-line-name {
   grid-area: name;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .kt-barter .kt-line-stepper {
@@ -286,20 +276,12 @@
 
 .kt-barter .kt-coin-field input {
   width: 100%;
+  padding-inline: var(--kt-space-tight);
   text-align: center;
 }
 
 .kt-barter .kt-tray-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   justify-content: space-between;
-  gap: var(--kt-space-small);
-}
-
-.kt-barter .kt-tray-tools button {
-  flex: none;
-  width: auto;
 }
 
 .kt-barter .kt-keep {
@@ -309,30 +291,22 @@
   font-size: var(--kt-font-small);
 }
 
-/* Balance. */
+/* Balance: the state on top, then totals, modifiers and haggling. It scrolls when it runs long. */
 .kt-barter .kt-balance {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: var(--kt-space);
-  padding-top: var(--kt-space-large);
-  text-align: center;
+  min-height: 0;
+  padding-top: var(--kt-space);
+  overflow-y: auto;
 }
 
-/* Totals on each side. */
-.kt-barter .kt-sides {
-  display: grid;
+.kt-barter .kt-balance-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: var(--kt-space-tight);
-  margin: 0;
-}
-
-.kt-barter .kt-sides dt {
-  font-size: var(--kt-font-small);
-  color: var(--kt-text-muted);
-}
-
-.kt-barter .kt-sides dd {
-  margin: 0 0 var(--kt-space-small);
+  text-align: center;
 }
 
 .kt-barter .kt-scale {
@@ -341,18 +315,25 @@
   transition: color var(--kt-transition), transform var(--kt-transition);
 }
 
-.kt-barter .kt-balance.short .kt-scale,
-.kt-barter .kt-balance.short .kt-readout {
+.kt-barter .kt-net {
+  font-size: var(--kt-font-display);
+}
+
+.kt-barter .kt-word {
+  font-size: var(--kt-font-small);
+  text-transform: uppercase;
+  letter-spacing: var(--kt-letter-spacing);
+}
+
+.kt-barter .kt-balance.short :is(.kt-scale, .kt-net, .kt-word) {
   color: var(--kt-short);
 }
 
-.kt-barter .kt-balance.even .kt-scale,
-.kt-barter .kt-balance.even .kt-readout {
+.kt-barter .kt-balance.even :is(.kt-scale, .kt-net, .kt-word) {
   color: var(--kt-even);
 }
 
-.kt-barter .kt-balance.generous .kt-scale,
-.kt-barter .kt-balance.generous .kt-readout {
+.kt-barter .kt-balance.generous :is(.kt-scale, .kt-net, .kt-word) {
   color: var(--kt-generous);
 }
 
@@ -391,33 +372,9 @@
   }
 }
 
-.kt-barter .kt-readout {
-  display: flex;
-  flex-direction: column;
-  gap: var(--kt-space-tight);
-}
-
-.kt-barter .kt-net {
-  font-size: var(--kt-font-large);
-}
-
-.kt-barter .kt-word {
-  font-size: var(--kt-font-small);
-  text-transform: uppercase;
-  letter-spacing: var(--kt-letter-spacing);
-}
-
-.kt-barter .kt-change {
-  margin: 0;
-  font-size: var(--kt-font-small);
-}
-
 .kt-barter .kt-modifiers {
-  display: flex;
-  flex-direction: column;
-  gap: var(--kt-space-tight);
-  margin: 0;
-  font-size: var(--kt-font-small);
+  padding-top: var(--kt-space-small);
+  border-top: var(--kt-border);
 }
 
 .kt-barter .kt-modifiers .good strong {
@@ -428,13 +385,19 @@
   color: var(--kt-short);
 }
 
-.kt-barter .kt-warning {
-  margin: 0;
-  color: var(--kt-short);
-  font-size: var(--kt-font-small);
+.kt-barter .kt-haggle {
+  flex: none;
 }
 
 /* Footer. */
+.kt-barter .kt-barter-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--kt-space);
+  padding-top: var(--kt-space);
+  border-top: var(--kt-border);
+}
+
 .kt-barter .kt-footer-reason {
   flex: 1;
   text-align: right;
@@ -444,14 +407,6 @@
   flex: none;
   width: auto;
   min-width: var(--kt-meter-width);
-}
-
-.kt-barter .kt-barter-footer {
-  display: flex;
-  align-items: center;
-  gap: var(--kt-space);
-  padding-top: var(--kt-space);
-  border-top: var(--kt-border);
 }
 
 /* Item tooltip. */
@@ -474,85 +429,4 @@
 
 #tooltip.kt-tooltip .kt-tooltip-description {
   font-size: var(--kt-font-small);
-}
-
-/* Haggle button and lock note under the modifiers. */
-.kt-barter .kt-haggle {
-  display: flex;
-  justify-content: center;
-  margin-top: var(--kt-space);
-}
-
-.kt-barter .kt-haggle button {
-  width: auto;
-  padding-inline: var(--kt-space);
-}
-
-.kt-barter .kt-haggle-locked,
-.kt-barter .kt-distracted {
-  margin: 0;
-  font-size: var(--kt-font-small);
-  color: var(--kt-text-muted);
-}
-/* Wanted board above the merchant's shelf. */
-.kt-barter .kt-wanted {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--kt-space-small);
-  padding: var(--kt-space-small);
-  border: var(--kt-border);
-  border-radius: var(--kt-radius);
-  background: var(--kt-surface);
-  font-size: var(--kt-font-small);
-}
-
-.kt-barter .kt-wanted-title {
-  color: var(--kt-generous);
-  font-weight: bold;
-}
-
-.kt-barter .kt-wanted-entry {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--kt-space-tight);
-}
-
-.kt-barter .kt-wanted-entry img {
-  width: var(--kt-chip-height);
-  height: var(--kt-chip-height);
-  border: none;
-}
-/* The merchant's reaction line under the portrait. */
-.kt-barter .kt-reaction {
-  margin: 0;
-  font-size: var(--kt-font-small);
-  font-style: italic;
-  color: var(--kt-text-muted);
-  text-align: right;
-}
-
-.kt-barter .kt-reaction i {
-  color: var(--kt-text-subtle);
-}
-
-/* Last visited note under the reaction line. */
-.kt-barter .kt-visit-note {
-  display: flex;
-  gap: var(--kt-space-small);
-  align-items: baseline;
-  padding: var(--kt-space-small);
-  border: var(--kt-border);
-  border-radius: var(--kt-radius);
-  background: var(--kt-surface);
-  font-size: var(--kt-font-small);
-  color: var(--kt-text-muted);
-}
-
-.kt-barter .kt-visit-note p {
-  margin: 0;
-}
-
-.kt-barter .kt-visit-note i {
-  color: var(--kt-text-subtle);
 }

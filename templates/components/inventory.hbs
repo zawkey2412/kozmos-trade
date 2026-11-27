@@ -7,24 +7,19 @@
   </nav>
   {{/if}}
   {{#if reaction}}
-  <p class="kt-reaction" aria-live="polite"><i class="fa-solid fa-comment" inert></i> <q>{{reaction}}</q></p>
+  <p class="kt-note kt-reaction" aria-live="polite"><i class="fa-solid fa-comment" inert></i> <q>{{reaction}}</q></p>
   {{/if}}
   {{#if note}}
-  <div class="kt-visit-note">
-    <i class="fa-solid fa-clock-rotate-left" inert></i>
-    <p>{{#each note as |line|}}<span>{{line}}</span> {{/each}}</p>
-  </div>
+  <p class="kt-note"><i class="fa-solid fa-clock-rotate-left" inert></i> <span>{{#each note as |line|}}{{line}} {{/each}}</span></p>
   {{/if}}
   {{#if wanted.length}}
-  <div class="kt-wanted" data-tooltip-text="{{localize "KT.Wanted.Hint"}}">
-    <span class="kt-wanted-title"><i class="fa-solid fa-bullhorn" inert></i> {{localize "KT.Wanted.Title"}}</span>
-    {{#each wanted as |entry|}}
-    <span class="kt-wanted-entry">{{#if entry.img}}<img src="{{entry.img}}" alt="">{{/if}}{{entry.label}} <strong>{{entry.rate}}</strong></span>
-    {{/each}}
-  </div>
+  <p class="kt-note kt-wanted" data-tooltip-text="{{localize "KT.Wanted.Hint"}}">
+    <i class="fa-solid fa-bullhorn" inert></i>
+    <span><strong>{{localize "KT.Wanted.Title"}}</strong>{{#each wanted as |entry|}}<span class="kt-wanted-entry">{{entry.label}} <strong>{{entry.rate}}</strong></span>{{/each}}</span>
+  </p>
   {{/if}}
-  <div class="kt-inventory-tools">
-    <input type="search" class="kt-search" data-side="{{side}}" value="{{search}}"
+  <div class="kt-toolbar kt-inventory-tools">
+    <input type="search" class="kt-search kt-grow" data-side="{{side}}" value="{{search}}"
            placeholder="{{localize "KT.Barter.Search"}}" aria-label="{{localize "KT.Barter.Search"}}">
     <select class="kt-sort" data-side="{{side}}" aria-label="{{localize "KT.Barter.Sort"}}">
       {{selectOptions sorts selected=sort localize=true}}

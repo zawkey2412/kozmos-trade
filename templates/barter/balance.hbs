@@ -1,38 +1,34 @@
 <section class="kt-balance {{balance.state}}" aria-live="polite">
-  <i class="fa-solid {{balance.icon}} kt-scale" inert></i>
-  <div class="kt-readout">
+  <div class="kt-balance-head">
+    <i class="fa-solid {{balance.icon}} kt-scale" inert></i>
     <strong class="kt-net">{{balance.readout}}</strong>
     <span class="kt-word">{{balance.word}}</span>
   </div>
   {{#if balance.change}}
-  <p class="kt-change">{{localize "KT.Balance.Change" amount=balance.change}}</p>
+  <p class="kt-note"><i class="fa-solid fa-coins" inert></i> {{localize "KT.Balance.Change" amount=balance.change}}</p>
   {{/if}}
-  <dl class="kt-sides">
-    <dt>{{localize "KT.Barter.YouOffer"}}</dt>
-    <dd>{{balance.customer}}</dd>
-    <dt>{{localize "KT.Barter.YouGet"}}</dt>
-    <dd>{{balance.merchant}}</dd>
-  </dl>
+  <div class="kt-pairs">
+    <div><span>{{localize "KT.Barter.YouOffer"}}</span><span>{{balance.customer}}</span></div>
+    <div><span>{{localize "KT.Barter.YouGet"}}</span><span>{{balance.merchant}}</span></div>
+  </div>
   {{#if balance.modifiers.length}}
-  <ul class="kt-modifiers plain">
+  <ul class="kt-pairs kt-modifiers plain">
     {{#each balance.modifiers as |modifier|}}
-    <li class="{{modifier.tone}}"><span>{{modifier.label}}</span> <strong>{{modifier.value}}</strong></li>
+    <li class="{{modifier.tone}}"><span>{{modifier.label}}</span><strong>{{modifier.value}}</strong></li>
     {{/each}}
   </ul>
   {{/if}}
   {{#if balance.haggle}}
-  <div class="kt-haggle">
-    {{#if balance.haggle.locked}}
-    <p class="kt-haggle-locked"><i class="fa-solid fa-lock" inert></i> {{balance.haggle.text}}</p>
-    {{else}}
-    <button type="button" data-action="haggle" {{disabled balance.haggle.disabled}}{{#if balance.haggle.reason}} data-tooltip-text="{{balance.haggle.reason}}"{{/if}}>
-      <i class="fa-solid fa-comments-dollar" inert></i> {{localize "KT.Haggle.Button"}}
-    </button>
-    {{/if}}
-  </div>
+  {{#if balance.haggle.locked}}
+  <p class="kt-note"><i class="fa-solid fa-lock" inert></i> {{balance.haggle.text}}</p>
+  {{else}}
+  <button type="button" class="kt-haggle" data-action="haggle" {{disabled balance.haggle.disabled}}{{#if balance.haggle.reason}} data-tooltip-text="{{balance.haggle.reason}}"{{/if}}>
+    <i class="fa-solid fa-comments-dollar" inert></i> {{localize "KT.Haggle.Button"}}
+  </button>
+  {{/if}}
   {{/if}}
   {{#if balance.distracted}}
-  <p class="kt-distracted"><i class="fa-solid fa-masks-theater" inert></i> {{balance.distracted}}</p>
+  <p class="kt-note"><i class="fa-solid fa-masks-theater" inert></i> {{balance.distracted}}</p>
   {{/if}}
   {{#if balance.cannotCover}}
   <p class="kt-warning"><i class="fa-solid fa-triangle-exclamation" inert></i> {{localize "KT.Balance.CannotCover"}}</p>

@@ -828,7 +828,7 @@ export default class BarterWindow extends HandlebarsApplication {
     const hints = [
       game.i18n.localize(haggle.opposed ? "KT.Haggle.OpposedHint" : "KT.Haggle.DcHint"),
       ...(limited ? [game.i18n.localize("KT.Haggle.LimitedHint")] : []),
-      game.i18n.localize(haggle.helper ? "KT.Haggle.Help.Helped" : "KT.Haggle.Help.Nobody", { name: foundry.utils.escapeHTML(haggle.helper ?? "") }),
+      ...(haggle.helper ? [game.i18n.localize("KT.Haggle.Help.Helped", { name: foundry.utils.escapeHTML(haggle.helper) })] : []),
     ];
     const content = `${hints.map((hint) => `<p class="hint">${hint}</p>`).join("")}${groups.map((group) => group.outerHTML).join("")}`;
     const data = /** @type {any} */ (await foundry.applications.api.DialogV2.input(/** @type {any} */ ({

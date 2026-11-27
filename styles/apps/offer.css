@@ -1,10 +1,10 @@
 /* Player trade and joined trade windows, on top of the barter window's layout. */
 .kt-barter.kt-player-trade .window-content {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--kt-balance-width) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) var(--kt-balance-width) minmax(0, 1fr);
 }
 
 .kt-barter.kt-join .window-content {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--kt-panel-width);
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) var(--kt-panel-width);
 }
 
 /* Read-only lines: picture, name and quantity. */
@@ -68,13 +68,7 @@
 
 /* The panel beside a joined trade. */
 .kt-barter .kt-join-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--kt-space);
-  padding: var(--kt-space);
-  border: var(--kt-border);
-  border-radius: var(--kt-radius);
-  background: var(--kt-surface);
+  align-self: start;
 }
 
 .kt-barter .kt-join-panel p {

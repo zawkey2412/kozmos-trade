@@ -21,10 +21,10 @@
     <legend>{{localize "KT.Ledger.Label"}}</legend>
     <p class="hint">{{localize "KT.Ledger.Hint"}}</p>
     {{#if ledger.length}}
-    <ol class="kt-ledger-list plain">
+    <ol class="kt-list kt-ledger-list plain">
       {{#each ledger as |entry|}}
-      <li class="kt-ledger-row{{#if entry.reverted}} reverted{{/if}}">
-        <span class="kt-ledger-who">{{entry.customer}}</span>
+      <li class="kt-row kt-ledger-row{{#if entry.reverted}} reverted{{/if}}">
+        <span class="kt-ledger-who kt-clip">{{entry.customer}}</span>
         <span class="kt-ledger-what">{{entry.summary}}</span>
         {{#if entry.reverted}}
         <span class="kt-muted">{{localize "KT.Receipt.RevertedNote"}}</span>

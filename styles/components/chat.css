@@ -51,7 +51,7 @@
   gap: var(--kt-space-small);
 }
 
-.kozmos-trade.kt-theft-card .kt-chat-buttons button {
+.kozmos-trade.kt-note-card .kt-chat-buttons button {
   flex: 1 1 40%;
 }
 
@@ -60,25 +60,16 @@
   color: var(--kt-text-muted);
 }
 
-.kozmos-trade .kt-muted {
-  color: var(--kt-text-muted);
-}
-
 .kozmos-trade.kt-receipt.reverted .kt-chat-sides {
   text-decoration: line-through;
   opacity: var(--kt-dim);
 }
 
-/* Haggle and appraisal result cards: a coloured edge for the outcome. */
-.kt-check-card {
-  padding-left: var(--kt-space);
-  border-left: 3px solid var(--kt-short);
+/* Result cards: the title shows the outcome in color, and the lines say it in words. */
+.kozmos-trade.kt-note-card.success .kt-chat-title {
+  color: var(--kt-even);
 }
 
-.kt-check-card.success {
-  border-left-color: var(--kt-even);
-}
-
-.kt-check-card p {
-  margin: 0 0 var(--kt-space-tight);
+.kozmos-trade.kt-note-card.failure .kt-chat-title {
+  color: var(--kt-short);
 }

@@ -5,9 +5,9 @@
   <p class="hint">{{localize "KT.Market.Rules.Intro"}}</p>
 
   {{#if rows.length}}
-  <ol class="kt-rule-list plain">
+  <ol class="kt-list kt-rule-list plain">
     {{#each rows as |row|}}
-    <li class="kt-rule-row{{#if row.ended}} disabled{{/if}}">
+    <li class="kt-row kt-rule-row{{#if row.ended}} disabled{{/if}}">
       <div class="kt-rule-text">
         <strong>{{row.name}} {{row.change}}</strong>
         <span class="kt-muted">{{row.categories}}</span>

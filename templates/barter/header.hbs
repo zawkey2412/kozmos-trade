@@ -2,7 +2,7 @@
   <div class="kt-party kt-party-customer">
     <img class="kt-portrait" src="{{header.customer.img}}" alt="">
     <div class="kt-party-text">
-      <h2>{{header.customer.name}}</h2>
+      <h2 class="kt-clip">{{header.customer.name}}</h2>
       <span class="kt-muted"><i class="fa-solid fa-coins" inert></i> {{header.customer.coins}}</span>
       {{#if header.remote}}<span class="kt-muted"><i class="fa-solid fa-store" inert></i> {{localize "KT.Barter.Remote"}}</span>{{/if}}
     </div>
@@ -18,7 +18,7 @@
 
   <div class="kt-party kt-party-merchant">
     <div class="kt-party-text">
-      <h2>{{header.merchant.name}}</h2>
+      <h2 class="kt-clip">{{header.merchant.name}}</h2>
       <span class="kt-muted">
         {{header.merchant.archetype}}
         {{#if header.attitude}}

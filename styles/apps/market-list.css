@@ -22,14 +22,8 @@
   overflow-y: auto;
 }
 
-/* Section headings, small quiet capitals. */
-.kt-market-list .kt-market-heading {
-  margin: 0 0 var(--kt-space-small);
-  border: none;
-  font-size: var(--kt-font-small);
-  letter-spacing: var(--kt-letter-spacing);
-  text-transform: uppercase;
-  color: var(--kt-text-muted);
+.kt-market-list .kt-party-group {
+  flex: none;
 }
 
 /* The selected NPC token, while it is not a shop. */
@@ -39,19 +33,7 @@
   align-items: center;
   gap: var(--kt-space);
   padding: var(--kt-space-small) var(--kt-space);
-  border: var(--kt-border);
   border-color: var(--kt-highlight);
-  border-radius: var(--kt-radius);
-  background: var(--kt-surface);
-}
-
-.kt-market-list .kt-setup-bar img {
-  width: var(--kt-icon);
-  height: var(--kt-icon);
-  object-fit: cover;
-  object-position: top;
-  border: none;
-  border-radius: var(--kt-radius);
 }
 
 .kt-market-list .kt-setup-bar button,
@@ -61,37 +43,15 @@
 
 /* Market rules in force, with its Edit button. */
 .kt-market-list .kt-rules-line {
-  display: flex;
   align-items: center;
-  gap: var(--kt-space-small);
-  color: var(--kt-text-muted);
-  font-size: var(--kt-font-small);
 }
 
 .kt-market-list .kt-rules-line span {
   flex: 1;
 }
 
-.kt-market-list .kt-market-rows {
-  display: flex;
-  flex-direction: column;
-  gap: var(--kt-space-small);
-  margin: 0;
-}
-
 .kt-market-list .kt-market-row {
-  display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--kt-space);
-  padding: var(--kt-space-small);
-  border: var(--kt-border-clear);
-  border-radius: var(--kt-radius);
-  background: var(--kt-surface);
-}
-
-.kt-market-list .kt-market-row.active {
-  border-color: var(--kt-highlight);
 }
 
 /* The picture and text, which open Configure Shop for the GM. */
@@ -122,24 +82,10 @@
   text-decoration: underline;
 }
 
-/* A closed shop is dimmed, but its tools still work. */
-.kt-market-list .kt-market-row.disabled {
-  pointer-events: auto;
-}
-
 .kt-market-list .kt-market-row.disabled .kt-row-main > img,
 .kt-market-list .kt-market-row.disabled .kt-market-text > strong,
 .kt-market-list .kt-market-row.disabled .kt-market-text > .kt-muted:not(.kt-market-facts) {
   opacity: var(--kt-dim);
-}
-
-.kt-market-list .kt-row-main img {
-  width: var(--kt-icon-large);
-  height: var(--kt-icon-large);
-  object-fit: cover;
-  object-position: top;
-  border: var(--kt-border);
-  border-radius: var(--kt-radius);
 }
 
 .kt-market-list .kt-market-text {
@@ -149,15 +95,7 @@
   min-width: 0;
 }
 
-.kt-market-list .kt-market-text .kt-muted {
-  color: var(--kt-text-muted);
-  font-size: var(--kt-font-small);
-}
-
 .kt-market-list .kt-market-facts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   gap: var(--kt-space-tight) var(--kt-space);
 }
 
@@ -171,10 +109,6 @@
   gap: var(--kt-space-small);
 }
 
-.kt-market-list .kt-market-actions button:not(.icon) {
-  width: auto;
-}
-
 .kt-market-list .kt-open-toggle {
   height: auto;
   padding: 0 var(--kt-space-small);
@@ -185,16 +119,6 @@
 .kt-market-list .kt-open-toggle.active {
   color: var(--kt-even);
   border-color: var(--kt-even);
-}
-
-.kt-market-list .kt-empty {
-  color: var(--kt-text-muted);
-  font-style: italic;
-  text-align: center;
-}
-
-.kt-market-list .kt-party-group {
-  flex: none;
 }
 
 .kt-market-list .kt-party-group .kt-empty {

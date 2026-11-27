@@ -1,0 +1,156 @@
+/* Shared pieces: every window builds its layout from these. */
+
+/* Quiet section heading in small capitals. */
+.kozmos-trade .kt-heading {
+  margin: 0 0 var(--kt-space-small);
+  border: none;
+  font-size: var(--kt-font-small);
+  font-weight: normal;
+  letter-spacing: var(--kt-letter-spacing);
+  text-transform: uppercase;
+  color: var(--kt-text-muted);
+}
+
+.kozmos-trade .kt-muted {
+  color: var(--kt-text-muted);
+  font-size: var(--kt-font-small);
+}
+
+.kozmos-trade .kt-empty {
+  margin: var(--kt-space-large) 0;
+  color: var(--kt-text-muted);
+  font-style: italic;
+  text-align: center;
+}
+
+/* A line of small text led by an icon. */
+.kozmos-trade .kt-note {
+  display: flex;
+  align-items: baseline;
+  gap: var(--kt-space-small);
+  margin: 0;
+  color: var(--kt-text-muted);
+  font-size: var(--kt-font-small);
+}
+
+.kozmos-trade .kt-note > i {
+  flex: none;
+  color: var(--kt-text-subtle);
+}
+
+.kozmos-trade .kt-warning {
+  margin: 0;
+  color: var(--kt-short);
+  font-size: var(--kt-font-small);
+}
+
+/* A framed area on the window's surface. */
+.kozmos-trade .kt-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space);
+  padding: var(--kt-space);
+  border: var(--kt-border);
+  border-radius: var(--kt-radius);
+  background: var(--kt-surface);
+}
+
+/* A list of rows, and one row in it. Each window sets the row's columns. */
+.kozmos-trade .kt-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-small);
+  margin: 0;
+  padding: 0;
+}
+
+.kozmos-trade .kt-row {
+  display: grid;
+  align-items: center;
+  gap: var(--kt-space);
+  min-width: 0;
+  padding: var(--kt-space-small) var(--kt-space);
+  border: var(--kt-border-clear);
+  border-radius: var(--kt-radius);
+  background: var(--kt-surface);
+}
+
+.kozmos-trade .kt-row.active {
+  border-color: var(--kt-highlight);
+}
+
+/* A dimmed row keeps working controls. */
+.kozmos-trade .kt-row.disabled {
+  pointer-events: auto;
+}
+
+/* Buttons in a line, sized to their labels. */
+.kozmos-trade .kt-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kt-space-small);
+}
+
+.kozmos-trade .kt-toolbar > button,
+.kozmos-trade .kt-row button:not(.icon, .kt-row-main) {
+  flex: none;
+  width: auto;
+}
+
+.kozmos-trade .kt-toolbar > .kt-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+/* A name that never pushes its neighbors. */
+.kozmos-trade .kt-clip {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Pictures of items and characters. */
+.kozmos-trade .kt-thumb {
+  flex: none;
+  width: var(--kt-icon);
+  height: var(--kt-icon);
+  object-fit: cover;
+  object-position: top;
+  border: none;
+  border-radius: var(--kt-radius);
+}
+
+.kozmos-trade .kt-thumb.large {
+  width: var(--kt-icon-large);
+  height: var(--kt-icon-large);
+  border: var(--kt-border);
+}
+
+/* A label on the left and its value on the right. */
+.kozmos-trade .kt-pairs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space-tight);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: var(--kt-font-small);
+}
+
+.kozmos-trade .kt-pairs > * {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--kt-space-small);
+}
+
+.kozmos-trade .kt-pairs > * > :first-child {
+  color: var(--kt-text-muted);
+  text-align: start;
+}
+
+.kozmos-trade .kt-pairs > * > :last-child {
+  text-align: end;
+  white-space: nowrap;
+}

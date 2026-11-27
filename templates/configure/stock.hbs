@@ -1,6 +1,6 @@
 <section class="tab kt-configure-stock{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
   <div class="kt-stock-tools">
-    <p class="hint">{{localize "KT.Configure.Stock.Hint"}}</p>
+    <p class="hint kt-grow">{{localize "KT.Configure.Stock.Hint"}}</p>
     <button type="button" data-action="generate"><i class="fa-solid fa-dice" inert></i> {{localize "KT.Configure.Generate"}}</button>
   </div>
 
@@ -11,12 +11,12 @@
     <span>{{localize "KT.Configure.Stock.Price"}}</span>
     <span class="kt-stock-pin" data-tooltip aria-label="{{localize "KT.Configure.Stock.Pin"}}"><i class="fa-solid fa-thumbtack" inert></i></span>
   </div>
-  <ol class="kt-stock-list plain">
+  <ol class="kt-list kt-stock-list plain">
     {{#each rows as |row|}}
-    <li class="kt-stock-row{{#unless row.forSale}} disabled{{/unless}}">
+    <li class="kt-row kt-stock-row{{#unless row.forSale}} disabled{{/unless}}">
       <span class="kt-stock-name">
-        <img src="{{row.img}}" alt="">
-        <span>{{row.name}}</span>
+        <img class="kt-thumb" src="{{row.img}}" alt="">
+        <span class="kt-clip">{{row.name}}</span>
         {{#if (gt row.quantity 1)}}<span class="kt-quantity">{{row.quantity}}</span>{{/if}}
         {{#if row.underCounter}}<i class="fa-solid fa-box-open kt-under-counter" data-tooltip aria-label="{{localize "KT.Tag.underCounter"}}"></i>{{/if}}
       </span>
@@ -41,13 +41,13 @@
   <fieldset class="kt-configure-wanted">
     <legend>{{localize "KT.Wanted.Title"}}</legend>
     <div class="kt-stock-tools">
-      <p class="hint">{{localize "KT.Wanted.ConfigureHint"}}</p>
+      <p class="hint kt-grow">{{localize "KT.Wanted.ConfigureHint"}}</p>
       <button type="button" data-action="rollWanted"><i class="fa-solid fa-dice" inert></i> {{localize "KT.Wanted.Roll"}}</button>
     </div>
     {{#if wanted.length}}
-    <ul class="kt-wanted-rows plain">
+    <ul class="kt-list kt-wanted-rows plain">
       {{#each wanted as |entry|}}
-      <li>{{#if entry.img}}<img src="{{entry.img}}" alt="">{{/if}}<span>{{entry.label}}</span> <strong>{{localize "KT.Wanted.Pays" rate=entry.rate}}</strong></li>
+      <li class="kt-row">{{#if entry.img}}<img class="kt-thumb" src="{{entry.img}}" alt="">{{else}}<i class="fa-solid fa-bullhorn kt-thumb" inert></i>{{/if}}<span class="kt-clip">{{entry.label}}</span> <strong>{{localize "KT.Wanted.Pays" rate=entry.rate}}</strong></li>
       {{/each}}
     </ul>
     {{else}}

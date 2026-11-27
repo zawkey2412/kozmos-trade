@@ -3,7 +3,7 @@
     data-tooltip-html="{{tooltip}}" data-tooltip-class="kt-tooltip" data-tooltip-direction="LEFT">
   {{#if icon}}<i class="{{icon}} kt-card-icon" inert></i>{{else}}<img src="{{img}}" alt="">{{/if}}
   <div class="kt-card-text">
-    <span class="kt-card-name">{{name}}</span>
+    <span class="kt-card-name kt-clip">{{name}}</span>
     {{#if tags.length}}
     <span class="kt-card-tags">
       {{#each tags as |tag|}}<span class="kt-tag {{tag.key}}">{{#if tag.icon}}<i class="{{tag.icon}}" inert></i>{{/if}}{{tag.label}}</span>{{/each}}

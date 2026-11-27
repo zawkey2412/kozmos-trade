@@ -5,37 +5,18 @@
   gap: var(--kt-space);
 }
 
-.kt-market-rules .kt-rules > .hint {
+.kt-market-rules .kt-rules > .hint,
+.kt-market-rules .kt-rules > .kt-empty {
   margin: 0;
-}
-
-.kt-market-rules .kt-warning {
-  margin: 0;
-  color: var(--kt-short);
 }
 
 .kt-market-rules .kt-rule-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--kt-space-small);
   max-height: var(--kt-ledger-height);
   overflow-y: auto;
-  margin: 0;
 }
 
 .kt-market-rules .kt-rule-row {
-  display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--kt-space);
-  padding: var(--kt-space-small);
-  border-radius: var(--kt-radius);
-  background: var(--kt-surface);
-}
-
-/* An ended rule is dimmed, but can still be removed. */
-.kt-market-rules .kt-rule-row.disabled {
-  pointer-events: auto;
 }
 
 .kt-market-rules .kt-rule-row.disabled .kt-rule-text {
@@ -47,16 +28,4 @@
   flex-direction: column;
   gap: var(--kt-space-tight);
   min-width: 0;
-}
-
-.kt-market-rules .kt-muted {
-  color: var(--kt-text-muted);
-  font-size: var(--kt-font-small);
-}
-
-.kt-market-rules .kt-empty {
-  color: var(--kt-text-muted);
-  font-style: italic;
-  text-align: center;
-  margin: 0;
 }

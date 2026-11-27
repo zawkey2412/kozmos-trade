@@ -62,10 +62,10 @@ async function settleAppraisal(entry, total) {
   const success = total >= dc;
   await merchant.update({ [`flags.${MODULE_ID}.appraisals.${appraisalKey(customer.id, itemId)}`]: { day: currentDay(), success } });
   const lines = [
-    game.i18n.localize("KT.Appraise.Card.Ask", { customer: foundry.utils.escapeHTML(customer.name), item: foundry.utils.escapeHTML(item?.name ?? ""), check: skillLabel(skill) }),
+    game.i18n.localize("KT.Appraise.Card.Ask", { customer: customer.name, item: item?.name ?? "", check: skillLabel(skill) }),
     game.i18n.localize("KT.Haggle.Card.Dc", { dc, total }),
     game.i18n.localize(success ? "KT.Appraise.Card.Success" : "KT.Appraise.Card.Failure"),
   ];
-  await postCheckCard(merchant, lines, success, "appraiseResult");
+  await postCheckCard(merchant, { icon: "fa-solid fa-magnifying-glass-dollar", title: game.i18n.localize("KT.Appraise.Button"), lines }, success, "appraiseResult");
   return { success, dc, total, appraisal: appraisalView(merchant, customer) };
 }

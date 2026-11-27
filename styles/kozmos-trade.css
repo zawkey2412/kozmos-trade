@@ -1,4 +1,5 @@
 @import "./tokens.css";
+@import "./components/base.css";
 @import "./components/card.css";
 @import "./components/chat.css";
 @import "./components/proximity.css";

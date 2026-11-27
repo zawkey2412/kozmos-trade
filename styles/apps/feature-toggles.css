@@ -1,4 +1,4 @@
-/* Feature toggles: the preset value beside each toggle, marked when the GM changed it. */
+/* Features: the preset value beside each toggle, marked when the GM changed it. */
 .kt-feature-toggles .kt-preset {
   color: var(--kt-text-subtle);
   font-size: var(--kt-font-small);
@@ -8,11 +8,14 @@
 .kt-feature-toggles .kt-preset.kt-changed {
   color: var(--kt-info);
 }
+
 /* A feature's own rules, set in under it. */
 .kt-feature-toggles .kt-feature-rules {
-  margin-left: var(--kt-space-large);
-  padding-left: var(--kt-space);
-  border-left: var(--kt-border);
+  margin: 0 0 var(--kt-space) var(--kt-space-large);
+}
+
+.kt-feature-toggles .kt-feature-rules .form-group label {
+  color: var(--kt-text-muted);
 }
 
 .kt-feature-toggles .window-content > .kt-feature-list {

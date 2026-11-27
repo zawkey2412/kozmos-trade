@@ -10,6 +10,7 @@ import { attitudeValue, recordAttitude } from "./attitude.mjs";
 import { TradeError } from "./errors.mjs";
 import { expectRoll, registerRollKind } from "./rolls.mjs";
 import { announcePool, checkVisit, haggleView, helperOf, resolvePair, sessionAt } from "./session.mjs";
+import { postNote } from "./notes.mjs";
 import { MESSAGES, onRequest } from "./socket.mjs";
 
 /** @import { ExpectedRoll } from "./rolls.mjs"; */
@@ -132,26 +133,22 @@ async function postResult({ merchant, customer, data, dc, total, opposed, succes
   const percent = Math.round(data.ask * 100);
   const check = data.tool ? toolLabel(data.tool) : skillLabel(data.skill ?? "");
   const lines = [
-    game.i18n.localize("KT.Haggle.Card.Ask", { customer: foundry.utils.escapeHTML(customer.name), percent, check }),
-    ...(data.helper ? [game.i18n.localize("KT.Haggle.Card.Helped", { name: foundry.utils.escapeHTML(data.helper) })] : []),
+    game.i18n.localize("KT.Haggle.Card.Ask", { customer: customer.name, percent, check }),
+    ...(data.helper ? [game.i18n.localize("KT.Haggle.Card.Helped", { name: data.helper })] : []),
     game.i18n.localize(opposed ? "KT.Haggle.Card.Opposed" : "KT.Haggle.Card.Dc", { dc, total }),
     game.i18n.localize(success ? "KT.Haggle.Card.Success" : "KT.Haggle.Card.Failure", { percent }),
     ...(attitudeChange ? [game.i18n.localize("KT.Haggle.Card.Attitude", { change: `${attitudeChange > 0 ? "+" : ""}${attitudeChange}` })] : []),
   ];
-  await postCheckCard(merchant, lines, success, "haggleResult");
+  await postCheckCard(merchant, { icon: "fa-solid fa-comments-dollar", title: game.i18n.localize("KT.Haggle.Button"), lines }, success, "haggleResult");
 }
 
-// A public result card from the merchant, edged by the outcome.
+// A public result card from the merchant, titled in the outcome's color.
 /**
  * @param {any} merchant
- * @param {string[]} lines
+ * @param {{ icon: string, title: string, lines: string[] }} view
  * @param {boolean} success
  * @param {string} flag
  */
-export function postCheckCard(merchant, lines, success, flag) {
-  return ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor: merchant }),
-    content: `<div class="${MODULE_ID} kt-check-card ${success ? "success" : "failure"}">${lines.map((line) => `<p>${line}</p>`).join("")}</div>`,
-    flags: { [MODULE_ID]: { [flag]: true } },
-  });
+export function postCheckCard(merchant, view, success, flag) {
+  return postNote(merchant, { ...view, tone: success ? "success" : "failure" }, { flags: { [MODULE_ID]: { [flag]: true } } });
 }

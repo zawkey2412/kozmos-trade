@@ -14,11 +14,11 @@
       },
       "Proximity": {
         "Name": "Trade only up close",
-        "Hint": "Players must have their own token within 2 squares of the merchant's token to trade. The GM can always trade."
+        "Hint": "Players must stand within 2 squares of the merchant to trade."
       },
       "NoCombat": {
         "Name": "No trading during combat",
-        "Hint": "Players can't start a trade while their character or the merchant is fighting in a combat that has started. Trades already open can finish. The GM can always trade."
+        "Hint": "Players can't start a trade while their character or the merchant is in a started combat. Trades already open can finish."
       },
       "Compendiums": {
         "Name": "Stock compendiums",
@@ -123,7 +123,7 @@
       },
       "Remote": {
         "Label": "Trade from the Shops list",
-        "Hint": "Once the party has visited, players can trade here from the Shops list in the token controls, without walking up."
+        "Hint": "Once the party has visited, players can trade here from the Shops window."
       },
       "TheftProof": {
         "Label": "Theft-proof",
@@ -136,7 +136,7 @@
         "Hint": "Instant trades go through as soon as the offer balances. With GM approval, you approve, counter or decline each one."
       },
       "Stock": {
-        "Hint": "Loose items are the stock. Equipped gear stays with the merchant. Leave a price empty to sell at the item's value. Pin an item to keep it through restocks. Drop items, a folder or a roll table here to add stock.",
+        "Hint": "Leave a price empty to sell at the item's value. Pinned items stay through restocks. Drop items, a folder or a roll table here to add them.",
         "Item": "Item",
         "Value": "Value",
         "Price": "Price",
@@ -160,7 +160,7 @@
       "Status": "Status",
       "Kind": "What it sells",
       "Rules": "Rules",
-      "ArchetypeHint": "The kind of shop. It decides what stock rolls and which trade-ins it pays more for.",
+      "ArchetypeHint": "Decides what stock rolls and which trade-ins it pays more for.",
       "TierHint": "How many items it stocks, how rare they get, and how much coin is in its purse.",
       "PostCardHint": "Posts a chat card with a Trade button for everyone.",
       "RemoveTitle": "Stop being a shop: {name}",
@@ -173,11 +173,11 @@
       "CardPosted": "Open Shop card posted in chat.",
       "GenerateOpen": "Stock and open",
       "New": {
-        "Hint": "Pick what {name} sells and how wealthy the shop is. You can change all of it later.",
+        "Hint": "Pick what {name} sells. You can change all of it later.",
         "Carries": "{name} carries {count} items to sell. Open with its own items to sell only those.",
         "Nothing": "{name} carries nothing to sell yet. Stock and open rolls a shelf from the compendiums."
       },
-      "MenuHint": "Trade, Show to players, Post Open Shop card and Stop being a shop are in this window's menu, at the top right."
+      "MenuHint": "More actions are in the window menu, top right."
     },
     "Archetype": {
       "blacksmith": "Blacksmith",
@@ -344,7 +344,7 @@
       "Empty": "No trades yet.",
       "Summary": "Got {gets} for {gives}",
       "Item": "{quantity} {name}",
-      "Hint": "The last 50 trades here. Revert puts the items and coins back where they were."
+      "Hint": "The last 50 trades. Revert puts the items and coins back."
     },
     "ShopCard": {
       "Body": "{name} is open for business.",
@@ -433,7 +433,7 @@
       "Title": "Features",
       "Open": "Choose features",
       "Hint": "Pick a complexity preset, turn single features on or off, and set the rules for every trade.",
-      "Intro": "{mode} turns the features below on or off. Your changes are kept for each preset, so switching back finds them again.",
+      "Intro": "{mode} sets the toggles below. Your changes are kept for each preset.",
       "PresetOn": "{mode}: on",
       "PresetOff": "{mode}: off",
       "Reset": "Back to preset",
@@ -511,7 +511,6 @@
         "Hint": "Take the Help action, so {lead}'s next haggle rolls with advantage.",
         "Helping": "You are helping {lead}. Their next haggle rolls with advantage.",
         "Helped": "{name} is helping, so you roll with advantage.",
-        "Nobody": "A character who joins your trade can help, for advantage.",
         "Already": "Someone is already helping with this haggle.",
         "Locked": "{name} will not haggle with {lead} again until tomorrow.",
         "Won": "{lead} already won a discount for this trade."
@@ -546,7 +545,7 @@
       "Title": "Wanted",
       "Hint": "This merchant pays extra for these. Bringing a named item also wins its favor.",
       "Pays": "pays {rate}",
-      "ConfigureHint": "Rolled with each restock. Named items leave the board once someone brings one. The Open Shop card shows the board too.",
+      "ConfigureHint": "Rolled with each restock. A named item leaves the board once someone sells one.",
       "Empty": "Nothing wanted right now.",
       "Roll": "Roll a new board"
     },
@@ -878,7 +877,7 @@
       "Hint": {
         "unique": "Every token of {name} is the same shop, with the same stock, purse and memory of customers, on every map.",
         "generic": "Each token of {name} you place from now on becomes its own shop, starting as a copy of this one.",
-        "token": "This token is its own shop, kept on the token only. Deleting the token deletes the shop. Choose One person to move this shop onto {name}, so it follows them to every map.",
+        "token": "This token is its own shop, and the shop goes if the token is deleted.",
         "fresh": "Each token rolls its own shelf and purse the first time someone trades there."
       },
       "Fresh": {

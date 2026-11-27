@@ -1,7 +1,7 @@
 <section class="kt-market">
   {{#if setup}}
-  <div class="kt-setup-bar" aria-live="polite">
-    <img src="{{setup.img}}" alt="">
+  <div class="kt-panel kt-setup-bar" aria-live="polite">
+    <img class="kt-thumb" src="{{setup.img}}" alt="">
     <span>{{setup.text}}</span>
     <button type="button" data-action="setUp"><i class="fa-solid fa-store" inert></i> {{localize "KT.Shop.SetUp"}}</button>
   </div>
@@ -9,15 +9,15 @@
 
   {{#if partyOn}}
   <section class="kt-party-group">
-    <h3 class="kt-market-heading">{{localize "KT.Market.Group.party"}}</h3>
+    <h3 class="kt-heading">{{localize "KT.Market.Group.party"}}</h3>
     {{#if party.length}}
-    <ol class="kt-market-rows plain">
+    <ol class="kt-list kt-market-rows plain">
       {{#each party as |row|}}
-      <li class="kt-market-row" data-uuid="{{row.uuid}}">
+      <li class="kt-row kt-market-row" data-uuid="{{row.uuid}}">
         <div class="kt-row-main">
-          <img src="{{row.img}}" alt="">
+          <img class="kt-thumb large" src="{{row.img}}" alt="">
           <span class="kt-market-text">
-            <strong>{{row.name}}</strong>
+            <strong class="kt-clip">{{row.name}}</strong>
             <span class="kt-muted">{{row.player}}</span>
           </span>
         </div>
@@ -38,7 +38,7 @@
   {{/if}}
 
   {{#if rules}}
-  <div class="kt-rules-line">
+  <div class="kt-note kt-rules-line">
     <i class="fa-solid fa-chart-line" inert></i>
     <span>{{rules.text}}</span>
     <button type="button" data-action="rules">{{localize "KT.Market.RulesLine.Edit"}}</button>
@@ -49,20 +49,20 @@
     {{#if any}}
     {{#each groups as |group|}}
     <section class="kt-market-group">
-      <h3 class="kt-market-heading">{{group.label}}</h3>
-      <ol class="kt-market-rows plain">
+      <h3 class="kt-heading">{{group.label}}</h3>
+      <ol class="kt-list kt-market-rows plain">
         {{#each group.rows as |row|}}
-        <li class="kt-market-row{{#unless row.open}} disabled{{/unless}}{{#if row.selected}} active{{/if}}" data-uuid="{{row.uuid}}" data-name="{{row.name}}">
+        <li class="kt-row kt-market-row{{#unless row.open}} disabled{{/unless}}{{#if row.selected}} active{{/if}}" data-uuid="{{row.uuid}}" data-name="{{row.name}}">
           {{#if @root.gm}}
           <button type="button" class="kt-row-main" data-action="configure" data-tooltip-text="{{localize "KT.Market.RowHint"}}">
           {{else}}
           <div class="kt-row-main">
           {{/if}}
-            <img src="{{row.img}}" alt="">
+            <img class="kt-thumb large" src="{{row.img}}" alt="">
             <span class="kt-market-text">
-              <strong>{{row.name}}</strong>
+              <strong class="kt-clip">{{row.name}}</strong>
               <span class="kt-muted">{{row.archetype}}{{#if group.elsewhere}}, {{row.scene}}{{/if}}</span>
-              <span class="kt-muted kt-market-facts">
+              <span class="kt-muted kt-toolbar kt-market-facts">
                 {{#unless @root.gm}}
                 <span><i class="fa-solid {{#if row.open}}fa-door-open{{else}}fa-door-closed{{/if}}" inert></i> {{row.status}}</span>
                 {{/unless}}

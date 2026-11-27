@@ -1,18 +1,18 @@
 <section class="kt-tray" data-side="{{side}}">
-  <h3>{{title}}</h3>
+  <h3 class="kt-heading">{{title}}</h3>
   {{#if rows.length}}
-  <ol class="kt-tray-list plain">
+  <ol class="kt-list kt-tray-list plain">
     {{#each rows as |row|}}
     {{#if row.readonly}}
     <li class="kt-line kt-line-plain" aria-label="{{row.name}}">
       {{#if row.img}}<img src="{{row.img}}" alt="">{{else}}<i class="fa-solid fa-coins kt-line-icon" inert></i>{{/if}}
-      <span class="kt-line-name">{{row.name}} <span class="kt-line-owner">{{row.owner}}</span></span>
+      <span class="kt-line-name kt-clip">{{row.name}} <span class="kt-line-owner">{{row.owner}}</span></span>
       <span class="kt-line-total">{{row.totalLabel}}</span>
     </li>
     {{else}}
     <li class="kt-line" data-item-id="{{row.id}}" data-side="{{row.side}}" draggable="true" tabindex="0" aria-label="{{row.name}}">
       {{#if row.icon}}<i class="{{row.icon}} kt-line-icon" inert></i>{{else}}<img src="{{row.img}}" alt="">{{/if}}
-      <span class="kt-line-name">{{#if row.buyback}}<i class="fa-solid fa-rotate-left" inert data-tooltip aria-label="{{localize "KT.Tag.buyback"}}"></i> {{/if}}{{row.name}}</span>
+      <span class="kt-line-name kt-clip">{{#if row.buyback}}<i class="fa-solid fa-rotate-left" inert data-tooltip aria-label="{{localize "KT.Tag.buyback"}}"></i> {{/if}}{{row.name}}</span>
       <span class="kt-line-stepper">
         <button type="button" class="inline-control icon fa-solid fa-minus" data-action="step" data-delta="-1"
                 data-tooltip aria-label="{{localize "KT.Barter.Less"}}"></button>
@@ -46,7 +46,7 @@
   </label>
   {{/if}}
   {{#unless noTools}}
-  <div class="kt-tray-tools">
+  <div class="kt-toolbar kt-tray-tools">
     <button type="button" data-action="autoBalance" data-side="{{side}}">
       <i class="fa-solid fa-scale-unbalanced" inert></i> <span>{{localize "KT.Barter.AutoBalance"}}</span>
     </button>

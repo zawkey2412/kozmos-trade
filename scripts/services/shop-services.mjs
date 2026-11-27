@@ -6,6 +6,7 @@ import { merchantFlags } from "../data/flags.mjs";
 import { healFormula, parseServiceKey } from "../engine/services.mjs";
 import { servicesOf } from "./archetypes.mjs";
 import { TradeError } from "./errors.mjs";
+import { postNote } from "./notes.mjs";
 import { buyQuote } from "./offer.mjs";
 
 /** @import { Service } from "../engine/services.mjs"; */
@@ -91,17 +92,12 @@ export function serviceSteps(lines, merchant, customer) {
 export async function postServiceNotes(lines, merchant, customer) {
   for (const line of lines) {
     const { service } = line;
-    const escape = foundry.utils.escapeHTML;
-    const text = [game.i18n.localize(`KT.Service.Card.${service.kind}`, { merchant: escape(merchant.name), customer: escape(customer.name), service: escape(service.label), item: escape(line.target?.name ?? "") })];
+    const text = [game.i18n.localize(`KT.Service.Card.${service.kind}`, { merchant: merchant.name, customer: customer.name, service: service.label, item: line.target?.name ?? "" })];
     const own = service.note ?? (game.i18n.has(`KT.Service.${service.id}.Note`) ? game.i18n.localize(`KT.Service.${service.id}.Note`) : "");
-    if (own) text.push(escape(own));
+    if (own) text.push(own);
     const heal = healFormula(service, rulesVersion());
     if (heal) text.push(`[[/heal ${heal}]]`);
-    await ChatMessage.create({
-      speaker: ChatMessage.getSpeaker({ actor: merchant }),
-      content: `<div class="${MODULE_ID} kt-check-card success kt-service-card">${text.map((p) => `<p>${p}</p>`).join("")}</div>`,
-      flags: { [MODULE_ID]: { service: service.id } },
-    });
+    await postNote(merchant, { icon: service.icon ?? "fa-solid fa-hand-holding-heart", title: service.label, tone: "success", lines: text }, { flags: { [MODULE_ID]: { service: service.id } } });
     Hooks.callAll("kozmosTrade.service", merchant, customer, service, line.target);
   }
 }

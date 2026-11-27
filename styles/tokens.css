@@ -16,6 +16,7 @@
   --kt-font-small: var(--font-size-12);
   --kt-font-body: var(--font-size-14);
   --kt-font-large: var(--font-size-16);
+  --kt-font-display: var(--font-size-20);
   --kt-icon: 32px;
   --kt-icon-small: 24px;
   --kt-icon-large: 48px;
@@ -26,7 +27,7 @@
   --kt-ledger-height: 12rem;
   --kt-editor-list-width: 13rem;
   --kt-json-height: 9rem;
-  --kt-balance-width: 11rem;
+  --kt-balance-width: 12rem;
   --kt-panel-width: 16rem;
   --kt-tooltip-width: 22rem;
   --kt-tooltip-height: 26rem;

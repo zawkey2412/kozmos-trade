@@ -14,6 +14,7 @@ import { attitudeTables, attitudeValue, recordAttitude } from "./attitude.mjs";
 import { TradeError, warn } from "./errors.mjs";
 import { merchantScene } from "./market-rules.mjs";
 import { addNotoriety } from "./notoriety.mjs";
+import { noteContent, postNote } from "./notes.mjs";
 import { buyQuote, shelfView } from "./offer.mjs";
 import { expectRoll, registerRollKind, rollFlags } from "./rolls.mjs";
 import { announcePool, checkVisit, currentDay, endSessionAt, poolOf, priceContextFor, resolvePair, sessionAt, theftOpen, visibleShelf } from "./session.mjs";
@@ -21,6 +22,7 @@ import { broadcast, MESSAGES, onBroadcast, onRequest, request } from "./socket.m
 import { addTradeCheck, moveAll } from "./trade.mjs";
 
 /** @import { ExpectedRoll } from "./rolls.mjs"; */
+/** @import { NoteView } from "./notes.mjs"; */
 /** @import { PreparedTrade } from "./trade.mjs"; */
 /** @import { ShelfEntry } from "./shop.mjs"; */
 /** @import { TheftOutcome } from "../engine/theft.mjs"; */
@@ -52,7 +54,6 @@ import { addTradeCheck, moveAll } from "./trade.mjs";
 export const THEFT_ROLL = "theft";
 export const DISTRACT_ROLL = "distract";
 
-const TEMPLATE = `modules/${MODULE_ID}/templates/chat/theft.hbs`;
 const BUTTONS = {
   ask: [
     { action: "allow", icon: "fa-solid fa-check", label: "KT.Theft.Allow" },
@@ -309,7 +310,7 @@ function cardContent(card) {
   const pending = card.status === "pending";
   const value = getTables().attitude.events.caughtStealing;
   const buttons = pending ? buttonsOf(card).map((button) => ({ ...button, label: game.i18n.localize(button.label, { value }) })) : [];
-  return foundry.applications.handlebars.renderTemplate(TEMPLATE, { ...card.view, buttons, status: pending ? null : card.status });
+  return noteContent(/** @type {NoteView} */ ({ ...card.view, buttons, status: pending ? null : card.status }));
 }
 
 // A card for the GM's eyes only, with nothing to answer.
@@ -318,8 +319,7 @@ function cardContent(card) {
  * @param {TheftCard["view"]} view
  */
 async function whisperNote(merchant, view) {
-  const content = await foundry.applications.handlebars.renderTemplate(TEMPLATE, { ...view, buttons: [], status: null });
-  await ChatMessage.create(/** @type {any} */ ({ content, whisper: gmIds(), speaker: ChatMessage.getSpeaker({ actor: merchant }) }));
+  await postNote(merchant, /** @type {NoteView} */ (view), { whisper: gmIds() });
 }
 
 /**
@@ -529,11 +529,7 @@ async function punish({ messageId, choice }, sender) {
   const value = getTables().attitude.events.caughtStealing;
   const line = game.i18n.localize(`KT.Theft.Done.${choice}`, { merchant: merchant.name, customer: customer.name, item: card.item, price, value });
   await closeCard(message, card, line);
-  await ChatMessage.create(/** @type {any} */ ({
-    content: `<div class="${MODULE_ID} kt-check-card failure"><p>${foundry.utils.escapeHTML(line)}</p></div>`,
-    whisper: [...new Set([...gmIds(), card.userId])],
-    speaker: ChatMessage.getSpeaker({ actor: merchant }),
-  }));
+  await postNote(merchant, { icon: "fa-solid fa-hand", title: game.i18n.localize("KT.Theft.Title"), tone: "failure", lines: [line] }, { whisper: [...new Set([...gmIds(), card.userId])] });
   broadcast(MESSAGES.SHOP_CHANGED, { merchant: merchant.uuid });
   return choice;
 }

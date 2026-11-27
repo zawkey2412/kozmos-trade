@@ -1,11 +1,11 @@
 <section class="kt-tray kt-their-tray" data-side="theirs">
-  <h3>{{theirs.title}}</h3>
+  <h3 class="kt-heading">{{theirs.title}}</h3>
   {{#if theirs.rows.length}}
-  <ol class="kt-tray-list plain">
+  <ol class="kt-list kt-tray-list plain">
     {{#each theirs.rows as |row|}}
     <li class="kt-line kt-line-plain" aria-label="{{row.name}}">
       <img src="{{row.img}}" alt="">
-      <span class="kt-line-name">{{row.name}}</span>
+      <span class="kt-line-name kt-clip">{{row.name}}</span>
       <span class="kt-line-total">{{row.quantity}}</span>
     </li>
     {{/each}}
