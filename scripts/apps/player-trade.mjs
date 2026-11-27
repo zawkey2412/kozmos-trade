@@ -37,6 +37,7 @@ export default class PlayerTradeWindow extends OfferWindow {
   // Opens the window for a trade, or brings an open one up to date.
   /** @param {PlayerTradeView} view */
   static async sync(view) {
+    PlayerTradeWindow.#closeInvite(view.id);
     const id = `kt-player-${view.id}`;
     const existing = /** @type {any} */ (foundry.applications.instances.get(id));
     if (existing) {
@@ -79,6 +80,11 @@ export default class PlayerTradeWindow extends OfferWindow {
    * @returns {Promise<boolean | null>}
    */
   static async invite(id, name) {
+    const asking = /** @type {any} */ (foundry.applications.instances.get(`kt-invite-${id}`));
+    if (asking) {
+      asking.bringToFront();
+      return null;
+    }
     const answer = await foundry.applications.api.DialogV2.wait(/** @type {any} */ ({
       id: `kt-invite-${id}`,
       window: { title: game.i18n.localize("KT.PlayerTrade.InviteTitle", { name }), icon: "fa-solid fa-handshake" },
@@ -96,6 +102,15 @@ export default class PlayerTradeWindow extends OfferWindow {
   /** @type {Set<string>} */
   static #gone = new Set();
 
+  // Closes an invite that no longer needs an answer.
+  /** @param {string} id */
+  static #closeInvite(id) {
+    const question = foundry.applications.instances.get(`kt-invite-${id}`);
+    if (!question) return;
+    PlayerTradeWindow.#gone.add(id);
+    question.close();
+  }
+
   // The GM ended the trade: done, closed by one side, a player left, or the invite was turned down or ran out.
   /**
    * @param {string} id
@@ -104,11 +119,7 @@ export default class PlayerTradeWindow extends OfferWindow {
    * @param {string} asker
    */
   static ended(id, reason, name, asker) {
-    const question = foundry.applications.instances.get(`kt-invite-${id}`);
-    if (question) {
-      PlayerTradeWindow.#gone.add(id);
-      question.close();
-    }
+    PlayerTradeWindow.#closeInvite(id);
     const app = /** @type {any} */ (foundry.applications.instances.get(`kt-player-${id}`));
     if (!app) {
       const key = { declined: "KT.PlayerTrade.Declined", expired: "KT.PlayerTrade.Expired", combat: "KT.Error.InCombat" }[reason];
