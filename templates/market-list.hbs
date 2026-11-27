@@ -3,7 +3,7 @@
   <div class="kt-panel kt-setup-bar" aria-live="polite">
     <img class="kt-thumb" src="{{setup.img}}" alt="">
     <span>{{setup.text}}</span>
-    <button type="button" data-action="setUp"><i class="fa-solid fa-store" inert></i> {{localize "KT.Shop.SetUp"}}</button>
+    <button type="button" class="kt-act" data-action="setUp"><i class="fa-solid fa-store" inert></i> {{localize "KT.Shop.SetUp"}}</button>
   </div>
   {{/if}}
 
@@ -22,7 +22,7 @@
           </span>
         </div>
         <div class="kt-market-actions">
-          <button type="button" data-action="tradePlayer"><i class="fa-solid fa-handshake" inert></i> {{localize "KT.Market.Trade"}}</button>
+          <button type="button" class="kt-act" data-action="tradePlayer"><i class="fa-solid fa-handshake" inert></i> {{localize "KT.Market.Trade"}}</button>
         </div>
       </li>
       {{/each}}
@@ -41,7 +41,7 @@
   <div class="kt-note kt-rules-line">
     <i class="fa-solid fa-chart-line" inert></i>
     <span>{{rules.text}}</span>
-    <button type="button" data-action="rules">{{localize "KT.Market.RulesLine.Edit"}}</button>
+    <button type="button" class="kt-act" data-action="rules">{{localize "KT.Market.RulesLine.Edit"}}</button>
   </div>
   {{/if}}
 
@@ -86,7 +86,7 @@
             <button type="button" class="inline-control icon fa-solid fa-scale-balanced" data-action="trade"
                     data-tooltip aria-label="{{localize "KT.Shop.Trade"}}"></button>
             {{else if row.canTrade}}
-            <button type="button" data-action="trade"><i class="fa-solid fa-scale-balanced" inert></i> {{localize "KT.Market.Trade"}}</button>
+            <button type="button" class="kt-act" data-action="trade"><i class="fa-solid fa-scale-balanced" inert></i> {{localize "KT.Market.Trade"}}</button>
             {{/if}}
           </div>
         </li>

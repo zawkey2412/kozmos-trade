@@ -27,7 +27,7 @@
         {{#if entry.reverted}}
         <span class="kt-muted">{{localize "KT.Receipt.RevertedNote"}}</span>
         {{else}}
-        <button type="button" class="kt-ledger-revert" data-action="revert" data-entry="{{entry.id}}">
+        <button type="button" class="kt-act" data-action="revert" data-entry="{{entry.id}}">
           <i class="fa-solid fa-rotate-left" inert></i> {{localize "KT.Receipt.Revert"}}
         </button>
         {{/if}}

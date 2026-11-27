@@ -12,17 +12,17 @@
   </div>
   <div class="kt-card-side">
     {{#if canEmpty}}
-    <button type="button" class="kt-empty-button" data-action="empty">
-      <i class="fa-solid fa-box-open" inert></i> <span>{{localize "KT.Barter.Empty"}}</span>
+    <button type="button" class="kt-card-action icon" data-action="empty" data-tooltip-text="{{localize "KT.Barter.Empty"}}" aria-label="{{localize "KT.Barter.Empty"}}">
+      <i class="fa-solid fa-box-open" inert></i>
     </button>
     {{else}}
     {{#if canAppraise}}
-    <button type="button" class="kt-appraise-button icon" data-action="appraise" data-tooltip-text="{{localize "KT.Appraise.Button"}}" aria-label="{{localize "KT.Appraise.Button"}}">
+    <button type="button" class="kt-card-action icon" data-action="appraise" data-tooltip-text="{{localize "KT.Appraise.Button"}}" aria-label="{{localize "KT.Appraise.Button"}}">
       <i class="fa-solid fa-magnifying-glass-dollar" inert></i>
     </button>
     {{/if}}
     {{#if canPocket}}
-    <button type="button" class="kt-pocket-button icon" data-action="pocket" data-tooltip-text="{{localize "KT.Theft.Button"}}" aria-label="{{localize "KT.Theft.Button"}}">
+    <button type="button" class="kt-card-action kt-pocket-button icon" data-action="pocket" data-tooltip-text="{{localize "KT.Theft.Button"}}" aria-label="{{localize "KT.Theft.Button"}}">
       <i class="fa-solid fa-hand" inert></i>
     </button>
     {{/if}}

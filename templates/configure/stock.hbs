@@ -1,7 +1,7 @@
 <section class="tab kt-configure-stock{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
-  <div class="kt-stock-tools">
-    <p class="kt-note kt-grow"><i class="fa-solid fa-file-import" inert></i> <span>{{localize "KT.Configure.Stock.Drop"}} {{> kt-info text=(localize "KT.Configure.Stock.Hint")}}</span></p>
-    <button type="button" data-action="generate"><i class="fa-solid fa-dice" inert></i> {{localize "KT.Configure.Generate"}}</button>
+  <div class="kt-section-head">
+    <p class="kt-note"><i class="fa-solid fa-file-import" inert></i> <span>{{localize "KT.Configure.Stock.Drop"}} {{> kt-info text=(localize "KT.Configure.Stock.Hint")}}</span></p>
+    <button type="button" class="kt-act" data-action="generate"><i class="fa-solid fa-dice" inert></i> {{localize "KT.Configure.Generate"}}</button>
   </div>
 
   {{#if rows.length}}
@@ -38,11 +38,10 @@
   {{/if}}
 
   {{#if wantedOn}}
-  <fieldset class="kt-configure-wanted">
-    <legend>{{localize "KT.Wanted.Title"}} {{> kt-info text=(localize "KT.Wanted.ConfigureHint")}}</legend>
-    <div class="kt-stock-tools">
-      <span class="kt-grow"></span>
-      <button type="button" data-action="rollWanted"><i class="fa-solid fa-dice" inert></i> {{localize "KT.Wanted.Roll"}}</button>
+  <section class="kt-configure-wanted">
+    <div class="kt-section-head">
+      <h3 class="kt-heading">{{localize "KT.Wanted.Title"}} {{> kt-info text=(localize "KT.Wanted.ConfigureHint")}}</h3>
+      <button type="button" class="kt-act" data-action="rollWanted"><i class="fa-solid fa-dice" inert></i> {{localize "KT.Wanted.Roll"}}</button>
     </div>
     {{#if wanted.length}}
     <ul class="kt-list kt-wanted-rows plain">
@@ -53,6 +52,6 @@
     {{else}}
     <p class="kt-empty">{{localize "KT.Wanted.Empty"}}</p>
     {{/if}}
-  </fieldset>
+  </section>
   {{/if}}
 </section>

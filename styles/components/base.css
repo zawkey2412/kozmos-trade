@@ -172,3 +172,42 @@
   color: var(--kt-text);
   outline: none;
 }
+
+/* A section's title or note on the left and its action on the right. */
+.kozmos-trade .kt-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kt-space);
+  min-height: var(--kt-button-height);
+}
+
+.kozmos-trade .kt-section-head > :is(.kt-heading, .kt-note, p) {
+  flex: 1;
+  margin: 0;
+}
+
+/* The one size for an action inside a section or row. */
+.kozmos-trade button.kt-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--kt-space-small);
+  flex: none;
+  width: auto;
+  height: var(--kt-button-height);
+  min-height: 0;
+  padding: 0 var(--kt-space);
+  font-size: var(--kt-font-small);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* A field that is only a checkbox gives its label the room. */
+.kozmos-trade .form-group:has(> .form-fields > input[type="checkbox"]) > label {
+  flex: 1;
+}
+
+.kozmos-trade .form-group:has(> .form-fields > input[type="checkbox"]) > .form-fields {
+  flex: none;
+}
