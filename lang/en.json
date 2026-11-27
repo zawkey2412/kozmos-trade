@@ -98,7 +98,7 @@
       "OfferChanged": "The offer changed. Check it and accept again.",
       "CoinsGone": "{name} no longer has those coins.",
       "AlreadyJoined": "You already joined {name}'s trade here.",
-      "JoinGM": "A GM can't join a trade. Open the shop for a character instead.",
+      "JoinGM": "A GM can't join a trade. Trade as a character instead.",
       "NothingToJoin": "Nobody is trading with {name} right now.",
       "NotJoined": "That character is not part of this trade anymore.",
       "NoService": "This merchant does not offer that service.",
@@ -106,7 +106,7 @@
     },
     "Shop": {
       "SetUp": "Set up as a shop",
-      "Trade": "Open the shop",
+      "Trade": "Trade",
       "RightClick": "Right-click to configure it.",
       "Configure": "Configure shop"
     },
@@ -145,14 +145,14 @@
       "Save": "Save",
       "Remove": "Stop being a shop",
       "PostCard": "Post Open Shop card",
-      "Generate": "Generate new stock",
+      "Generate": "Restock",
       "GenerateConfirm": "This replaces {count} unpinned items on the shelf. Pinned items stay.",
       "Generated": "{count} items stocked. The purse holds {purse}.",
       "NewTitle": "Set up a shop: {name}",
       "Intro": {
         "Title": "Turn {name} into a shop",
         "Step1": "Pick what it sells and how wealthy it is.",
-        "Step2": "Generate stock rolls a fresh shelf from the compendiums. Or open the shop with the items it already carries.",
+        "Step2": "Stock and open rolls a fresh shelf from the compendiums. Or open the shop with the items it already carries.",
         "Step3": "Players then trade from its token, an Open Shop card or a @Trade link. Prices, attitude and history live in this window's tabs."
       },
       "Tab": {
@@ -169,7 +169,7 @@
       "ArchetypeHint": "The kind of shop. It decides what stock rolls and which trade-ins it pays more for.",
       "TierHint": "How many items it stocks, how rare they get, and how much coin is in its purse.",
       "ShowHint": "Opens the shop on the screens of the players you choose.",
-      "PostCardHint": "Posts a chat card with a Browse wares button for everyone.",
+      "PostCardHint": "Posts a chat card with a Trade button for everyone.",
       "RemoveHint": "Players can no longer trade here. Its items stay on the actor.",
       "RemoveTitle": "Stop being a shop: {name}",
       "RemoveBody": "{name} goes back to being a normal NPC, and players can no longer trade here. Its items stay where they are.",
@@ -179,7 +179,7 @@
       "Saved": "{name} saved.",
       "Opened": "{name} is open for business.",
       "CardPosted": "Open Shop card posted in chat.",
-      "GenerateOpen": "Generate stock and open"
+      "GenerateOpen": "Stock and open"
     },
     "Archetype": {
       "blacksmith": "Blacksmith",
@@ -244,8 +244,7 @@
       },
       "GMTools": "GM tools",
       "Show": "Show",
-      "Undo": "Undo last",
-      "Settings": "Configure"
+      "Undo": "Undo last"
     },
     "Attitude": {
       "hostile": "Hostile",
@@ -353,7 +352,7 @@
     },
     "ShopCard": {
       "Body": "{name} is open for business.",
-      "Browse": "Browse wares"
+      "Browse": "Trade"
     },
     "Archetypes": {
       "Title": "Shop archetypes",
@@ -740,12 +739,11 @@
       "AllShops": "All shops",
       "Search": "Search shops",
       "NoMatch": "No shop matches that name.",
-      "Configure": "Configure",
       "Find": "Show on the map",
       "ToggleOpen": "Open or close this shop",
       "Kind": {
         "unique": "One person",
-        "generic": "Per token"
+        "generic": "A kind of merchant"
       },
       "Selected": {
         "Title": "Selected token",

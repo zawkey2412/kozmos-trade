@@ -1,4 +1,4 @@
-// The Open Shop chat card: anyone who clicks Browse wares opens the trade for their own character.
+// The Open Shop chat card: anyone who clicks Trade opens the trade for their own character.
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID } from "../constants.mjs";
 import { merchantFlags } from "../data/flags.mjs";
