@@ -1,7 +1,6 @@
 // GM controls: the shop button on NPC token HUDs, sheet headers and the Actors sidebar menu, the guard toggle, and an item's true value.
 import ConfigureShop from "../apps/configure-shop.mjs";
-import { openTrade, pickCustomer } from "../services/open-trade.mjs";
-import { showShop } from "../services/show.mjs";
+import { openTrade } from "../services/open-trade.mjs";
 import { canBeShop, isShop, setTrueValue } from "../services/shop.mjs";
 import { MODULE_ID } from "../constants.mjs";
 import { itemFlags, tokenFlags } from "../data/flags.mjs";
@@ -39,32 +38,13 @@ function addShowOption(directory, options) {
       visible: gmAnd(isShop),
       onClick: (/** @type {Event} */ event, /** @type {HTMLElement} */ li) => ConfigureShop.open(actorOf(li)),
     },
-    {
-      label: "KT.Show.Control",
-      icon: "fa-solid fa-eye",
-      visible: gmAnd(isShop),
-      onClick: (/** @type {Event} */ event, /** @type {HTMLElement} */ li) => showShop(actorOf(li)),
-    },
-    {
-      label: "KT.Configure.Remove",
-      icon: "fa-solid fa-store-slash",
-      visible: gmAnd(isShop),
-      onClick: (/** @type {Event} */ event, /** @type {HTMLElement} */ li) => ConfigureShop.confirmRemove(actorOf(li)),
-    },
   );
 }
 
 // The barter window for a shop that is set up, Configure Shop for anything else.
 /** @param {any} actor */
-export async function openShopFor(actor) {
-  if (!isShop(actor)) return ConfigureShop.open(actor);
-  let customer;
-  try {
-    customer = await pickCustomer();
-  } catch {
-    return ConfigureShop.open(actor);
-  }
-  if (customer) return openTrade(customer, actor);
+export function openShopFor(actor) {
+  return isShop(actor) ? openTrade(null, actor) : ConfigureShop.open(actor);
 }
 
 /**
