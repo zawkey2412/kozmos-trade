@@ -3,7 +3,7 @@
     "Settings": {
       "Mode": {
         "Name": "Complexity",
-        "Hint": "How much rules weight a trade carries.",
+        "Hint": "How much rules weight a trade carries. Each feature can still be turned on or off on its own.",
         "Simple": "Simple",
         "Standard": "Standard",
         "Crunchy": "Crunchy"
@@ -14,11 +14,11 @@
       },
       "Proximity": {
         "Name": "Trade only up close",
-        "Hint": "Players must stand within 2 squares of the merchant to trade."
+        "Hint": "Players must have their own token within 2 squares of the merchant's token to trade. The GM can always trade."
       },
       "NoCombat": {
         "Name": "No trading during combat",
-        "Hint": "Players can't start a trade while their character or the merchant is in a started combat. Trades already open can finish."
+        "Hint": "Players can't start a trade while their character or the merchant is fighting in a combat that has started. Trades already open can finish. The GM can always trade."
       },
       "Compendiums": {
         "Name": "Stock compendiums",
@@ -123,7 +123,7 @@
       },
       "Remote": {
         "Label": "Trade from the Shops list",
-        "Hint": "Once the party has visited, players can trade here from the Shops window."
+        "Hint": "Once the party has visited, players can trade here from the Shops window in the token controls, without walking up."
       },
       "TheftProof": {
         "Label": "Theft-proof",
@@ -136,12 +136,13 @@
         "Hint": "Instant trades go through as soon as the offer balances. With GM approval, you approve, counter or decline each one."
       },
       "Stock": {
-        "Hint": "Leave a price empty to sell at the item's value. Pinned items stay through restocks. Drop items, a folder or a roll table here to add them.",
+        "Hint": "Loose items on this actor are its stock. Equipped gear and natural weapons stay with the merchant. Leave a price empty to sell at the item's value. Pin an item to keep it through restocks. Drop items, an item folder or a roll table here to add stock.",
         "Item": "Item",
         "Value": "Value",
         "Price": "Price",
         "Pin": "Pinned: kept through restocks",
-        "Empty": "This actor has no items to sell. Drop items onto its sheet to stock the shelf."
+        "Empty": "This actor has no items to sell. Drop items onto its sheet to stock the shelf.",
+        "Drop": "Drop items, a folder or a roll table here to add stock."
       },
       "NotForSale": "Not for sale",
       "OpenShop": "Open with its own items",
@@ -160,7 +161,7 @@
       "Status": "Status",
       "Kind": "What it sells",
       "Rules": "Rules",
-      "ArchetypeHint": "Decides what stock rolls and which trade-ins it pays more for.",
+      "ArchetypeHint": "The kind of shop. It decides what stock rolls and which trade-ins it pays more for.",
       "TierHint": "How many items it stocks, how rare they get, and how much coin is in its purse.",
       "PostCardHint": "Posts a chat card with a Trade button for everyone.",
       "RemoveTitle": "Stop being a shop: {name}",
@@ -344,7 +345,7 @@
       "Empty": "No trades yet.",
       "Summary": "Got {gets} for {gives}",
       "Item": "{quantity} {name}",
-      "Hint": "The last 50 trades. Revert puts the items and coins back."
+      "Hint": "The last 50 trades here. Revert puts the items and coins back where they were."
     },
     "ShopCard": {
       "Body": "{name} is open for business.",
@@ -433,7 +434,7 @@
       "Title": "Features",
       "Open": "Choose features",
       "Hint": "Pick a complexity preset, turn single features on or off, and set the rules for every trade.",
-      "Intro": "{mode} sets the toggles below. Your changes are kept for each preset.",
+      "Intro": "Toggles start from the {mode} preset. Changes are kept for each preset, so switching back finds them again.",
       "PresetOn": "{mode}: on",
       "PresetOff": "{mode}: off",
       "Reset": "Back to preset",
@@ -545,7 +546,7 @@
       "Title": "Wanted",
       "Hint": "This merchant pays extra for these. Bringing a named item also wins its favor.",
       "Pays": "pays {rate}",
-      "ConfigureHint": "Rolled with each restock. A named item leaves the board once someone sells one.",
+      "ConfigureHint": "Rolled with each restock. Named items leave the board once someone brings one. The Open Shop card shows the board too.",
       "Empty": "Nothing wanted right now.",
       "Roll": "Roll a new board"
     },
@@ -877,7 +878,7 @@
       "Hint": {
         "unique": "Every token of {name} is the same shop, with the same stock, purse and memory of customers, on every map.",
         "generic": "Each token of {name} you place from now on becomes its own shop, starting as a copy of this one.",
-        "token": "This token is its own shop, and the shop goes if the token is deleted.",
+        "token": "This token is its own shop, kept on the token only. Deleting the token deletes the shop. Choose One person to move this shop onto {name}, so it follows them to every map.",
         "fresh": "Each token rolls its own shelf and purse the first time someone trades there."
       },
       "Fresh": {

@@ -20,6 +20,7 @@ import { removeShop, saveShop, shelf } from "../services/shop.mjs";
 /** @import { UniqueMode } from "../services/identity.mjs"; */
 
 import { HandlebarsDocumentSheet } from "./base.mjs";
+import { loadPartials } from "./cards.mjs";
 
 const template = (name) => `modules/${MODULE_ID}/templates/configure/${name}.hbs`;
 const SHOP_HEIGHT = 720;
@@ -112,6 +113,11 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     });
     if (done) ui.notifications.info(game.i18n.localize("KT.Stock.Restocked", { name: actor.name }));
     return done;
+  }
+
+  async _preFirstRender(context, options) {
+    await super._preFirstRender(context, options);
+    await loadPartials();
   }
 
   async _onRender(context, options) {

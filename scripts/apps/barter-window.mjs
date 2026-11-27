@@ -34,7 +34,7 @@ import { MESSAGES, request } from "../services/socket.mjs";
 import { getTables } from "../settings.mjs";
 import ConfigureShop from "./configure-shop.mjs";
 import { HandlebarsApplication } from "./base.mjs";
-import { card, loadTradePartials, rarityTag, tag } from "./cards.mjs";
+import { card, loadPartials, rarityTag, tag } from "./cards.mjs";
 
 /** @import { Snapshot } from "../services/session.mjs"; */
 /** @import { PriceContext } from "../services/offer.mjs"; */
@@ -99,7 +99,7 @@ export default class BarterWindow extends HandlebarsApplication {
   }
 
   static #loadPartials() {
-    return loadTradePartials();
+    return loadPartials();
   }
 
   // The GM's copy of a proposal, where only the merchant's side can change.

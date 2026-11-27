@@ -2,6 +2,7 @@
 import { MODES, MODULE_ID, SETTINGS } from "../constants.mjs";
 import { changesFrom, FEATURES, featuresFor, MODE_FEATURES } from "../data/modes.mjs";
 import { HandlebarsApplication } from "./base.mjs";
+import { loadPartials } from "./cards.mjs";
 
 /** @import { Feature } from "../data/modes.mjs"; */
 
@@ -65,7 +66,7 @@ export default class FeatureToggles extends HandlebarsApplication {
 
   async _preFirstRender(context, options) {
     await super._preFirstRender(context, options);
-    await foundry.applications.handlebars.loadTemplates({ "kt-rule-field": `modules/${MODULE_ID}/templates/components/rule-field.hbs` });
+    await loadPartials();
   }
 
   async _onFirstRender(context, options) {

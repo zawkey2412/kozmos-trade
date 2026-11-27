@@ -4,6 +4,7 @@ import { cleanArchetype } from "../engine/fit.mjs";
 import { servicesFromGold, servicesToGold } from "../engine/services.mjs";
 import { ARCHETYPE_ID, archetypeLabel, baseArchetypes, getArchetypes, isBuiltIn, saveArchetypes } from "../services/archetypes.mjs";
 import { HandlebarsApplication } from "./base.mjs";
+import { loadPartials } from "./cards.mjs";
 
 /** @import { Archetype } from "../engine/fit.mjs"; */
 
@@ -40,6 +41,11 @@ export default class ArchetypeEditor extends HandlebarsApplication {
     /** @type {Record<string, Draft>} */
     this.drafts = Object.fromEntries(Object.entries(getArchetypes()).map(([id, archetype]) => [id, toDraft(archetype)]));
     this.selected = Object.keys(this.drafts)[0];
+  }
+
+  async _preFirstRender(context, options) {
+    await super._preFirstRender(context, options);
+    await loadPartials();
   }
 
   async _prepareContext(options) {

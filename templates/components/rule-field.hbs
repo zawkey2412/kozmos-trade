@@ -1,5 +1,5 @@
 <div class="form-group">
-  <label for="{{id}}">{{localize label}}</label>
+  <label for="{{id}}">{{localize label}} {{> kt-info text=(localize hint)}}</label>
   <div class="form-fields">
     {{#if choices}}
     <select id="{{id}}" name="{{name}}">
@@ -9,5 +9,4 @@
     <input type="checkbox" id="{{id}}" name="{{name}}" {{checked value}}>
     {{/if}}
   </div>
-  <p class="hint">{{localize hint}}</p>
 </div>

@@ -7,7 +7,7 @@ import { MESSAGES, request } from "../services/socket.mjs";
 import { distract } from "../services/theft.mjs";
 import { playCoins } from "../ui/effects.mjs";
 import { getTables } from "../settings.mjs";
-import { loadTradePartials } from "./cards.mjs";
+import { loadPartials } from "./cards.mjs";
 import OfferWindow from "./offer-window.mjs";
 
 /**
@@ -43,7 +43,7 @@ export default class JoinWindow extends OfferWindow {
    * @param {any} actor
    */
   static async show(view, actor) {
-    await loadTradePartials();
+    await loadPartials();
     const id = `kt-join-${view.merchant.uuid}-${actor.uuid}`.replace(/[^A-Za-z0-9-]/g, "-");
     const existing = /** @type {any} */ (foundry.applications.instances.get(id));
     if (existing) {

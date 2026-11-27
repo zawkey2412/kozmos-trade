@@ -5,14 +5,11 @@ import { rarityLabel } from "../adapter/dnd5e.mjs";
 /** @type {Promise<void> | null} */
 let partials = null;
 
-// The card, inventory and tray partials, loaded once.
-export function loadTradePartials() {
+// Every shared partial in templates/components, loaded once.
+export function loadPartials() {
+  const path = (/** @type {string} */ name) => `modules/${MODULE_ID}/templates/components/${name}.hbs`;
   partials ??= foundry.applications.handlebars
-    .loadTemplates({
-      "kt-card": `modules/${MODULE_ID}/templates/components/card.hbs`,
-      "kt-inventory": `modules/${MODULE_ID}/templates/components/inventory.hbs`,
-      "kt-tray": `modules/${MODULE_ID}/templates/components/tray.hbs`,
-    })
+    .loadTemplates(Object.fromEntries(["card", "inventory", "tray", "rule-field", "info"].map((name) => [`kt-${name}`, path(name)])))
     .then(() => {});
   return partials;
 }

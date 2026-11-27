@@ -4,61 +4,55 @@
   <fieldset>
     <legend>{{localize "KT.Configure.Status"}}</legend>
     <div class="form-group kt-toggle">
-      <label for="{{rootId}}-open">{{localize "KT.Configure.Open.Label"}}</label>
+      <label for="{{rootId}}-open">{{localize "KT.Configure.Open.Label"}} {{> kt-info text=(localize "KT.Configure.Open.Hint")}}</label>
       <div class="form-fields">
         <input type="checkbox" id="{{rootId}}-open" name="open" {{checked shop.open}}>
       </div>
-      <p class="hint">{{localize "KT.Configure.Open.Hint"}}</p>
     </div>
     <div class="form-group">
-      <label for="{{rootId}}-mode">{{localize "KT.Configure.ExecutionMode.Label"}}</label>
+      <label for="{{rootId}}-mode">{{localize "KT.Configure.ExecutionMode.Label"}} {{> kt-info text=(localize "KT.Configure.ExecutionMode.Hint")}}</label>
       <div class="form-fields">
         <select id="{{rootId}}-mode" name="executionMode">
           {{selectOptions modes selected=shop.executionMode localize=true}}
         </select>
       </div>
-      <p class="hint">{{localize "KT.Configure.ExecutionMode.Hint"}}</p>
     </div>
   </fieldset>
 
   <fieldset>
     <legend>{{localize "KT.Configure.Kind"}}</legend>
     <div class="form-group">
-      <label for="{{rootId}}-archetype">{{localize "KT.Configure.Archetype"}}</label>
+      <label for="{{rootId}}-archetype">{{localize "KT.Configure.Archetype"}} {{> kt-info text=(localize "KT.Configure.ArchetypeHint")}}</label>
       <div class="form-fields">
         <select id="{{rootId}}-archetype" name="archetype">
           {{selectOptions archetypes selected=shop.archetype}}
         </select>
       </div>
-      <p class="hint">{{localize "KT.Configure.ArchetypeHint"}}</p>
     </div>
     <div class="form-group">
-      <label for="{{rootId}}-tier">{{localize "KT.Configure.Tier"}}</label>
+      <label for="{{rootId}}-tier">{{localize "KT.Configure.Tier"}} {{> kt-info text=(localize "KT.Configure.TierHint")}}</label>
       <div class="form-fields">
         <select id="{{rootId}}-tier" name="tier">
           {{selectOptions tiers selected=shop.tier localize=true}}
         </select>
       </div>
-      <p class="hint">{{localize "KT.Configure.TierHint"}}</p>
     </div>
   </fieldset>
 
   <fieldset>
     <legend>{{localize "KT.Configure.Rules"}}</legend>
     <div class="form-group kt-toggle">
-      <label for="{{rootId}}-remote">{{localize "KT.Configure.Remote.Label"}}</label>
+      <label for="{{rootId}}-remote">{{localize "KT.Configure.Remote.Label"}} {{> kt-info text=(localize "KT.Configure.Remote.Hint")}}</label>
       <div class="form-fields">
         <input type="checkbox" id="{{rootId}}-remote" name="remoteTrade" {{checked shop.remoteTrade}}>
       </div>
-      <p class="hint">{{localize "KT.Configure.Remote.Hint"}}</p>
     </div>
     {{#if theftOn}}
     <div class="form-group kt-toggle">
-      <label for="{{rootId}}-theft-proof">{{localize "KT.Configure.TheftProof.Label"}}</label>
+      <label for="{{rootId}}-theft-proof">{{localize "KT.Configure.TheftProof.Label"}} {{> kt-info text=(localize "KT.Configure.TheftProof.Hint")}}</label>
       <div class="form-fields">
         <input type="checkbox" id="{{rootId}}-theft-proof" name="theftProof" {{checked shop.theftProof}}>
       </div>
-      <p class="hint">{{localize "KT.Configure.TheftProof.Hint"}}</p>
     </div>
     {{/if}}
   </fieldset>
@@ -67,10 +61,9 @@
     <legend>{{localize "KT.Identity.Legend"}}</legend>
     <div class="form-group kt-identity">
       <div class="form-fields">
-        <span class="kt-identity-value"><i class="fa-solid {{identity.icon}}" inert></i> {{identity.label}}</span>
+        <span class="kt-identity-value"><i class="fa-solid {{identity.icon}}" inert></i> {{identity.label}} {{> kt-info text=identity.hint}}</span>
         <button type="button" data-action="changeIdentity"><i class="fa-solid fa-pen" inert></i> {{localize "KT.Identity.Change"}}</button>
       </div>
-      <p class="hint">{{identity.hint}}</p>
     </div>
   </fieldset>
 </section>

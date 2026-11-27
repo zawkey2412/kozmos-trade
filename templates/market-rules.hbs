@@ -37,26 +37,23 @@
       </div>
     </div>
     <div class="form-group">
-      <label>{{localize "KT.Market.Rules.Categories"}}</label>
+      <label>{{localize "KT.Market.Rules.Categories"}} {{> kt-info text=(localize "KT.Market.Rules.CategoriesHint")}}</label>
       <div class="form-fields">
         <multi-select name="categories">{{selectOptions categories localize=true}}</multi-select>
       </div>
-      <p class="hint">{{localize "KT.Market.Rules.CategoriesHint"}}</p>
     </div>
     <div class="form-group">
-      <label for="{{rootId}}-percent">{{localize "KT.Market.Rules.Percent"}}</label>
+      <label for="{{rootId}}-percent">{{localize "KT.Market.Rules.Percent"}} {{> kt-info text=(localize "KT.Market.Rules.PercentHint")}}</label>
       <div class="form-fields">
         <input type="number" id="{{rootId}}-percent" name="percent" step="1" placeholder="30">
         <span class="units">%</span>
       </div>
-      <p class="hint">{{localize "KT.Market.Rules.PercentHint"}}</p>
     </div>
     <div class="form-group">
-      <label for="{{rootId}}-days">{{localize "KT.Market.Rules.Days"}}</label>
+      <label for="{{rootId}}-days">{{localize "KT.Market.Rules.Days"}} {{> kt-info text=(localize "KT.Market.Rules.DaysHint")}}</label>
       <div class="form-fields">
         <input type="number" id="{{rootId}}-days" name="days" min="0" step="1" placeholder="7">
       </div>
-      <p class="hint">{{localize "KT.Market.Rules.DaysHint"}}</p>
     </div>
   </fieldset>
 </section>

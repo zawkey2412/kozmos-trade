@@ -2,13 +2,12 @@
   <fieldset>
     <legend>{{localize "KT.Settings.Mode.Name"}}</legend>
     <div class="form-group">
-      <label for="{{@root.rootId}}-mode">{{localize "KT.Features.Preset"}}</label>
+      <label for="{{@root.rootId}}-mode">{{localize "KT.Features.Preset"}} {{> kt-info text=intro}}</label>
       <div class="form-fields">
         <select id="{{@root.rootId}}-mode" name="mode">
           {{selectOptions modes selected=mode localize=true}}
         </select>
       </div>
-      <p class="hint">{{intro}}</p>
     </div>
   </fieldset>
 
@@ -16,12 +15,11 @@
     <legend>{{localize "KT.Features.Legend"}}</legend>
     {{#each features as |feature|}}
     <div class="form-group">
-      <label for="{{@root.rootId}}-{{feature.name}}">{{localize feature.label}}</label>
+      <label for="{{@root.rootId}}-{{feature.name}}">{{localize feature.label}} {{> kt-info text=(localize feature.hint)}}</label>
       <div class="form-fields">
         <span class="kt-preset{{#if feature.changed}} kt-changed{{/if}}">{{feature.preset}}</span>
         <input type="checkbox" id="{{@root.rootId}}-{{feature.name}}" name="features.{{feature.name}}" {{checked feature.checked}}>
       </div>
-      <p class="hint">{{localize feature.hint}}</p>
     </div>
     {{#if feature.rules.length}}
     <div class="kt-feature-rules" data-rules-for="{{feature.name}}">

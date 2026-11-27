@@ -13,19 +13,17 @@
   {{#if selected}}
   <section class="kt-archetype-form">
     <div class="form-group">
-      <label for="{{rootId}}-label">{{localize "KT.Archetypes.Name"}}</label>
+      <label for="{{rootId}}-label">{{localize "KT.Archetypes.Name"}} {{> kt-info text=(localize "KT.Archetypes.Id" id=selected.id)}}</label>
       <div class="form-fields">
         <input type="text" id="{{rootId}}-label" name="label" value="{{selected.label}}" placeholder="{{selected.placeholder}}">
       </div>
-      <p class="hint">{{localize "KT.Archetypes.Id" id=selected.id}}</p>
     </div>
 
     <div class="form-group">
-      <label for="{{rootId}}-fence">{{localize "KT.Archetypes.Fence"}}</label>
+      <label for="{{rootId}}-fence">{{localize "KT.Archetypes.Fence"}} {{> kt-info text=(localize "KT.Archetypes.FenceHint")}}</label>
       <div class="form-fields">
         <input type="checkbox" id="{{rootId}}-fence" name="fence" {{checked selected.fence}}>
       </div>
-      <p class="hint">{{localize "KT.Archetypes.FenceHint"}}</p>
     </div>
 
     <div class="form-group">
@@ -36,11 +34,10 @@
     </div>
 
     <div class="form-group">
-      <label for="{{rootId}}-tools">{{localize "KT.Archetypes.Tools"}}</label>
+      <label for="{{rootId}}-tools">{{localize "KT.Archetypes.Tools"}} {{> kt-info text=(localize "KT.Archetypes.ToolsHint")}}</label>
       <div class="form-fields">
         <input type="text" id="{{rootId}}-tools" name="tools" value="{{selected.tools}}" placeholder="smith, thief">
       </div>
-      <p class="hint">{{localize "KT.Archetypes.ToolsHint"}}</p>
     </div>
 
     <div class="form-group stacked">
@@ -49,21 +46,18 @@
     </div>
 
     <div class="form-group stacked">
-      <label for="{{rootId}}-favored">{{localize "KT.Archetypes.Favored"}}</label>
+      <label for="{{rootId}}-favored">{{localize "KT.Archetypes.Favored"}} {{> kt-info text=(localize "KT.Archetypes.FilterHint")}}</label>
       <textarea id="{{rootId}}-favored" name="favored" class="kt-json" spellcheck="false">{{selected.favored}}</textarea>
-      <p class="hint">{{localize "KT.Archetypes.FilterHint"}}</p>
     </div>
 
     <div class="form-group stacked">
-      <label for="{{rootId}}-reactions">{{localize "KT.Archetypes.Reactions"}}</label>
+      <label for="{{rootId}}-reactions">{{localize "KT.Archetypes.Reactions"}} {{> kt-info text=(localize "KT.Archetypes.ReactionsHint")}}</label>
       <textarea id="{{rootId}}-reactions" name="reactions" class="kt-json" spellcheck="false" placeholder="{{localize "KT.Archetypes.ReactionsPlaceholder"}}">{{selected.reactions}}</textarea>
-      <p class="hint">{{localize "KT.Archetypes.ReactionsHint"}}</p>
     </div>
 
     <div class="form-group stacked">
-      <label for="{{rootId}}-services">{{localize "KT.Archetypes.Services"}}</label>
+      <label for="{{rootId}}-services">{{localize "KT.Archetypes.Services"}} {{> kt-info text=(localize "KT.Archetypes.ServicesHint")}}</label>
       <textarea id="{{rootId}}-services" name="services" class="kt-json" spellcheck="false" placeholder="{{localize "KT.Archetypes.ServicesPlaceholder"}}">{{selected.services}}</textarea>
-      <p class="hint">{{localize "KT.Archetypes.ServicesHint"}}</p>
     </div>
 
     <button type="button" data-action="remove">

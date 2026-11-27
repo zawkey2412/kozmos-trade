@@ -1,8 +1,7 @@
 <section class="tab kt-configure-customers{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
   {{#if attitudeOn}}
   <fieldset class="kt-configure-attitude">
-    <legend>{{localize "KT.Attitude.Title"}}</legend>
-    <p class="hint">{{localize "KT.Attitude.Hint"}}</p>
+    <legend>{{localize "KT.Attitude.Title"}} {{> kt-info text=(localize "KT.Attitude.Hint")}}</legend>
     {{#each attitudes as |row|}}
     <div class="form-group">
       <label for="{{@root.rootId}}-attitude-{{row.key}}">{{row.name}}</label>
@@ -18,8 +17,7 @@
   {{/if}}
 
   <fieldset class="kt-configure-ledger">
-    <legend>{{localize "KT.Ledger.Label"}}</legend>
-    <p class="hint">{{localize "KT.Ledger.Hint"}}</p>
+    <legend>{{localize "KT.Ledger.Label"}} {{> kt-info text=(localize "KT.Ledger.Hint")}}</legend>
     {{#if ledger.length}}
     <ol class="kt-list kt-ledger-list plain">
       {{#each ledger as |entry|}}

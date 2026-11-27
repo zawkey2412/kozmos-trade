@@ -7,6 +7,7 @@ import { warn } from "../services/errors.mjs";
 import { addMarketRule, removeMarketRule, sceneRules, worldRules } from "../services/market-rules.mjs";
 import { feature } from "../settings.mjs";
 import { HandlebarsApplication } from "./base.mjs";
+import { loadPartials } from "./cards.mjs";
 
 /** @import { MarketRule } from "../engine/market.mjs"; */
 
@@ -30,6 +31,11 @@ export default class MarketRules extends HandlebarsApplication {
     const existing = foundry.applications.instances.get(MarketRules.DEFAULT_OPTIONS.id);
     if (existing) return existing.render({ force: true });
     return new MarketRules().render({ force: true });
+  }
+
+  async _preFirstRender(context, options) {
+    await super._preFirstRender(context, options);
+    await loadPartials();
   }
 
   async _prepareContext(options) {

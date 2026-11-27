@@ -5,7 +5,7 @@ import { coinsToCopper, formatCoins, formatCopper } from "../engine/money.mjs";
 import { warn } from "../services/errors.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
 import { playCoins } from "../ui/effects.mjs";
-import { loadTradePartials } from "./cards.mjs";
+import { loadPartials } from "./cards.mjs";
 import OfferWindow from "./offer-window.mjs";
 
 /** @import { PlayerTradeView } from "../services/player-trade.mjs"; */
@@ -67,7 +67,7 @@ export default class PlayerTradeWindow extends OfferWindow {
     if (mine < 0) return null;
     const actor = await foundry.utils.fromUuid(view.sides[mine].actor);
     if (!actor) return null;
-    await loadTradePartials();
+    await loadPartials();
     const app = new PlayerTradeWindow({ id, actor, state: view, mine });
     await app.render({ force: true });
     return app;
