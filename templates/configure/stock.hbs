@@ -1,8 +1,9 @@
-<fieldset class="kt-configure-stock">
-  <legend>{{localize "KT.Configure.Stock.Label"}}</legend>
+<section class="tab kt-configure-stock{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
   <div class="kt-stock-tools">
     <p class="hint">{{localize "KT.Configure.Stock.Hint"}}</p>
+    {{#if shop.enabled}}
     <button type="button" data-action="generate"><i class="fa-solid fa-dice" inert></i> {{localize "KT.Configure.Generate"}}</button>
+    {{/if}}
   </div>
 
   {{#if rows.length}}
@@ -10,7 +11,7 @@
     <span class="kt-stock-name">{{localize "KT.Configure.Stock.Item"}}</span>
     <span class="kt-stock-value">{{localize "KT.Configure.Stock.Value"}}</span>
     <span>{{localize "KT.Configure.Stock.Price"}}</span>
-    <span class="kt-stock-pin"><i class="fa-solid fa-thumbtack" inert></i></span>
+    <span class="kt-stock-pin" data-tooltip aria-label="{{localize "KT.Configure.Stock.Pin"}}"><i class="fa-solid fa-thumbtack" inert></i></span>
   </div>
   <ol class="kt-stock-list plain">
     {{#each rows as |row|}}
@@ -37,4 +38,4 @@
   {{else}}
   <p class="kt-empty">{{localize "KT.Configure.Stock.Empty"}}</p>
   {{/if}}
-</fieldset>
+</section>

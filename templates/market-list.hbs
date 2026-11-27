@@ -2,8 +2,9 @@
   <div class="kt-market-tools">
     <p class="hint">{{localize (ifThen gm "KT.Market.HintGM" "KT.Market.Hint")}}</p>
     {{#if gm}}
-    <button type="button" class="inline-control icon fa-solid fa-chart-line" data-action="rules"
-            data-tooltip aria-label="{{localize "KT.Market.Rules.Title"}}"></button>
+    <button type="button" class="kt-market-rules-button" data-action="rules">
+      <i class="fa-solid fa-chart-line" inert></i> {{localize "KT.Market.Rules.Title"}}
+    </button>
     {{/if}}
     <button type="button" class="inline-control icon fa-solid fa-rotate" data-action="reload"
             data-tooltip aria-label="{{localize "KT.Market.Reload"}}"></button>
@@ -28,7 +29,7 @@
         {{/if}}
         {{#if @root.gm}}
         <button type="button" class="inline-control icon fa-solid fa-sliders" data-action="configure"
-                data-tooltip aria-label="{{localize "KT.Barter.Configure"}}"></button>
+                data-tooltip aria-label="{{localize "KT.Shop.Configure"}}"></button>
         {{/if}}
       </div>
     </li>

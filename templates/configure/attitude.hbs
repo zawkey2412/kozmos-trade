@@ -1,5 +1,4 @@
-<fieldset class="kt-configure-attitude">
-  <legend>{{localize "KT.Attitude.Title"}}</legend>
+<section class="tab kt-configure-attitude{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
   <p class="hint">{{localize "KT.Attitude.Hint"}}</p>
   {{#each attitudes as |row|}}
   <div class="form-group">
@@ -10,6 +9,6 @@
     </div>
   </div>
   {{else}}
-  <p class="hint">{{localize "KT.Attitude.Nobody"}}</p>
+  <p class="kt-empty">{{localize "KT.Attitude.Nobody"}}</p>
   {{/each}}
-</fieldset>
+</section>

@@ -1,4 +1,4 @@
-// GM controls: the scales button on NPC token HUDs and actor sheet headers, the guard toggle, and an item's true value.
+// GM controls: the shop button on NPC token HUDs, sheet headers and the Actors sidebar menu, the guard toggle, and an item's true value.
 import ConfigureShop from "../apps/configure-shop.mjs";
 import { openTrade, pickCustomer } from "../services/open-trade.mjs";
 import { showShop } from "../services/show.mjs";
@@ -18,19 +18,40 @@ export function registerGmControls() {
   Hooks.on("getActorContextOptions", addShowOption);
 }
 
-// "Show to players" on shops in the Actors sidebar.
+// Shop entries in the Actors sidebar's right-click menu.
 /**
  * @param {any} directory
  * @param {object[]} options
  */
 function addShowOption(directory, options) {
   const actorOf = (/** @type {HTMLElement} */ li) => game.actors.get(/** @type {HTMLElement} */ (li.closest("[data-entry-id]")).dataset.entryId);
-  options.push({
-    label: "KT.Show.Control",
-    icon: "fa-solid fa-eye",
-    visible: (/** @type {HTMLElement} */ li) => game.user.isGM && isShop(actorOf(li)),
-    onClick: (/** @type {Event} */ event, /** @type {HTMLElement} */ li) => showShop(actorOf(li)),
-  });
+  const gmAnd = (/** @type {(actor: any) => boolean} */ test) => (/** @type {HTMLElement} */ li) => game.user.isGM && test(actorOf(li));
+  options.push(
+    {
+      label: "KT.Shop.SetUp",
+      icon: "fa-solid fa-store",
+      visible: gmAnd((actor) => canBeShop(actor) && !isShop(actor)),
+      onClick: (/** @type {Event} */ event, /** @type {HTMLElement} */ li) => ConfigureShop.open(actorOf(li)),
+    },
+    {
+      label: "KT.Shop.Configure",
+      icon: "fa-solid fa-sliders",
+      visible: gmAnd(isShop),
+      onClick: (/** @type {Event} */ event, /** @type {HTMLElement} */ li) => ConfigureShop.open(actorOf(li)),
+    },
+    {
+      label: "KT.Show.Control",
+      icon: "fa-solid fa-eye",
+      visible: gmAnd(isShop),
+      onClick: (/** @type {Event} */ event, /** @type {HTMLElement} */ li) => showShop(actorOf(li)),
+    },
+    {
+      label: "KT.Configure.Remove",
+      icon: "fa-solid fa-store-slash",
+      visible: gmAnd(isShop),
+      onClick: (/** @type {Event} */ event, /** @type {HTMLElement} */ li) => ConfigureShop.confirmRemove(actorOf(li)),
+    },
+  );
 }
 
 // The barter window for a shop that is set up, Configure Shop for anything else.
@@ -55,15 +76,22 @@ function addHudButton(hud, element) {
   if (!game.user.isGM || !canBeShop(actor)) return;
   const column = element.querySelector(".col.left");
   if (!column || column.querySelector(".kt-hud-shop")) return;
+  const shop = isShop(actor);
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "control-icon kt-hud-shop";
-  button.dataset.tooltip = "";
-  button.setAttribute("aria-label", game.i18n.localize("KT.Shop.Control"));
-  button.innerHTML = `<i class="${ICON}" inert></i>`;
+  button.className = `control-icon kt-hud-shop${shop ? " active" : ""}`;
+  button.dataset.tooltipHtml = shop
+    ? `<strong>${game.i18n.localize("KT.Shop.Trade")}</strong><br>${game.i18n.localize("KT.Shop.RightClick")}`
+    : game.i18n.localize("KT.Shop.SetUp");
+  button.setAttribute("aria-label", game.i18n.localize(shop ? "KT.Shop.Trade" : "KT.Shop.SetUp"));
+  button.innerHTML = `<i class="${shop ? ICON : "fa-solid fa-store"}" inert></i>`;
   button.addEventListener("click", (event) => {
     event.preventDefault();
     openShopFor(actor);
+  });
+  button.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    ConfigureShop.open(actor);
   });
   column.append(button);
 }
@@ -75,23 +103,25 @@ function addHudButton(hud, element) {
  */
 function addGuardButton(hud, element) {
   const token = hud.document;
-  if (!game.user.isGM || !token || !feature("theft")) return;
+  if (!game.user.isGM || !token || !feature("theft") || isShop(token.actor)) return;
   const column = element.querySelector(".col.right");
   if (!column || column.querySelector(".kt-hud-guard")) return;
-  const on = tokenFlags(token).guard;
   const button = document.createElement("button");
   button.type = "button";
-  button.className = `control-icon kt-hud-guard${on ? " active" : ""}`;
-  button.dataset.tooltip = "";
-  button.setAttribute("aria-label", game.i18n.localize("KT.Theft.Guard"));
-  button.setAttribute("aria-pressed", String(on));
+  button.className = "control-icon kt-hud-guard";
   button.innerHTML = `<i class="fa-solid fa-shield-halved" inert></i>`;
+  const show = (/** @type {boolean} */ on) => {
+    button.classList.toggle("active", on);
+    button.setAttribute("aria-pressed", String(on));
+    button.setAttribute("aria-label", game.i18n.localize(on ? "KT.Theft.GuardOn" : "KT.Theft.GuardOff"));
+    button.dataset.tooltipHtml = `<strong>${game.i18n.localize(on ? "KT.Theft.GuardOn" : "KT.Theft.GuardOff")}</strong><br>${game.i18n.localize("KT.Theft.GuardHint")}`;
+  };
+  show(tokenFlags(token).guard);
   button.addEventListener("click", async (event) => {
     event.preventDefault();
     const next = !tokenFlags(token).guard;
     await token.update({ [`flags.${MODULE_ID}.guard`]: next });
-    button.classList.toggle("active", next);
-    button.setAttribute("aria-pressed", String(next));
+    show(next);
   });
   column.append(button);
 }
@@ -128,5 +158,12 @@ async function askTrueValue(item) {
 function addHeaderControl(sheet, controls) {
   const actor = sheet.document;
   if (!game.user.isGM || !canBeShop(actor)) return;
-  controls.push({ icon: ICON, label: "KT.Shop.Control", action: "kozmosTradeShop", onClick: () => openShopFor(actor) });
+  if (!isShop(actor)) {
+    controls.push({ icon: "fa-solid fa-store", label: "KT.Shop.SetUp", action: "kozmosTradeShop", onClick: () => ConfigureShop.open(actor) });
+    return;
+  }
+  controls.push(
+    { icon: ICON, label: "KT.Shop.Trade", action: "kozmosTradeShop", onClick: () => openShopFor(actor) },
+    { icon: "fa-solid fa-sliders", label: "KT.Shop.Configure", action: "kozmosTradeConfigure", onClick: () => ConfigureShop.open(actor) },
+  );
 }

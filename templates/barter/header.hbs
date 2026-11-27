@@ -12,17 +12,24 @@
     {{#if header.counter}}
     <span class="kt-counter-label"><i class="fa-solid fa-pen" inert></i> {{localize "KT.Barter.CounterTitle"}}</span>
     {{else if gm}}
-    <button type="button" class="kt-mode-toggle" data-action="toggleMode" data-tooltip aria-label="{{localize "KT.Barter.ToggleMode"}}">
-      <i class="{{header.modeIcon}}" inert></i> <span>{{header.mode}}</span>
-    </button>
-    <button type="button" class="inline-control icon fa-solid fa-eye" data-action="showPlayers"
-            data-tooltip aria-label="{{localize "KT.Show.Control"}}"></button>
-    <button type="button" class="inline-control icon fa-solid fa-boxes-stacked" data-action="restock"
-            data-tooltip aria-label="{{localize "KT.Stock.Restock"}}"></button>
-    <button type="button" class="inline-control icon fa-solid fa-rotate-left" data-action="revertLast"
-            data-tooltip aria-label="{{localize "KT.Receipt.RevertLast"}}"></button>
-    <button type="button" class="inline-control icon fa-solid fa-sliders" data-action="configure"
-            data-tooltip aria-label="{{localize "KT.Barter.Configure"}}"></button>
+    <div class="kt-gm-tools" role="toolbar" aria-label="{{localize "KT.Barter.GMTools"}}">
+      <span class="kt-gm-label">{{localize "KT.Barter.GMTools"}}</span>
+      <button type="button" class="kt-mode-toggle" data-action="toggleMode" data-tooltip-text="{{localize "KT.Barter.ToggleMode"}}">
+        <i class="{{header.modeIcon}}" inert></i> <span>{{header.mode}}</span>
+      </button>
+      <button type="button" data-action="showPlayers" data-tooltip-text="{{localize "KT.Show.Hint"}}">
+        <i class="fa-solid fa-eye" inert></i> <span>{{localize "KT.Barter.Show"}}</span>
+      </button>
+      <button type="button" data-action="restock" data-tooltip-text="{{localize "KT.Stock.RestockConfirm"}}">
+        <i class="fa-solid fa-dice" inert></i> <span>{{localize "KT.Stock.Restock"}}</span>
+      </button>
+      <button type="button" data-action="revertLast" data-tooltip-text="{{localize "KT.Receipt.RevertBody"}}">
+        <i class="fa-solid fa-rotate-left" inert></i> <span>{{localize "KT.Barter.Undo"}}</span>
+      </button>
+      <button type="button" data-action="configure" data-tooltip-text="{{localize "KT.Shop.Configure"}}">
+        <i class="fa-solid fa-sliders" inert></i> <span>{{localize "KT.Barter.Settings"}}</span>
+      </button>
+    </div>
     {{/if}}
   </div>
 

@@ -1,9 +1,90 @@
-/* Configure Shop. */
-.kt-configure-shop .kt-configure-stock {
+/* Configure Shop: tabs fill the window and scroll on their own, the footer stays in view. */
+.kt-configure-shop .window-content {
   display: flex;
   flex-direction: column;
-  gap: var(--kt-space-small);
+  gap: var(--kt-space);
+}
+
+.kt-configure-shop .window-content > .tab.active {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kt-space);
+  flex: 1;
   min-height: 0;
+  overflow-y: auto;
+}
+
+.kt-configure-shop .window-content > .tab > fieldset {
+  margin: 0;
+}
+
+.kt-configure-shop .sheet-tabs {
+  flex: none;
+}
+
+.kt-configure-shop .form-footer {
+  flex: none;
+}
+
+/* First screen for an NPC that is not a shop yet. */
+.kt-configure-shop .kt-configure-intro {
+  display: flex;
+  gap: var(--kt-space-large);
+  align-items: flex-start;
+  padding: var(--kt-space);
+  border: var(--kt-border);
+  border-radius: var(--kt-radius);
+  background: var(--kt-surface);
+}
+
+.kt-configure-shop .kt-intro-icon {
+  font-size: var(--kt-icon);
+  color: var(--kt-text-muted);
+}
+
+.kt-configure-shop .kt-configure-intro h3 {
+  margin: 0 0 var(--kt-space-small);
+  border: none;
+  font-size: var(--kt-font-large);
+}
+
+.kt-configure-shop .kt-intro-steps {
+  margin: 0;
+  padding-left: var(--kt-space-large);
+  color: var(--kt-text-muted);
+  font-size: var(--kt-font-body);
+}
+
+.kt-configure-shop .kt-intro-steps li + li {
+  margin-top: var(--kt-space-tight);
+}
+
+/* A button with what it does beside it. */
+.kt-configure-shop .kt-action-row {
+  display: grid;
+  grid-template-columns: var(--kt-action-width) 1fr;
+  align-items: center;
+  gap: var(--kt-space);
+}
+
+.kt-configure-shop .kt-action-row + .kt-action-row {
+  margin-top: var(--kt-space-small);
+}
+
+.kt-configure-shop .kt-action-row .hint {
+  margin: 0;
+}
+
+.kt-configure-shop .kt-danger {
+  border-color: var(--kt-short);
+}
+
+.kt-configure-shop .kt-danger legend {
+  color: var(--kt-short);
+}
+
+.kt-configure-shop .kt-configure-stock.active {
+  gap: var(--kt-space-small);
 }
 
 .kt-configure-shop .kt-stock-head,
@@ -24,9 +105,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--kt-space-small);
-  max-height: var(--kt-list-height);
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   margin: 0;
+}
+
+.kt-configure-shop:not(:has(.sheet-tabs)) .kt-stock-list {
+  max-height: var(--kt-list-height);
 }
 
 .kt-configure-shop .kt-stock-row {
@@ -118,9 +204,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--kt-space-small);
-  max-height: var(--kt-ledger-height);
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   margin: 0;
+}
+
+.kt-configure-shop .kt-ledger-revert {
+  width: auto;
+  font-size: var(--kt-font-small);
 }
 
 .kt-configure-shop .kt-ledger-row {

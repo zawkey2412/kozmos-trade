@@ -1,5 +1,5 @@
-<fieldset class="kt-configure-ledger">
-  <legend>{{localize "KT.Ledger.Label"}}</legend>
+<section class="tab kt-configure-ledger{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+  <p class="hint">{{localize "KT.Ledger.Hint"}}</p>
   {{#if ledger.length}}
   <ol class="kt-ledger-list plain">
     {{#each ledger as |entry|}}
@@ -9,8 +9,9 @@
       {{#if entry.reverted}}
       <span class="kt-muted">{{localize "KT.Receipt.RevertedNote"}}</span>
       {{else}}
-      <button type="button" class="inline-control icon fa-solid fa-rotate-left" data-action="revert" data-entry="{{entry.id}}"
-              data-tooltip aria-label="{{localize "KT.Receipt.Revert"}}"></button>
+      <button type="button" class="kt-ledger-revert" data-action="revert" data-entry="{{entry.id}}">
+        <i class="fa-solid fa-rotate-left" inert></i> {{localize "KT.Receipt.Revert"}}
+      </button>
       {{/if}}
     </li>
     {{/each}}
@@ -18,4 +19,4 @@
   {{else}}
   <p class="kt-empty">{{localize "KT.Ledger.Empty"}}</p>
   {{/if}}
-</fieldset>
+</section>

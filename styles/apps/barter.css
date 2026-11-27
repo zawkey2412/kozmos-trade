@@ -77,6 +77,33 @@
   width: auto;
 }
 
+/* The GM's tools in the header: small labelled buttons under a quiet label. */
+.kt-barter .kt-gm-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--kt-space-small);
+  max-width: var(--kt-gm-tools-width);
+}
+
+.kt-barter .kt-gm-tools button {
+  flex: none;
+  width: auto;
+  height: auto;
+  padding: var(--kt-space-tight) var(--kt-space);
+  font-size: var(--kt-font-small);
+}
+
+.kt-barter .kt-gm-label {
+  flex: 0 0 100%;
+  text-align: center;
+  font-size: var(--kt-font-tiny);
+  letter-spacing: var(--kt-letter-spacing);
+  text-transform: uppercase;
+  color: var(--kt-text-subtle);
+}
+
 .kt-barter .kt-counter-label {
   color: var(--kt-generous);
   font-weight: bold;

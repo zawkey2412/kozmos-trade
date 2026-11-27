@@ -105,10 +105,13 @@
       "RevertService": "Trades with a service can't be reverted. Undo them by hand."
     },
     "Shop": {
-      "Control": "Shop"
+      "SetUp": "Set up as a shop",
+      "Trade": "Open the shop",
+      "RightClick": "Right-click to configure it.",
+      "Configure": "Configure shop"
     },
     "Configure": {
-      "Title": "Configure Shop: {name}",
+      "Title": "Shop: {name}",
       "Shop": "Shop",
       "Open": {
         "Label": "Open",
@@ -130,7 +133,7 @@
       },
       "Stock": {
         "Label": "Shelf",
-        "Hint": "Items on this actor are its stock. Equipped and natural items stay with the merchant. Leave a price empty to use the item's value. Drop items, an item folder or a roll table here to add stock.",
+        "Hint": "Loose items on this actor are its stock. Equipped gear and natural weapons stay with the merchant. Leave a price empty to sell at the item's value. Pin an item to keep it through restocks. Drop items, an item folder or a roll table here to add stock.",
         "Item": "Item",
         "Value": "Value",
         "Price": "Price",
@@ -138,13 +141,45 @@
         "Empty": "This actor has no items to sell. Drop items onto its sheet to stock the shelf."
       },
       "NotForSale": "Not for sale",
-      "OpenShop": "Open shop",
+      "OpenShop": "Open with its own items",
       "Save": "Save",
       "Remove": "Stop being a shop",
       "PostCard": "Post Open Shop card",
-      "Generate": "Generate stock",
+      "Generate": "Generate new stock",
       "GenerateConfirm": "This replaces {count} unpinned items on the shelf. Pinned items stay.",
-      "Generated": "{count} items stocked. The purse holds {purse}."
+      "Generated": "{count} items stocked. The purse holds {purse}.",
+      "NewTitle": "Set up a shop: {name}",
+      "Intro": {
+        "Title": "Turn {name} into a shop",
+        "Step1": "Pick what it sells and how wealthy it is.",
+        "Step2": "Generate stock rolls a fresh shelf from the compendiums. Or open the shop with the items it already carries.",
+        "Step3": "Players then trade from its token, an Open Shop card or a @Trade link. Prices, attitude and history live in this window's tabs."
+      },
+      "Tab": {
+        "setup": "Shop",
+        "stock": "Shelf",
+        "attitude": "Attitude",
+        "wanted": "Wanted",
+        "ledger": "Ledger"
+      },
+      "Status": "Status",
+      "Kind": "What it sells",
+      "Rules": "Rules",
+      "Players": "Players",
+      "ArchetypeHint": "The kind of shop. It decides what stock rolls and which trade-ins it pays more for.",
+      "TierHint": "How many items it stocks, how rare they get, and how much coin is in its purse.",
+      "ShowHint": "Opens the shop on the screens of the players you choose.",
+      "PostCardHint": "Posts a chat card with a Browse wares button for everyone.",
+      "RemoveHint": "Players can no longer trade here. Its items stay on the actor.",
+      "RemoveTitle": "Stop being a shop: {name}",
+      "RemoveBody": "{name} goes back to being a normal NPC, and players can no longer trade here. Its items stay where they are.",
+      "RemoveForget": "Also forget its shop records",
+      "RemoveForgetHint": "Clears shelf prices, pins, attitude, the ledger, visits and the Wanted board. Leave it unticked to get them back if you turn the shop on again.",
+      "Removed": "{name} is no longer a shop.",
+      "Saved": "{name} saved.",
+      "Opened": "{name} is open for business.",
+      "CardPosted": "Open Shop card posted in chat.",
+      "GenerateOpen": "Generate stock and open"
     },
     "Archetype": {
       "blacksmith": "Blacksmith",
@@ -172,7 +207,6 @@
     },
     "Barter": {
       "Title": "{merchant} and {customer}",
-      "Configure": "Configure shop",
       "Purse": "Merchant's purse",
       "Search": "Search",
       "Sort": "Sort",
@@ -207,7 +241,11 @@
         "shelf": "Shelf",
         "buyback": "Buy back",
         "services": "Services"
-      }
+      },
+      "GMTools": "GM tools",
+      "Show": "Show",
+      "Undo": "Undo last",
+      "Settings": "Configure"
     },
     "Attitude": {
       "hostile": "Hostile",
@@ -310,7 +348,8 @@
       "Label": "Ledger",
       "Empty": "No trades yet.",
       "Summary": "Got {gets} for {gives}",
-      "Item": "{quantity} {name}"
+      "Item": "{quantity} {name}",
+      "Hint": "The last 50 trades here. Revert puts the items and coins back where they were."
     },
     "ShopCard": {
       "Body": "{name} is open for business.",
@@ -723,7 +762,6 @@
       "MerchantInsight": "Insight against a distraction",
       "MerchantRecognize": "Insight against stolen goods",
       "Recognized": "{merchant} recognizes {item} as stolen and refuses the trade.",
-      "Guard": "Guard: makes theft harder in this scene",
       "AskTitle": "Theft attempt",
       "Ask": "{customer} wants to pocket {item} from {merchant}. Allow the roll?",
       "Allow": "Allow",
@@ -788,7 +826,10 @@
         "BadSkill": "That check cannot be used to distract.",
         "Already": "The merchant is already distracted.",
         "Tried": "You already tried. Wait for the next theft attempt."
-      }
+      },
+      "GuardOn": "Guard: on",
+      "GuardOff": "Guard: off",
+      "GuardHint": "A guard makes theft harder at every shop in this scene."
     },
     "Show": {
       "Control": "Show to players",

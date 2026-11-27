@@ -89,7 +89,16 @@ export async function setTrueValue(item, gold) {
   return copper;
 }
 
-/** @param {any} actor */
-export async function removeShop(actor) {
-  await saveShop(actor, { shop: { enabled: false, open: false } });
+// Stops being a shop. With forget, every module record on the actor and its items goes too.
+/**
+ * @param {any} actor
+ * @param {{ forget?: boolean }} [options]
+ */
+export async function removeShop(actor, { forget = false } = {}) {
+  if (!game.user.isGM) throw new TradeError("KT.Error.GMOnly");
+  if (!forget) return saveShop(actor, { shop: { enabled: false, open: false } });
+  const items = /** @type {any[]} */ (actor.items.contents).filter((item) => item.flags?.[MODULE_ID]);
+  if (items.length) await actor.updateEmbeddedDocuments("Item", items.map((item) => ({ _id: item.id, [`flags.${MODULE_ID}`]: new foundry.data.operators.ForcedDeletion() })));
+  await actor.update({ [`flags.${MODULE_ID}`]: new foundry.data.operators.ForcedDeletion() });
+  broadcast(MESSAGES.SHOP_CHANGED, { merchant: actor.uuid });
 }

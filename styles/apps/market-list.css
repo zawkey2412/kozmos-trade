@@ -24,6 +24,14 @@
   margin: 0;
 }
 
+.kt-market-list .kt-market-rules-button {
+  flex: none;
+  width: auto;
+  height: auto;
+  padding: var(--kt-space-tight) var(--kt-space);
+  font-size: var(--kt-font-small);
+}
+
 .kt-market-list .kt-market-rows {
   display: flex;
   flex-direction: column;

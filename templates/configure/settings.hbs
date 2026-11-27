@@ -1,59 +1,98 @@
-<fieldset class="kt-configure-settings">
-  <legend>{{localize "KT.Configure.Shop"}}</legend>
+<section class="tab kt-configure-setup{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+  {{#if shop.enabled}}
+  <fieldset>
+    <legend>{{localize "KT.Configure.Status"}}</legend>
+    <div class="form-group kt-toggle">
+      <label for="{{rootId}}-open">{{localize "KT.Configure.Open.Label"}}</label>
+      <div class="form-fields">
+        <input type="checkbox" id="{{rootId}}-open" name="open" {{checked shop.open}}>
+      </div>
+      <p class="hint">{{localize "KT.Configure.Open.Hint"}}</p>
+    </div>
+    <div class="form-group">
+      <label for="{{rootId}}-mode">{{localize "KT.Configure.ExecutionMode.Label"}}</label>
+      <div class="form-fields">
+        <select id="{{rootId}}-mode" name="executionMode">
+          {{selectOptions modes selected=shop.executionMode localize=true}}
+        </select>
+      </div>
+      <p class="hint">{{localize "KT.Configure.ExecutionMode.Hint"}}</p>
+    </div>
+  </fieldset>
+  {{/if}}
+
+  <fieldset>
+    <legend>{{localize "KT.Configure.Kind"}}</legend>
+    <div class="form-group">
+      <label for="{{rootId}}-archetype">{{localize "KT.Configure.Archetype"}}</label>
+      <div class="form-fields">
+        <select id="{{rootId}}-archetype" name="archetype">
+          {{selectOptions archetypes selected=shop.archetype}}
+        </select>
+      </div>
+      <p class="hint">{{localize "KT.Configure.ArchetypeHint"}}</p>
+    </div>
+    <div class="form-group">
+      <label for="{{rootId}}-tier">{{localize "KT.Configure.Tier"}}</label>
+      <div class="form-fields">
+        <select id="{{rootId}}-tier" name="tier">
+          {{selectOptions tiers selected=shop.tier localize=true}}
+        </select>
+      </div>
+      <p class="hint">{{localize "KT.Configure.TierHint"}}</p>
+    </div>
+    {{#unless shop.enabled}}
+    <div class="form-group">
+      <label for="{{rootId}}-mode">{{localize "KT.Configure.ExecutionMode.Label"}}</label>
+      <div class="form-fields">
+        <select id="{{rootId}}-mode" name="executionMode">
+          {{selectOptions modes selected=shop.executionMode localize=true}}
+        </select>
+      </div>
+      <p class="hint">{{localize "KT.Configure.ExecutionMode.Hint"}}</p>
+    </div>
+    {{/unless}}
+  </fieldset>
 
   {{#if shop.enabled}}
-  <div class="form-group">
-    <label for="{{rootId}}-open">{{localize "KT.Configure.Open.Label"}}</label>
-    <div class="form-fields">
-      <input type="checkbox" id="{{rootId}}-open" name="open" {{checked shop.open}}>
+  <fieldset>
+    <legend>{{localize "KT.Configure.Rules"}}</legend>
+    <div class="form-group kt-toggle">
+      <label for="{{rootId}}-remote">{{localize "KT.Configure.Remote.Label"}}</label>
+      <div class="form-fields">
+        <input type="checkbox" id="{{rootId}}-remote" name="remoteTrade" {{checked shop.remoteTrade}}>
+      </div>
+      <p class="hint">{{localize "KT.Configure.Remote.Hint"}}</p>
     </div>
-    <p class="hint">{{localize "KT.Configure.Open.Hint"}}</p>
-  </div>
+    {{#if theftOn}}
+    <div class="form-group kt-toggle">
+      <label for="{{rootId}}-theft-proof">{{localize "KT.Configure.TheftProof.Label"}}</label>
+      <div class="form-fields">
+        <input type="checkbox" id="{{rootId}}-theft-proof" name="theftProof" {{checked shop.theftProof}}>
+      </div>
+      <p class="hint">{{localize "KT.Configure.TheftProof.Hint"}}</p>
+    </div>
+    {{/if}}
+  </fieldset>
 
-  <div class="form-group">
-    <label for="{{rootId}}-remote">{{localize "KT.Configure.Remote.Label"}}</label>
-    <div class="form-fields">
-      <input type="checkbox" id="{{rootId}}-remote" name="remoteTrade" {{checked shop.remoteTrade}}>
+  <fieldset>
+    <legend>{{localize "KT.Configure.Players"}}</legend>
+    <div class="kt-action-row">
+      <button type="button" data-action="showPlayers"><i class="fa-solid fa-eye" inert></i> {{localize "KT.Show.Control"}}</button>
+      <p class="hint">{{localize "KT.Configure.ShowHint"}}</p>
     </div>
-    <p class="hint">{{localize "KT.Configure.Remote.Hint"}}</p>
-  </div>
+    <div class="kt-action-row">
+      <button type="button" data-action="postCard"><i class="fa-solid fa-bullhorn" inert></i> {{localize "KT.Configure.PostCard"}}</button>
+      <p class="hint">{{localize "KT.Configure.PostCardHint"}}</p>
+    </div>
+  </fieldset>
 
-  {{#if theftOn}}
-  <div class="form-group">
-    <label for="{{rootId}}-theft-proof">{{localize "KT.Configure.TheftProof.Label"}}</label>
-    <div class="form-fields">
-      <input type="checkbox" id="{{rootId}}-theft-proof" name="theftProof" {{checked shop.theftProof}}>
+  <fieldset class="kt-danger">
+    <legend>{{localize "KT.Configure.Remove"}}</legend>
+    <div class="kt-action-row">
+      <button type="button" data-action="removeShop"><i class="fa-solid fa-store-slash" inert></i> {{localize "KT.Configure.Remove"}}</button>
+      <p class="hint">{{localize "KT.Configure.RemoveHint"}}</p>
     </div>
-    <p class="hint">{{localize "KT.Configure.TheftProof.Hint"}}</p>
-  </div>
+  </fieldset>
   {{/if}}
-  {{/if}}
-
-  <div class="form-group">
-    <label for="{{rootId}}-archetype">{{localize "KT.Configure.Archetype"}}</label>
-    <div class="form-fields">
-      <select id="{{rootId}}-archetype" name="archetype">
-        {{selectOptions archetypes selected=shop.archetype}}
-      </select>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label for="{{rootId}}-tier">{{localize "KT.Configure.Tier"}}</label>
-    <div class="form-fields">
-      <select id="{{rootId}}-tier" name="tier">
-        {{selectOptions tiers selected=shop.tier localize=true}}
-      </select>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label for="{{rootId}}-mode">{{localize "KT.Configure.ExecutionMode.Label"}}</label>
-    <div class="form-fields">
-      <select id="{{rootId}}-mode" name="executionMode">
-        {{selectOptions modes selected=shop.executionMode localize=true}}
-      </select>
-    </div>
-    <p class="hint">{{localize "KT.Configure.ExecutionMode.Hint"}}</p>
-  </div>
-</fieldset>
+</section>

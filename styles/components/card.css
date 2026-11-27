@@ -126,6 +126,13 @@
   color: var(--kt-text-muted);
 }
 
+/* The pocket button stays out of sight until the card is hovered or focused, where a pointer can hover. */
+@media (hover: hover) {
+  .kozmos-trade .kt-card:not(:hover, :focus-within) .kt-pocket-button {
+    opacity: 0;
+  }
+}
+
 /* Appraise and pocket buttons beside the price. */
 .kozmos-trade .kt-card-side:has(.kt-appraise-button, .kt-pocket-button) {
   flex-direction: row;
