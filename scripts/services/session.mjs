@@ -16,6 +16,7 @@ import { cleanPlayerOffer } from "../engine/player-trade.mjs";
 import { noCoins } from "../engine/tray.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { servicesOf } from "./archetypes.mjs";
+import { combatBlocks } from "./combat.mjs";
 import { TradeError } from "./errors.mjs";
 import { marketRulesFor } from "./market-rules.mjs";
 import { sellLine, sellQuote } from "./offer.mjs";
@@ -237,7 +238,7 @@ async function openSession({ merchant, customer, remote: fromAfar }, sender) {
   const ownVisit = Boolean(sameCustomer && current.userId === sender.id);
   const shown = takeGrant(pair.merchant.uuid, sender.id) || Boolean(ownVisit && current.shown);
   const remote = (Boolean(fromAfar) && remoteAllowed(pair.merchant, sender)) || Boolean(ownVisit && current.remote);
-  if (!sender.isGM && !shown) checkAccess(pair.merchant, pair.customer, { distance: !remote });
+  if (!sender.isGM && !shown) checkAccess(pair.merchant, pair.customer, { distance: !remote, combat: !ownVisit });
   if (current && !sameCustomer && game.users.get(current.userId)?.active) {
     const joined = current.pool.some((entry) => entry.actor === pair.customer.uuid);
     throw new TradeError(joined ? "KT.Error.AlreadyJoined" : "KT.Error.Busy", { name: current.customerName, join: !sender.isGM && !joined });
@@ -321,7 +322,7 @@ async function joinSession({ merchant, customer }, sender) {
   const session = sessions.get(pair.merchant.uuid);
   if (!session || !game.users.get(session.userId)?.active) throw new TradeError("KT.Error.NothingToJoin", { name: pair.merchant.name });
   if (session.customer === pair.customer.uuid) throw new TradeError("KT.Error.AlreadyJoined", { name: session.customerName });
-  if (!session.shown) checkAccess(pair.merchant, pair.customer, { distance: !session.remote });
+  if (!session.shown) checkAccess(pair.merchant, pair.customer, { distance: !session.remote, combat: true });
   session.pool = session.pool.filter((entry) => entry.actor !== pair.customer.uuid);
   session.pool.push({ userId: sender.id, actor: pair.customer.uuid, name: pair.customer.name, give: [], coins: noCoins() });
   sendPool(pair.merchant.uuid);
@@ -583,18 +584,20 @@ export function checkVisit(merchant, customer, sender) {
   checkAccess(merchant, customer, { distance: !(own && session.remote) });
 }
 
+// Whether the customer may trade here. Combat counts only for a new visit.
 /**
  * @param {any} merchant
  * @param {any} customer
- * @param {{ distance?: boolean }} [options]
+ * @param {{ distance?: boolean, combat?: boolean }} [options]
  */
-export function checkAccess(merchant, customer, { distance = true } = {}) {
+export function checkAccess(merchant, customer, { distance = true, combat = false } = {}) {
   const flags = merchantFlags(merchant);
   const tables = getTables();
   const proximity = distance && game.settings.get(MODULE_ID, SETTINGS.PROXIMITY);
   const problem = accessProblem({
     enabled: flags.enabled,
     open: flags.open,
+    fighting: combat && combatBlocks(merchant, customer),
     now: game.time.worldTime,
     bannedUntil: flags.banned[customer.id],
     attitude: feature("attitude") ? attitudeValue(merchant, customer) : null,

@@ -16,6 +16,10 @@
         "Name": "Trade only up close",
         "Hint": "Players must have their own token within 2 squares of the merchant's token to trade. The GM can always trade."
       },
+      "NoCombat": {
+        "Name": "No trading during combat",
+        "Hint": "Players can't start a trade while their character or the merchant is fighting in a combat that has started. Trades already open can finish. The GM can always trade."
+      },
       "Compendiums": {
         "Name": "Stock compendiums",
         "Hint": "Item compendiums the stock generator draws from. Leave empty to use dnd5e's own equipment for the world's rules."
@@ -102,7 +106,8 @@
       "NothingToJoin": "Nobody is trading with {name} right now.",
       "NotJoined": "That character is not part of this trade anymore.",
       "NoService": "This merchant does not offer that service.",
-      "RevertService": "Trades with a service can't be reverted. Undo them by hand."
+      "RevertService": "Trades with a service can't be reverted. Undo them by hand.",
+      "InCombat": "Nobody can start a trade during combat."
     },
     "Shop": {
       "SetUp": "Set up as a shop",

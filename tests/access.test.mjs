@@ -35,6 +35,11 @@ describe("access checks", () => {
     assert.equal(accessProblem({ ...open, open: false }), "KT.Error.Closed");
   });
 
+  it("refuses a new trade while either side is fighting", () => {
+    assert.equal(accessProblem({ ...open, fighting: true }), "KT.Error.InCombat");
+    assert.equal(accessProblem({ ...open, fighting: false }), null);
+  });
+
   it("refuses a customer banned until later today", () => {
     assert.equal(accessProblem({ ...open, bannedUntil: 2000 }), "KT.Error.Banned");
     assert.equal(accessProblem({ ...open, bannedUntil: 1000 }), null);

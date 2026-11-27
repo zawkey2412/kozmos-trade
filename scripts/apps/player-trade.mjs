@@ -111,9 +111,8 @@ export default class PlayerTradeWindow extends OfferWindow {
     }
     const app = /** @type {any} */ (foundry.applications.instances.get(`kt-player-${id}`));
     if (!app) {
-      if (asker === game.user.id && (reason === "declined" || reason === "expired")) {
-        ui.notifications.warn(game.i18n.localize(reason === "declined" ? "KT.PlayerTrade.Declined" : "KT.PlayerTrade.Expired", { name }));
-      }
+      const key = { declined: "KT.PlayerTrade.Declined", expired: "KT.PlayerTrade.Expired", combat: "KT.Error.InCombat" }[reason];
+      if (asker === game.user.id && key) ui.notifications.warn(game.i18n.localize(key, { name }));
       return;
     }
     if (reason === "done") {

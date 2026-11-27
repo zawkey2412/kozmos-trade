@@ -33,6 +33,14 @@ export function registerSettings() {
     type: new foundry.data.fields.BooleanField({ initial: false }),
   });
 
+  register(SETTINGS.NO_COMBAT, {
+    name: "KT.Settings.NoCombat.Name",
+    hint: "KT.Settings.NoCombat.Hint",
+    scope: "world",
+    config: true,
+    type: new foundry.data.fields.BooleanField({ initial: true }),
+  });
+
   register(SETTINGS.ATTITUDE_SCOPE, {
     name: "KT.Settings.AttitudeScope.Name",
     hint: "KT.Settings.AttitudeScope.Hint",

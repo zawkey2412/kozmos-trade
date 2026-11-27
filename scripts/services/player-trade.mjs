@@ -7,6 +7,7 @@ import { acceptOffer, answerInvite, bothAccepted, changeOffer, cleanPlayerOffer,
 import { tradeable } from "../engine/shelf.mjs";
 import { addCoins } from "../engine/tray.mjs";
 import { getTables } from "../settings.mjs";
+import { combatBlocks } from "./combat.mjs";
 import { TradeError, warn } from "./errors.mjs";
 import { broadcast, MESSAGES, onBroadcast, onRequest, request } from "./socket.mjs";
 import { moveAll } from "./trade.mjs";
@@ -137,6 +138,7 @@ async function openPlayerTrade({ from, to }, sender) {
   if (!first || !second) throw new TradeError("KT.Error.Missing");
   if (first.type !== "character" || second.type !== "character" || first === second) throw new TradeError("KT.Error.PlayersOnly");
   if (!first.testUserPermission(sender, "OWNER")) throw new TradeError("KT.Error.NotYours");
+  if (combatBlocks(first, second)) throw new TradeError("KT.Error.InCombat");
   const open = [...trades.values()];
   const same = open.find((trade) => sideIndex(trade, first.uuid) >= 0 && sideIndex(trade, second.uuid) >= 0);
   if (same && !same.invited) return publish(same);
@@ -182,6 +184,11 @@ function answerPlayerTrade({ id, yes }, sender) {
   if (!yes) {
     end(trade, "declined", nameOf(trade.sides[1].actor));
     return true;
+  }
+  const [first, second] = trade.sides.map((side) => foundry.utils.fromUuidSync(side.actor));
+  if (combatBlocks(first, second)) {
+    end(trade, "combat", "");
+    throw new TradeError("KT.Error.InCombat");
   }
   clearTimeout(expiries.get(id));
   expiries.delete(id);

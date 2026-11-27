@@ -12,6 +12,7 @@
  * @typedef {object} AccessCheck
  * @property {boolean} enabled
  * @property {boolean} open
+ * @property {boolean} [fighting]
  * @property {number} now
  * @property {number | undefined} bannedUntil
  * @property {number | null} attitude
@@ -34,9 +35,10 @@ export function squaresBetween(a, b, gridSize) {
 
 // The first reason the customer cannot trade, as a localization key.
 /** @param {AccessCheck} check */
-export function accessProblem({ enabled, open, now, bannedUntil, attitude, refuseAt, squares, maxSquares }) {
+export function accessProblem({ enabled, open, fighting = false, now, bannedUntil, attitude, refuseAt, squares, maxSquares }) {
   if (!enabled) return "KT.Error.NotShop";
   if (!open) return "KT.Error.Closed";
+  if (fighting) return "KT.Error.InCombat";
   if (bannedUntil !== undefined && now < bannedUntil) return "KT.Error.Banned";
   if (attitude !== null && attitude <= refuseAt) return "KT.Error.Refuses";
   if (maxSquares !== null && (squares === null || squares > maxSquares)) return "KT.Error.TooFar";

@@ -16,6 +16,7 @@ export const SETTINGS = Object.freeze({
   MODE: "mode",
   TABLES: "tables",
   PROXIMITY: "proximity",
+  NO_COMBAT: "noCombatTrade",
   ARCHETYPES: "archetypes",
   COMPENDIUMS: "compendiums",
   RESTOCK_DAYS: "restockDays",
