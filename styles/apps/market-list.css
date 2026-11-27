@@ -122,6 +122,11 @@
   text-decoration: underline;
 }
 
+/* A closed shop is dimmed, but its tools still work. */
+.kt-market-list .kt-market-row.disabled {
+  pointer-events: auto;
+}
+
 .kt-market-list .kt-market-row.disabled .kt-row-main > img,
 .kt-market-list .kt-market-row.disabled .kt-market-text > strong,
 .kt-market-list .kt-market-row.disabled .kt-market-text > .kt-muted:not(.kt-market-facts) {

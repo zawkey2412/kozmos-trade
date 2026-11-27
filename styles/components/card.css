@@ -23,9 +23,11 @@
   opacity: var(--kt-dim);
 }
 
+/* Dimmed, but its tooltip and Empty button still work. */
 .kozmos-trade .kt-card.disabled {
   opacity: var(--kt-dim);
   cursor: not-allowed;
+  pointer-events: auto;
 }
 
 .kozmos-trade .kt-card.hidden {

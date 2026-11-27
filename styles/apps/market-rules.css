@@ -33,6 +33,11 @@
   background: var(--kt-surface);
 }
 
+/* An ended rule is dimmed, but can still be removed. */
+.kt-market-rules .kt-rule-row.disabled {
+  pointer-events: auto;
+}
+
 .kt-market-rules .kt-rule-row.disabled .kt-rule-text {
   opacity: var(--kt-dim);
 }
