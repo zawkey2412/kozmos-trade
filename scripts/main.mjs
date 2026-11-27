@@ -2,6 +2,7 @@ import { createApi } from "./api.mjs";
 import { registerArchetypeMenu } from "./apps/archetype-editor.mjs";
 import { registerFeatureMenu } from "./apps/feature-toggles.mjs";
 import BarterWindow from "./apps/barter-window.mjs";
+import { loadPartials } from "./apps/cards.mjs";
 import JoinWindow from "./apps/join-window.mjs";
 import MarketList from "./apps/market-list.mjs";
 import PlayerTradeWindow from "./apps/player-trade.mjs";
@@ -52,6 +53,8 @@ Hooks.once("init", () => {
   // Module has no api property in the generated types.
   /** @type {any} */ (game.modules.get(MODULE_ID)).api = createApi();
 });
+
+Hooks.once("setup", () => loadPartials());
 
 Hooks.once("ready", () => {
   registerSessionHandlers();
