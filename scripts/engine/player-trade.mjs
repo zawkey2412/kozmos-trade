@@ -39,7 +39,7 @@ export function startPlayerTrade(id, first, second) {
   return { id, sides: [side(first), side(second)], version: 0, invited: true };
 }
 
-// The second side said yes, so both can make offers.
+// Opens an invited trade for offers.
 /** @param {PlayerTrade} trade */
 export function answerInvite(trade) {
   return { ...trade, invited: false };

@@ -73,7 +73,7 @@ export default class PlayerTradeWindow extends OfferWindow {
     return app;
   }
 
-  // Asks the invited player, and answers null when the invite ends first.
+  // Asks the invited player to trade.
   /**
    * @param {string} id
    * @param {string} name

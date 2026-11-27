@@ -227,7 +227,7 @@ export default class ConfigureShop extends HandlebarsDocumentSheet {
     };
   }
 
-  // Applies a change of identity. Answers the actor that holds the shop afterward, or null when the GM backs out.
+  // Applies a change of identity, and finds the actor that holds the shop afterward.
   /** @param {string | undefined} choice */
   async #applyIdentity(choice) {
     const actor = this.document;
