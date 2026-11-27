@@ -478,7 +478,6 @@
       "Title": "Haggle with {name}",
       "Ask": "Ask for",
       "Check": "Check",
-      "Helped": "Another character helps (Help action)",
       "AskOption": "{percent}% off, DC {dc}",
       "AskOpposed": "{percent}% off",
       "Advantage": "{label}, with advantage",
@@ -500,12 +499,22 @@
         "Opposed": "The merchant's Insight sets DC {dc}. Rolled {total}.",
         "Success": "Deal: {percent}% off this trade.",
         "Failure": "No deal. Haggling is locked until tomorrow.",
-        "Helped": "Helped by another character.",
+        "Helped": "Helped by {name}.",
         "Attitude": "Attitude {change}."
       },
       "Result": {
         "Success": "Haggle won: {percent}% off this trade.",
         "Failure": "Haggle lost. Try again tomorrow."
+      },
+      "Help": {
+        "Button": "Help with the haggle",
+        "Hint": "Take the Help action, so {lead}'s next haggle rolls with advantage.",
+        "Helping": "You are helping {lead}. Their next haggle rolls with advantage.",
+        "Helped": "{name} is helping, so you roll with advantage.",
+        "Nobody": "A character who joins your trade can help, for advantage.",
+        "Already": "Someone is already helping with this haggle.",
+        "Locked": "{name} will not haggle with {lead} again until tomorrow.",
+        "Won": "{lead} already won a discount for this trade."
       }
     },
     "Appraise": {

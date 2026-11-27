@@ -4,6 +4,15 @@
   {{#if panel.worth}}
   <p>{{localize "KT.Join.Worth" merchant=panel.merchant amount=panel.worth}}</p>
   {{/if}}
+  {{#if panel.help}}
+  {{#if panel.help.mine}}
+  <p><i class="fa-solid fa-handshake-angle" inert></i> {{localize "KT.Haggle.Help.Helping" lead=panel.lead}}</p>
+  {{else if panel.help.free}}
+  <button type="button" data-action="help" {{disabled panel.busy}} data-tooltip-text="{{localize "KT.Haggle.Help.Hint" lead=panel.lead}}">
+    <i class="fa-solid fa-handshake-angle" inert></i> {{localize "KT.Haggle.Help.Button"}}
+  </button>
+  {{/if}}
+  {{/if}}
   {{#if panel.distract}}
   <button type="button" data-action="distract" {{disabled panel.busy}}><i class="fa-solid fa-masks-theater" inert></i> {{localize "KT.Theft.Distract.Button"}}</button>
   {{/if}}

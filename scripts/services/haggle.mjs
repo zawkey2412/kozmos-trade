@@ -9,7 +9,7 @@ import { getArchetypes } from "./archetypes.mjs";
 import { attitudeValue, recordAttitude } from "./attitude.mjs";
 import { TradeError } from "./errors.mjs";
 import { expectRoll, registerRollKind } from "./rolls.mjs";
-import { checkVisit, haggleView, resolvePair, sessionAt } from "./session.mjs";
+import { announcePool, checkVisit, haggleView, helperOf, resolvePair, sessionAt } from "./session.mjs";
 import { MESSAGES, onRequest } from "./socket.mjs";
 
 /** @import { ExpectedRoll } from "./rolls.mjs"; */
@@ -19,7 +19,7 @@ import { MESSAGES, onRequest } from "./socket.mjs";
  * @property {number} ask
  * @property {string | null} skill
  * @property {string | null} tool
- * @property {boolean} helped
+ * @property {string | null} helper
  */
 
 // Skills anyone can haggle with. The archetype's own skills and tools come on top.
@@ -28,6 +28,7 @@ export const HAGGLE_ROLL = "haggle";
 
 export function registerHaggleHandlers() {
   onRequest(MESSAGES.HAGGLE_START, startHaggle, { queueKey: (payload) => payload?.merchant });
+  onRequest(MESSAGES.HAGGLE_HELP, helpHaggle, { queueKey: (payload) => payload?.merchant });
   registerRollKind(HAGGLE_ROLL, settleHaggle);
 }
 
@@ -44,11 +45,32 @@ export function haggleChoices(customer, archetypeId) {
   return [...skills, ...tools];
 }
 
+// A joined character takes the Help action, for the customer's next haggle.
 /**
- * @param {{ merchant: string, customer: string, ask: number, check: string, helped?: boolean }} payload
+ * @param {{ merchant: string, customer: string }} payload
  * @param {any} sender
  */
-async function startHaggle({ merchant: merchantUuid, customer: customerUuid, ask, check, helped }, sender) {
+async function helpHaggle({ merchant: merchantUuid, customer: customerUuid }, sender) {
+  const { merchant, customer } = await resolvePair(merchantUuid, customerUuid, sender);
+  const session = sessionAt(merchant.uuid);
+  if (!session?.pool.some((entry) => entry.actor === customer.uuid && entry.userId === sender.id)) throw new TradeError("KT.Error.NotJoined");
+  if (!feature("haggle")) throw new TradeError("KT.Haggle.Off");
+  const lead = /** @type {any} */ (await foundry.utils.fromUuid(session.customer));
+  if (!lead) throw new TradeError("KT.Error.Missing");
+  const view = haggleView(merchant, lead);
+  if (view.locked) throw new TradeError("KT.Haggle.Help.Locked", { name: merchant.name, lead: lead.name });
+  if (view.discount) throw new TradeError("KT.Haggle.Help.Won", { lead: lead.name });
+  if (helperOf(session)) throw new TradeError("KT.Haggle.Help.Already");
+  session.helper = customer.uuid;
+  announcePool(merchant.uuid);
+  return true;
+}
+
+/**
+ * @param {{ merchant: string, customer: string, ask: number, check: string }} payload
+ * @param {any} sender
+ */
+async function startHaggle({ merchant: merchantUuid, customer: customerUuid, ask, check }, sender) {
   const { merchant, customer } = await resolvePair(merchantUuid, customerUuid, sender);
   if (sessionAt(merchant.uuid)?.customer !== customer.uuid) throw new TradeError("KT.Error.NotInSession");
   checkVisit(merchant, customer, sender);
@@ -62,9 +84,9 @@ async function startHaggle({ merchant: merchantUuid, customer: customerUuid, ask
   if (!choice) throw new TradeError("KT.Haggle.BadCheck");
   const [kind, key] = check.split(":");
   /** @type {HaggleAsk} */
-  const data = { ask: chosenAsk, skill: kind === "skill" ? key : null, tool: kind === "tool" ? key : null, helped: Boolean(helped) };
+  const data = { ask: chosenAsk, skill: kind === "skill" ? key : null, tool: kind === "tool" ? key : null, helper: helperOf(sessionAt(merchant.uuid))?.name ?? null };
   const nonce = expectRoll({ kind: HAGGLE_ROLL, merchant: merchant.uuid, customer: customer.uuid, userId: sender.id, data });
-  return { nonce, advantage: choice.specialty || data.helped, skill: data.skill, tool: data.tool };
+  return { nonce, advantage: choice.specialty || Boolean(data.helper), skill: data.skill, tool: data.tool };
 }
 
 /**
@@ -88,6 +110,10 @@ async function settleHaggle(entry, total) {
   const dc = haggleDC({ insight, ask: data.ask, attitude: attitudeValue(merchant, customer) }, tables);
   const result = haggleResult({ total, dc, ask: data.ask, intimidation: data.skill === "itm" }, tables.haggle);
   if (result.success && session?.customer === entry.customer) session.haggle.discount = result.discount;
+  if (session?.customer === entry.customer && session.helper) {
+    session.helper = null;
+    announcePool(entry.merchant);
+  }
   if (!result.success) {
     const { now, day } = clock();
     await merchant.update({ [`flags.${MODULE_ID}.haggleLock.${customer.id}`]: lockUntil(now, day) });
@@ -95,7 +121,7 @@ async function settleHaggle(entry, total) {
   const attitudeChange = await recordAttitude(merchant, customer, result.events);
   await postResult({ merchant, customer, data, dc, total, opposed, success: result.success, attitudeChange });
   const outcome = { success: result.success, discount: result.discount, dc, total, locked: result.locked, attitudeChange, haggle: haggleView(merchant, customer) };
-  Hooks.callAll("kozmosTrade.haggle", merchant, customer, { ...outcome, ask: data.ask, skill: data.skill, tool: data.tool, helped: data.helped, opposed });
+  Hooks.callAll("kozmosTrade.haggle", merchant, customer, { ...outcome, ask: data.ask, skill: data.skill, tool: data.tool, helped: Boolean(data.helper), helper: data.helper, opposed });
   return outcome;
 }
 
@@ -107,7 +133,7 @@ async function postResult({ merchant, customer, data, dc, total, opposed, succes
   const check = data.tool ? toolLabel(data.tool) : skillLabel(data.skill ?? "");
   const lines = [
     game.i18n.localize("KT.Haggle.Card.Ask", { customer: foundry.utils.escapeHTML(customer.name), percent, check }),
-    ...(data.helped ? [game.i18n.localize("KT.Haggle.Card.Helped")] : []),
+    ...(data.helper ? [game.i18n.localize("KT.Haggle.Card.Helped", { name: foundry.utils.escapeHTML(data.helper) })] : []),
     game.i18n.localize(opposed ? "KT.Haggle.Card.Opposed" : "KT.Haggle.Card.Dc", { dc, total }),
     game.i18n.localize(success ? "KT.Haggle.Card.Success" : "KT.Haggle.Card.Failure", { percent }),
     ...(attitudeChange ? [game.i18n.localize("KT.Haggle.Card.Attitude", { change: `${attitudeChange > 0 ? "+" : ""}${attitudeChange}` })] : []),

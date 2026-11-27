@@ -15,6 +15,8 @@ import OfferWindow from "./offer-window.mjs";
  * @property {{ uuid: string, name: string, img: string }} merchant
  * @property {{ uuid: string, name: string, img: string }} lead
  * @property {boolean} [theft]
+ * @property {boolean} [haggle]
+ * @property {string | null} [helper]
  */
 
 const template = (name) => `modules/${MODULE_ID}/templates/${name}.hbs`;
@@ -24,7 +26,7 @@ export default class JoinWindow extends OfferWindow {
     classes: ["kt-join"],
     window: { icon: "fa-solid fa-people-group" },
     position: { width: 900, height: 680 },
-    actions: { leave: JoinWindow.#onLeave, distract: JoinWindow.#onDistract },
+    actions: { leave: JoinWindow.#onLeave, distract: JoinWindow.#onDistract, help: JoinWindow.#onHelp },
   };
 
   static PARTS = {
@@ -54,10 +56,10 @@ export default class JoinWindow extends OfferWindow {
   }
 
   // The GM's word on what the pool holds, after any change.
-  /** @param {{ merchant: string, pool: { actor: string, give: [string, number][], coins: Record<string, number> }[], traded: boolean }} change */
-  static onPool({ merchant, pool, traded }) {
+  /** @param {{ merchant: string, pool: { actor: string, give: [string, number][], coins: Record<string, number> }[], traded: boolean, helper?: string | null }} change */
+  static onPool({ merchant, pool, traded, helper = null }) {
     for (const app of foundry.applications.instances.values()) {
-      if (app instanceof JoinWindow && app.join.merchant.uuid === merchant) app.applyPool(pool, traded);
+      if (app instanceof JoinWindow && app.join.merchant.uuid === merchant) app.applyPool(pool, traded, helper);
     }
   }
 
@@ -82,6 +84,8 @@ export default class JoinWindow extends OfferWindow {
     this.dirty = false;
     this.over = false;
     this.busy = false;
+    /** @type {string | null} */
+    this.helper = join.helper ?? null;
     this.sendSoon = foundry.utils.debounce(() => this.send(), 300);
   }
 
@@ -105,8 +109,10 @@ export default class JoinWindow extends OfferWindow {
   /**
    * @param {{ actor: string, give: [string, number][], coins: Record<string, number> }[]} pool
    * @param {boolean} traded
+   * @param {string | null} [helper]
    */
-  applyPool(pool, traded) {
+  applyPool(pool, traded, helper = null) {
+    this.helper = helper;
     const entry = pool.find((e) => e.actor === this.actor.uuid);
     if (!entry) {
       this.over = true;
@@ -160,7 +166,14 @@ export default class JoinWindow extends OfferWindow {
       },
       inventory: this.inventoryContext(),
       tray: this.trayContext(game.i18n.localize("KT.Join.YouAdd")),
-      panel: { lead: this.join.lead.name, merchant: this.join.merchant.name, worth: worth ? formatCopper(worth, this.money) : null, distract: Boolean(this.join.theft), busy: this.busy },
+      panel: {
+        lead: this.join.lead.name,
+        merchant: this.join.merchant.name,
+        worth: worth ? formatCopper(worth, this.money) : null,
+        distract: Boolean(this.join.theft),
+        help: this.join.haggle ? { mine: this.helper === this.actor.uuid, free: !this.helper } : null,
+        busy: this.busy,
+      },
     });
   }
 
@@ -172,6 +185,24 @@ export default class JoinWindow extends OfferWindow {
   /** @this {JoinWindow} */
   static #onLeave() {
     this.close();
+  }
+
+  // Takes the Help action for the customer's next haggle.
+  /** @this {JoinWindow} */
+  static async #onHelp() {
+    if (this.busy) return;
+    this.busy = true;
+    this.render({ parts: ["panel"] });
+    try {
+      await request(MESSAGES.HAGGLE_HELP, { merchant: this.join.merchant.uuid, customer: this.actor.uuid });
+      this.helper = this.actor.uuid;
+      ui.notifications.info(game.i18n.localize("KT.Haggle.Help.Helping", { lead: this.join.lead.name }));
+    } catch (error) {
+      warn(error);
+    } finally {
+      this.busy = false;
+      if (this.rendered) this.render({ parts: ["panel"] });
+    }
   }
 
   // Distracts the merchant for the customer's next theft attempt.

@@ -820,14 +820,17 @@ export default class BarterWindow extends HandlebarsApplication {
       value: choice.value,
       label: choice.specialty ? game.i18n.localize("KT.Haggle.Advantage", { label: choice.label }) : choice.label,
     }));
-    const { createFormGroup, createSelectInput, createCheckboxInput } = foundry.applications.fields;
+    const { createFormGroup, createSelectInput } = foundry.applications.fields;
     const groups = [
       createFormGroup({ label: game.i18n.localize("KT.Haggle.Ask"), input: createSelectInput({ name: "ask", options: askOptions, value: askOptions[0]?.value }) }),
       createFormGroup({ label: game.i18n.localize("KT.Haggle.Check"), input: createSelectInput({ name: "check", options: checkOptions, value: checkOptions[0]?.value }) }),
-      createFormGroup({ label: game.i18n.localize("KT.Haggle.Helped"), input: createCheckboxInput({ name: "helped", value: false }) }),
     ];
-    const hints = [haggle.opposed ? "KT.Haggle.OpposedHint" : "KT.Haggle.DcHint", ...(limited ? ["KT.Haggle.LimitedHint"] : [])];
-    const content = `${hints.map((key) => `<p class="hint">${game.i18n.localize(key)}</p>`).join("")}${groups.map((group) => group.outerHTML).join("")}`;
+    const hints = [
+      game.i18n.localize(haggle.opposed ? "KT.Haggle.OpposedHint" : "KT.Haggle.DcHint"),
+      ...(limited ? [game.i18n.localize("KT.Haggle.LimitedHint")] : []),
+      game.i18n.localize(haggle.helper ? "KT.Haggle.Help.Helped" : "KT.Haggle.Help.Nobody", { name: foundry.utils.escapeHTML(haggle.helper ?? "") }),
+    ];
+    const content = `${hints.map((hint) => `<p class="hint">${hint}</p>`).join("")}${groups.map((group) => group.outerHTML).join("")}`;
     const data = /** @type {any} */ (await foundry.applications.api.DialogV2.input(/** @type {any} */ ({
       window: { title: game.i18n.localize("KT.Haggle.Title", { name: this.snapshot.merchant.name }), icon: "fa-solid fa-comments-dollar" },
       content,
@@ -839,7 +842,7 @@ export default class BarterWindow extends HandlebarsApplication {
     this.refresh(["balance", "footer"]);
     try {
       const payload = { merchant, customer: this.customer.uuid };
-      const start = await request(MESSAGES.HAGGLE_START, { ...payload, ask: Number(data.ask), check: data.check, helped: Boolean(data.helped) });
+      const start = await request(MESSAGES.HAGGLE_START, { ...payload, ask: Number(data.ask), check: data.check });
       const flags = rollFlags(HAGGLE_ROLL, start.nonce, merchant);
       const message = await rollCheck(this.customer, { skill: start.skill ?? undefined, tool: start.tool ?? undefined, advantage: start.advantage, flags, event });
       if (!message) return;

@@ -49,6 +49,7 @@ import { metByParty, noteFor, recordVisit } from "./visits.mjs";
  * @property {boolean} remote
  * @property {PoolEntry[]} pool
  * @property {{ by: string | null, tried: string[] }} distraction
+ * @property {string | null} helper
  * @property {VisitNote | null} note
  * @property {string[]} traded
  */
@@ -79,6 +80,7 @@ import { metByParty, noteFor, recordVisit } from "./visits.mjs";
  * @property {boolean} opposed
  * @property {number[]} asks
  * @property {number} limitedMaxAsk
+ * @property {string | null} helper
  */
 
 /**
@@ -196,7 +198,13 @@ function sendPool(merchant, { traded = false } = {}) {
   if (!session) return;
   const users = [...new Set([session.userId, ...session.pool.map((entry) => entry.userId)])];
   const pool = session.pool.map(({ actor, give, coins }) => ({ actor, give, coins }));
-  broadcast(MESSAGES.POOL_CHANGED, { merchant, customer: session.customer, pool, traded }, { users });
+  broadcast(MESSAGES.POOL_CHANGED, { merchant, customer: session.customer, pool, traded, helper: helperOf(session)?.actor ?? null }, { users });
+}
+
+// The joined character helping the customer's next haggle, while they are still in the trade.
+/** @param {Session | null | undefined} session */
+export function helperOf(session) {
+  return session?.helper ? (session.pool.find((entry) => entry.actor === session.helper) ?? null) : null;
 }
 
 // After a trade the joined items and coins are gone, so every contribution starts empty.
@@ -255,6 +263,7 @@ async function openSession({ merchant, customer, remote: fromAfar }, sender) {
     remote,
     pool: sameCustomer ? current.pool : [],
     distraction: sameCustomer ? current.distraction : { by: null, tried: [] },
+    helper: sameCustomer ? current.helper : null,
     note: sameCustomer ? current.note : noteFor(pair.merchant, pair.customer),
     traded: sameCustomer ? current.traded : [],
   });
@@ -332,6 +341,8 @@ async function joinSession({ merchant, customer }, sender) {
     merchant: { uuid: pair.merchant.uuid, name: pair.merchant.name, img: pair.merchant.img },
     lead: { uuid: session.customer, name: session.customerName, img: lead?.img ?? "" },
     theft: Boolean(lead && theftOpen(pair.merchant, lead)),
+    haggle: feature("haggle"),
+    helper: helperOf(session)?.actor ?? null,
   };
 }
 
@@ -453,8 +464,9 @@ export function useHaggle(merchant, customer) {
  */
 export function haggleView(merchant, customer) {
   const tables = getTables();
+  const session = sessions.get(merchant.uuid);
   const base = { asks: [...tables.haggle.asks], limitedMaxAsk: tables.haggle.limitedMaxAsk };
-  if (!feature("haggle")) return { ...base, on: false, locked: false, discount: 0, dcs: null, opposed: false };
+  if (!feature("haggle")) return { ...base, on: false, locked: false, discount: 0, dcs: null, opposed: false, helper: null };
   const opposed = feature("rolledInsight");
   const attitude = attitudeValue(merchant, customer);
   const insight = passiveScore(merchant, "ins");
@@ -465,6 +477,7 @@ export function haggleView(merchant, customer) {
     discount: haggleDiscount(merchant.uuid, customer.uuid),
     dcs: opposed ? null : Object.fromEntries(tables.haggle.asks.map((ask) => [String(ask), haggleDC({ insight, ask, attitude }, tables)])),
     opposed,
+    helper: session?.customer === customer.uuid ? (helperOf(session)?.name ?? null) : null,
   };
 }
 
