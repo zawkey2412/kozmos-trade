@@ -1,6 +1,7 @@
 // Windows where one character puts up its own items and coins: a trade between players, and joining a trade at a merchant.
 // Documents are typed any here because their schema fields have no generated types.
 import { coinLabels, holdingFacts, itemFacts, locale, purse } from "../adapter/dnd5e.mjs";
+import { itemFlags } from "../data/flags.mjs";
 import { arrange, CATEGORIES } from "../engine/catalog.mjs";
 import { COPPER } from "../engine/money.mjs";
 import { tradeable } from "../engine/shelf.mjs";
@@ -71,6 +72,7 @@ export default class OfferWindow extends HandlebarsApplication {
       if (holding.attuned) tags.push(tag("attuned", "fa-solid fa-link"));
       if (full) tags.push(tag("full", "fa-solid fa-box-open"));
       if (facts.identified === false) tags.push(tag("unidentified", "fa-solid fa-question"));
+      if (itemFlags(item).stolen) tags.push(tag("stolen", "fa-solid fa-mask"));
       const staged = this.offer.items.get(item.id) ?? 0;
       cards.push({
         ...card(item.id, "customer", item.name, item.img, facts, holding.quantity, staged),

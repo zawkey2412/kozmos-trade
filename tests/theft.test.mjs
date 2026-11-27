@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { TABLES } from "../scripts/data/tables.mjs";
-import { lastCustomer, needsApproval, pocketSize, raiseSuspicion, suspicionToday, theftDC, theftOutcome } from "../scripts/engine/theft.mjs";
+import { addCatch, lastCustomer, needsApproval, notorietyNow, notorietyPenalty, pocketSize, raiseSuspicion, stolenChecks, suspicionToday, theftDC, theftOutcome } from "../scripts/engine/theft.mjs";
 
 const T = TABLES.theft;
 const item = (type, subtype, weight = 2, properties = []) => ({ type, subtype, weight, properties });
@@ -116,6 +116,60 @@ describe("GM approval", () => {
 
   it("is needed for every theft when the GM asks for that", () => {
     assert.equal(needsApproval("all", undefined, T), true);
+  });
+});
+
+describe("notoriety", () => {
+  const WEEK = 7 * 86_400;
+
+  it("is 0 for a character never caught in the scene", () => {
+    assert.equal(notorietyNow(undefined, WEEK, WEEK, T), 0);
+  });
+
+  it("adds 1 for each catch", () => {
+    const first = addCatch(undefined, 100, WEEK, T);
+    assert.deepEqual(first, { points: 1, lastCatch: 100 });
+    assert.deepEqual(addCatch(first, 200, WEEK, T), { points: 2, lastCatch: 200 });
+  });
+
+  it("fades by 1 for each full in-game week since the last catch", () => {
+    const record = { points: 3, lastCatch: 0 };
+    assert.equal(notorietyNow(record, WEEK - 1, WEEK, T), 3);
+    assert.equal(notorietyNow(record, WEEK, WEEK, T), 2);
+    assert.equal(notorietyNow(record, 5 * WEEK, WEEK, T), 0);
+  });
+
+  it("starts a new catch from what is left after fading", () => {
+    assert.deepEqual(addCatch({ points: 3, lastCatch: 0 }, 2 * WEEK, WEEK, T), { points: 2, lastCatch: 2 * WEEK });
+  });
+
+  it("makes every merchant in the scene 10 points colder per point", () => {
+    assert.equal(notorietyPenalty(2, T), -20);
+  });
+});
+
+describe("spotting stolen goods", () => {
+  const shop = { merchant: "Actor.smith", sameScene: (source) => source === "Actor.baker", fence: false };
+
+  it("knows its own stolen goods at once", () => {
+    const { own, looked } = stolenChecks([{ source: "Actor.smith" }], shop);
+    assert.equal(own.length, 1);
+    assert.equal(looked.length, 0);
+  });
+
+  it("looks closely at goods stolen from a merchant in the same scene", () => {
+    assert.equal(stolenChecks([{ source: "Actor.baker" }], shop).looked.length, 1);
+  });
+
+  it("ignores goods stolen in another scene", () => {
+    const { own, looked } = stolenChecks([{ source: "Actor.faraway" }], shop);
+    assert.equal(own.length + looked.length, 0);
+  });
+
+  it("never looks closely when it is a fence, but still knows its own goods", () => {
+    const fence = { ...shop, fence: true };
+    assert.equal(stolenChecks([{ source: "Actor.baker" }], fence).looked.length, 0);
+    assert.equal(stolenChecks([{ source: "Actor.smith" }], fence).own.length, 1);
   });
 });
 

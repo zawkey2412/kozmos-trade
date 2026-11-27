@@ -151,6 +151,10 @@ export const TABLES = {
     approvalAbove: "uncommon",
     // What a caught thief pays for the item, as a share of its price.
     fine: 2,
+    // Attitude change per notoriety point at every merchant in the scene, and points lost each in-game week.
+    notoriety: { perPoint: -10, fadePerWeek: 1 },
+    // Skill a merchant rolls to spot stolen goods, against the seller's passive skill.
+    recognize: { merchant: "ins", seller: "dec" },
   },
   appraisal: {
     skills: ["inv", "arc", "nat"],

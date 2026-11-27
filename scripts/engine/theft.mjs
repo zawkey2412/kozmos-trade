@@ -98,6 +98,50 @@ export function needsApproval(rule, rarity, tables) {
   return rule === "rare" && rarityRank(rarity) > rarityRank(tables.approvalAbove);
 }
 
+// Notoriety left after it fades by whole in-game weeks since the last catch.
+/**
+ * @param {{ points: number, lastCatch: number } | undefined} record
+ * @param {number} now
+ * @param {number} week
+ * @param {TheftTables} tables
+ */
+export function notorietyNow(record, now, week, tables) {
+  if (!record) return 0;
+  const weeks = Math.max(0, Math.floor((now - record.lastCatch) / week));
+  return Math.max(0, record.points - weeks * tables.notoriety.fadePerWeek);
+}
+
+/**
+ * @param {{ points: number, lastCatch: number } | undefined} record
+ * @param {number} now
+ * @param {number} week
+ * @param {TheftTables} tables
+ */
+export function addCatch(record, now, week, tables) {
+  return { points: notorietyNow(record, now, week, tables) + 1, lastCatch: now };
+}
+
+// Attitude points notoriety takes off every merchant in the scene.
+/**
+ * @param {number} points
+ * @param {TheftTables} tables
+ */
+export function notorietyPenalty(points, tables) {
+  return points * tables.notoriety.perPoint;
+}
+
+// Which stolen items a merchant spots at once, and which it has to look at closely.
+/**
+ * @template {{ source: string }} T
+ * @param {T[]} stolen
+ * @param {{ merchant: string, sameScene: (source: string) => boolean, fence: boolean }} shop
+ */
+export function stolenChecks(stolen, { merchant, sameScene, fence }) {
+  const own = stolen.filter((entry) => entry.source === merchant);
+  const looked = fence ? [] : stolen.filter((entry) => entry.source !== merchant && sameScene(entry.source));
+  return { own, looked };
+}
+
 // The customer who visited last, by the visits record.
 /** @param {Record<string, { last: number }>} visits */
 export function lastCustomer(visits) {

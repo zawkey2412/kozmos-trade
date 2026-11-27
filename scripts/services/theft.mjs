@@ -1,24 +1,27 @@
 // Theft on the active GM: a hidden DC, the customer's secret roll, and what the merchant does about it.
 // Documents are typed any here because their schema fields have no generated types.
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
-import { clock, coinLabels, locale, passiveScore, purse, rollCheck, sizeFacts, skillBonus, skillLabel } from "../adapter/dnd5e.mjs";
-import { merchantFlags, tokenFlags } from "../data/flags.mjs";
+import { clock, coinLabels, holdingFacts, locale, passiveScore, purse, rollCheck, sizeFacts, skillBonus, skillLabel } from "../adapter/dnd5e.mjs";
+import { itemFlags, merchantFlags, tokenFlags } from "../data/flags.mjs";
 import { attitudeBand } from "../engine/attitude.mjs";
 import { lockUntil } from "../engine/haggle.mjs";
 import { formatCopper, payFrom } from "../engine/money.mjs";
-import { lastCustomer, needsApproval, pocketSize, raiseSuspicion, suspicionToday, theftDC, theftOutcome } from "../engine/theft.mjs";
+import { lastCustomer, needsApproval, pocketSize, raiseSuspicion, stolenChecks, suspicionToday, theftDC, theftOutcome } from "../engine/theft.mjs";
 import { addCoins } from "../engine/tray.mjs";
 import { feature, getTables } from "../settings.mjs";
+import { getArchetypes } from "./archetypes.mjs";
 import { attitudeTables, attitudeValue, recordAttitude } from "./attitude.mjs";
 import { TradeError, warn } from "./errors.mjs";
 import { merchantScene } from "./market-rules.mjs";
+import { addNotoriety } from "./notoriety.mjs";
 import { buyQuote, shelfView } from "./offer.mjs";
 import { expectRoll, registerRollKind, rollFlags } from "./rolls.mjs";
-import { announcePool, checkVisit, currentDay, endSessionAt, priceContextFor, resolvePair, sessionAt, theftOpen, visibleShelf } from "./session.mjs";
+import { announcePool, checkVisit, currentDay, endSessionAt, poolOf, priceContextFor, resolvePair, sessionAt, theftOpen, visibleShelf } from "./session.mjs";
 import { broadcast, MESSAGES, onBroadcast, onRequest, request } from "./socket.mjs";
-import { moveAll } from "./trade.mjs";
+import { addTradeCheck, moveAll } from "./trade.mjs";
 
 /** @import { ExpectedRoll } from "./rolls.mjs"; */
+/** @import { PreparedTrade } from "./trade.mjs"; */
 /** @import { ShelfEntry } from "./shop.mjs"; */
 /** @import { TheftOutcome } from "../engine/theft.mjs"; */
 
@@ -43,6 +46,7 @@ import { moveAll } from "./trade.mjs";
  * @property {string} userId
  * @property {string} status
  * @property {{ icon: string, title: string, tone: string, lines: string[] }} view
+ * @property {boolean} [sale]
  */
 
 export const THEFT_ROLL = "theft";
@@ -60,7 +64,18 @@ const BUTTONS = {
     { action: "guards", icon: "fa-solid fa-shield-halved", label: "KT.Theft.Punish.guards" },
     { action: "ban", icon: "fa-solid fa-door-closed", label: "KT.Theft.Punish.ban" },
   ],
+  sale: [
+    { action: "confiscate", icon: "fa-solid fa-hand-holding", label: "KT.Theft.Punish.confiscate" },
+    { action: "attitude", icon: "fa-regular fa-face-angry", label: "KT.Theft.Punish.attitude" },
+    { action: "guards", icon: "fa-solid fa-shield-halved", label: "KT.Theft.Punish.guards" },
+    { action: "ban", icon: "fa-solid fa-door-closed", label: "KT.Theft.Punish.ban" },
+  ],
 };
+
+/** @param {TheftCard} card */
+function buttonsOf(card) {
+  return card.kind === "caught" && card.sale ? BUTTONS.sale : BUTTONS[card.kind];
+}
 
 export function registerTheftHandlers() {
   onRequest(MESSAGES.THEFT_START, startTheft, { queueKey: (payload) => payload?.merchant });
@@ -70,6 +85,69 @@ export function registerTheftHandlers() {
   onBroadcast(MESSAGES.THEFT_GO, (go) => rollTheft(go));
   registerRollKind(THEFT_ROLL, settleTheft);
   registerRollKind(DISTRACT_ROLL, settleDistraction);
+  addTradeCheck(checkStolen);
+}
+
+// GM side: a merchant spots stolen goods a player tries to sell, and the sale becomes a catch.
+/**
+ * @param {PreparedTrade} trade
+ * @param {any} sender
+ */
+async function checkStolen(trade, sender) {
+  if (!feature("theft")) return;
+  const tables = getTables().theft;
+  const { merchant } = trade;
+  const scene = merchantScene(merchant);
+  const fence = Boolean(getArchetypes()[merchantFlags(merchant).archetype]?.fence);
+  const sameScene = (/** @type {string} */ source) => {
+    const shop = /** @type {any} */ (foundry.utils.fromUuidSync(source, { strict: false }));
+    return Boolean(scene && shop && merchantScene(shop) === scene);
+  };
+  const pool = poolOf(merchant.uuid, trade.customer.uuid);
+  const sellers = [
+    { actor: trade.customer, lines: trade.give, userId: sender.id },
+    ...trade.pool.map((part) => ({ actor: part.actor, lines: part.give, userId: pool.find((entry) => entry.actor === part.actor.uuid)?.userId ?? sender.id })),
+  ];
+  for (const seller of sellers) {
+    const stolen = seller.lines.flatMap((line) => {
+      const flag = itemFlags(line.item).stolen;
+      return flag ? [{ source: flag.source, line }] : [];
+    });
+    if (!stolen.length) continue;
+    const { own, looked } = stolenChecks(stolen, { merchant: merchant.uuid, sameScene, fence });
+    let spotted = own[0]?.line ?? null;
+    /** @type {{ total: number, dc: number } | null} */
+    let check = null;
+    if (!spotted && looked.length) {
+      check = { total: await merchantRoll(merchant, tables.recognize.merchant, "KT.Theft.MerchantRecognize"), dc: passiveScore(seller.actor, tables.recognize.seller) };
+      if (check.total >= check.dc) spotted = looked[0].line;
+      else await whisperNote(merchant, { icon: "fa-solid fa-mask", title: game.i18n.localize("KT.Theft.Title"), tone: "success", lines: recognizeLines(seller.actor, looked[0].line.item, check, false) });
+    }
+    if (!spotted) continue;
+    const points = await addNotoriety(merchant, seller.actor);
+    const lines = [
+      ...(check ? recognizeLines(seller.actor, spotted.item, check, true) : [game.i18n.localize("KT.Theft.Card.Own", { merchant: merchant.name, customer: seller.actor.name, item: spotted.item.name })]),
+      game.i18n.localize("KT.Theft.Card.Notoriety", { name: seller.actor.name, points }),
+      game.i18n.localize("KT.Theft.Card.caught"),
+    ];
+    const view = { icon: "fa-solid fa-mask", title: game.i18n.localize("KT.Theft.Title"), tone: "failure", lines };
+    await postCard(merchant, { kind: "caught", sale: true, merchant: merchant.uuid, customer: seller.actor.uuid, itemId: spotted.item.id, item: spotted.item.name, userId: seller.userId, status: "pending", view });
+    throw new TradeError("KT.Theft.Recognized", { merchant: merchant.name, item: spotted.item.name });
+  }
+}
+
+/**
+ * @param {any} seller
+ * @param {any} item
+ * @param {{ total: number, dc: number }} check
+ * @param {boolean} spotted
+ */
+function recognizeLines(seller, item, check, spotted) {
+  return [
+    game.i18n.localize("KT.Theft.Card.Looks", { customer: seller.name, item: item.name }),
+    game.i18n.localize("KT.Theft.Card.RecognizeRoll", { total: check.total, dc: check.dc }),
+    game.i18n.localize(spotted ? "KT.Theft.Card.Recognized" : "KT.Theft.Card.NotRecognized"),
+  ];
 }
 
 export function registerTheftCards() {
@@ -230,7 +308,7 @@ async function postCard(merchant, card) {
 function cardContent(card) {
   const pending = card.status === "pending";
   const value = getTables().attitude.events.caughtStealing;
-  const buttons = pending ? BUTTONS[card.kind].map((button) => ({ ...button, label: game.i18n.localize(button.label, { value }) })) : [];
+  const buttons = pending ? buttonsOf(card).map((button) => ({ ...button, label: game.i18n.localize(button.label, { value }) })) : [];
   return foundry.applications.handlebars.renderTemplate(TEMPLATE, { ...card.view, buttons, status: pending ? null : card.status });
 }
 
@@ -323,7 +401,8 @@ async function settleTheft(entry, total) {
     raised = next.suspicion;
     await merchant.update({ [`flags.${MODULE_ID}.suspicion`]: next.suspicion, [`flags.${MODULE_ID}.suspicionDay`]: next.day });
   }
-  await reportAttempt({ merchant, customer, item: found.item, entry, dc, perception, opposed, factors, total, outcome, distracted, suspicion: raised });
+  const notoriety = outcome === "caught" ? await addNotoriety(merchant, customer) : 0;
+  await reportAttempt({ merchant, customer, item: found.item, entry, dc, perception, opposed, factors, total, outcome, distracted, suspicion: raised, notoriety });
   Hooks.callAll("kozmosTrade.theft", merchant, customer, { item: found.item.name, outcome, dc, total, distracted, opposed });
   if (outcome === "clean" || outcome === "taken") broadcast(MESSAGES.TRADE_DONE, { merchant: merchant.uuid, customer: customer.uuid });
   announcePool(entry.merchant);
@@ -338,7 +417,7 @@ async function settleTheft(entry, total) {
  */
 async function pocketItem(merchant, customer, entry) {
   const stolen = { source: merchant.uuid, time: game.time.worldTime };
-  const line = { item: entry.item, quantity: 1, unit: 0, held: entry.holding.quantity, restoreFlags: { stolen } };
+  const line = { item: entry.item, quantity: 1, unit: 0, held: entry.holding.quantity, stolen };
   await moveAll({ currency: [], moves: [{ from: merchant, to: customer, lines: [line] }] });
 }
 
@@ -364,9 +443,9 @@ async function merchantRoll(merchant, skill, flavor) {
 
 // The whispered card for every attempt: the roll, the DC and its reasons, and the outcome.
 /**
- * @param {{ merchant: any, customer: any, item: any, entry: ExpectedRoll, dc: number, perception: number, opposed: boolean, factors: { kind: string, value: number }[], total: number, outcome: TheftOutcome, distracted: boolean, suspicion: number }} attempt
+ * @param {{ merchant: any, customer: any, item: any, entry: ExpectedRoll, dc: number, perception: number, opposed: boolean, factors: { kind: string, value: number }[], total: number, outcome: TheftOutcome, distracted: boolean, suspicion: number, notoriety: number }} attempt
  */
-async function reportAttempt({ merchant, customer, item, entry, dc, perception, opposed, factors, total, outcome, distracted, suspicion }) {
+async function reportAttempt({ merchant, customer, item, entry, dc, perception, opposed, factors, total, outcome, distracted, suspicion, notoriety }) {
   const reasons = [
     game.i18n.localize(opposed ? "KT.Theft.Factor.rolled" : "KT.Theft.Factor.passive", { value: perception }),
     ...factors.map((factor) => game.i18n.localize(`KT.Theft.Factor.${factor.kind}`, { value: `${factor.value > 0 ? "+" : ""}${factor.value}` })),
@@ -376,6 +455,7 @@ async function reportAttempt({ merchant, customer, item, entry, dc, perception, 
     ...(distracted ? [game.i18n.localize("KT.Theft.Card.Distracted")] : []),
     game.i18n.localize("KT.Theft.Card.Roll", { dc, reasons, total }),
     game.i18n.localize(`KT.Theft.Card.${outcome}`, { suspicion }),
+    ...(notoriety ? [game.i18n.localize("KT.Theft.Card.Notoriety", { name: customer.name, points: notoriety })] : []),
   ];
   const view = { icon: "fa-solid fa-hand", title: game.i18n.localize("KT.Theft.Title"), tone: outcome === "clean" || outcome === "taken" ? "success" : "failure", lines };
   if (outcome !== "caught") return whisperNote(merchant, view);
@@ -437,12 +517,13 @@ async function punish({ messageId, choice }, sender) {
   const message = game.messages.get(messageId);
   const card = theftCardOf(message);
   if (!card || card.kind !== "caught" || card.status !== "pending") throw new TradeError("KT.Theft.Answered");
-  if (!BUTTONS.caught.some((button) => button.action === choice)) throw new TradeError("KT.Theft.Answered");
+  if (!buttonsOf(card).some((button) => button.action === choice)) throw new TradeError("KT.Theft.Answered");
   const merchant = /** @type {any} */ (await foundry.utils.fromUuid(card.merchant));
   const customer = /** @type {any} */ (await foundry.utils.fromUuid(card.customer));
   if (!merchant || !customer) throw new TradeError("KT.Error.Missing");
   let price = "";
   if (choice === "double") price = await payDouble(merchant, customer, card.itemId);
+  if (choice === "confiscate") await confiscate(merchant, customer, card.itemId);
   if (choice === "attitude") await recordAttitude(merchant, customer, ["caughtStealing"]);
   if (choice === "attitude" || choice === "ban") await ban(merchant, customer);
   const value = getTables().attitude.events.caughtStealing;
@@ -480,6 +561,21 @@ async function payDouble(merchant, customer, itemId) {
   });
   broadcast(MESSAGES.TRADE_DONE, { merchant: merchant.uuid, customer: customer.uuid });
   return formatCopper(price, money);
+}
+
+// Gives the recognized item to the merchant for nothing.
+/**
+ * @param {any} merchant
+ * @param {any} seller
+ * @param {string} itemId
+ */
+async function confiscate(merchant, seller, itemId) {
+  const item = seller.items.get(itemId);
+  if (!item) throw new TradeError("KT.Error.SoldOut");
+  const held = holdingFacts(item).quantity;
+  const home = itemFlags(item).stolen?.source === merchant.uuid;
+  await moveAll({ currency: [], moves: [{ from: seller, to: merchant, lines: [{ item, quantity: held, unit: 0, held, ...(home ? { stolen: null } : {}) }] }] });
+  broadcast(MESSAGES.TRADE_DONE, { merchant: merchant.uuid, customer: seller.uuid });
 }
 
 // Bans the customer until the next in-game day.

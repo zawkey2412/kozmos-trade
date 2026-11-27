@@ -240,7 +240,8 @@
       "underCounter": "Under the counter",
       "appraised": "Appraised",
       "appraiseFailed": "Appraise again tomorrow",
-      "wanted": "Wanted"
+      "wanted": "Wanted",
+      "stolen": "Stolen"
     },
     "Balance": {
       "short": "Short",
@@ -248,6 +249,7 @@
       "generous": "Generous",
       "Change": "Change back: {amount}",
       "Attitude": "Attitude: {band}",
+      "AttitudeNotoriety": "Attitude: {band}, with notoriety {points} here",
       "CannotCover": "Merchant can't cover this. Add goods to make up the gap.",
       "Haggle": "Haggle",
       "Market": "{name}: {categories}"
@@ -704,6 +706,8 @@
       "CannotPay": "{name} can't pay {price}. Pick something else.",
       "MerchantPerception": "Perception against a theft",
       "MerchantInsight": "Insight against a distraction",
+      "MerchantRecognize": "Insight against stolen goods",
+      "Recognized": "{merchant} recognizes {item} as stolen and refuses the trade.",
       "Guard": "Guard: makes theft harder in this scene",
       "AskTitle": "Theft attempt",
       "Ask": "{customer} wants to pocket {item} from {merchant}. Allow the roll?",
@@ -738,16 +742,24 @@
         "DistractWorks": "It works. The next theft attempt has advantage.",
         "DistractFails": "The merchant is not fooled.",
         "Noticed": "{merchant} notices what is missing: {items}.",
-        "Blamed": "The merchant blames its last customer, {name}: attitude {value} on their next visit."
+        "Blamed": "The merchant blames its last customer, {name}: attitude {value} on their next visit.",
+        "Own": "{merchant} knows {item} at once. {customer} is selling back what was stolen here.",
+        "Looks": "{customer} offers {item}, stolen from another merchant in this scene.",
+        "RecognizeRoll": "Insight {total} against Deception {dc}.",
+        "Recognized": "The merchant recognizes it.",
+        "NotRecognized": "The merchant does not recognize it, and the trade goes on.",
+        "Notoriety": "{name} now has notoriety {points} in this scene."
       },
       "Punish": {
         "double": "Pay double",
+        "confiscate": "Take it back",
         "attitude": "Attitude {value}",
         "guards": "Call the guards",
         "ban": "Banned for the day"
       },
       "Done": {
         "double": "{merchant} makes {customer} pay {price} for {item}.",
+        "confiscate": "{merchant} takes {item} from {customer} and pays nothing.",
         "attitude": "{merchant} will remember this. Attitude {value}, and {customer} is not welcome back today.",
         "guards": "{merchant} shouts for the guards. {customer} has trouble coming.",
         "ban": "{merchant} throws {customer} out for the rest of the day."

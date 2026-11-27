@@ -7,6 +7,7 @@ import { accessProblem, squaresBetween } from "../engine/access.mjs";
 import { attitudeAdjustment, attitudeBand } from "../engine/attitude.mjs";
 import { applyGrudge, attitudeTables, attitudeValue } from "./attitude.mjs";
 import { pocketSize } from "../engine/theft.mjs";
+import { notorietyAt } from "./notoriety.mjs";
 import { appraisalKey, appraisalState } from "../engine/appraisal.mjs";
 import { haggleDC, isLocked } from "../engine/haggle.mjs";
 import { coinsToCopper, COPPER, payFrom } from "../engine/money.mjs";
@@ -99,7 +100,7 @@ import { metByParty, recordVisit } from "./visits.mjs";
  * @property {{ uuid: string, name: string, img: string, archetype: string, tier: string, executionMode: string, purse: number | null }} merchant
  * @property {string} customer
  * @property {boolean} remote
- * @property {{ on: boolean, band: string, adjustment: number }} attitude
+ * @property {{ on: boolean, band: string, adjustment: number, notoriety: number }} attitude
  * @property {HaggleView} haggle
  * @property {{ on: boolean, items: Record<string, "appraised" | "failed"> }} appraisal
  * @property {WantedView[]} wanted
@@ -629,6 +630,7 @@ export function snapshot(merchant, customer) {
       on: attitudeOn,
       band,
       adjustment: attitudeAdjustment(value, tables.attitude),
+      notoriety: attitudeOn ? notorietyAt(merchant, customer) : 0,
     },
     pool: poolView(merchant, customer),
     market: marketRulesFor(merchant),

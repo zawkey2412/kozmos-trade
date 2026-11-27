@@ -55,6 +55,7 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  * @property {number} held
  * @property {object} [restoreFlags]
  * @property {string} [mergeInto]
+ * @property {{ source: string, time: number } | null} [stolen]
  */
 
 /**
@@ -97,8 +98,17 @@ import { broadcast, MESSAGES, onRequest } from "./socket.mjs";
  * @property {() => Promise<unknown>} undo
  */
 
+/** @type {((trade: PreparedTrade, sender: any) => Promise<void>)[]} */
+const checks = [];
+
 export function registerTradeHandlers() {
   onRequest(MESSAGES.TRADE_REQUEST, instantTrade, { queueKey: (payload) => payload?.merchant });
+}
+
+// Adds a check a player's trade must pass on the GM before anything moves.
+/** @param {(trade: PreparedTrade, sender: any) => Promise<void>} check */
+export function addTradeCheck(check) {
+  checks.push(check);
 }
 
 // A trade the customer accepts on their own, where the shop allows it.
@@ -119,6 +129,7 @@ async function instantTrade(payload, sender) {
  */
 export async function runTrade(payload, sender, { requireBalance = true } = {}) {
   const trade = await prepareTrade(payload, sender, { requireBalance });
+  if (!sender.isGM) for (const check of checks) await check(trade, sender);
   if (Hooks.call("kozmosTrade.preTrade", trade) === false) throw new TradeError("KT.Error.Cancelled");
   const record = await applyTrade(trade);
   const entry = await recordTrade(trade, record, sender).catch((error) => {
@@ -300,7 +311,7 @@ export async function applyTrade(trade) {
  * @returns {Promise<string[][]>}
  */
 export async function moveAll({ currency, moves, steps = [] }) {
-  const data = moves.map((move) => move.lines.map((line) => transferData(line.item, line.quantity, line.restoreFlags)));
+  const data = moves.map((move) => move.lines.map((line) => transferData(line.item, line.quantity, line.restoreFlags, line.stolen)));
   /** @type {Map<any, TradeLine[]>} */
   const leaving = new Map();
   for (const move of moves) leaving.set(move.from, [...(leaving.get(move.from) ?? []), ...move.lines]);
@@ -401,16 +412,18 @@ async function deliver(actor, lines, data, undo) {
  * @param {any} item
  * @param {number} quantity
  * @param {object} [restoreFlags]
+ * @param {{ source: string, time: number } | null} [stolenAs]
  */
-export function transferData(item, quantity, restoreFlags) {
+export function transferData(item, quantity, restoreFlags, stolenAs) {
   const data = item.toObject();
   delete data._id;
   data.system.quantity = quantity;
   if ("equipped" in data.system) data.system.equipped = false;
   if ("attuned" in data.system) data.system.attuned = false;
   if ("container" in data.system) data.system.container = null;
-  const stolen = data.flags?.[MODULE_ID]?.stolen;
-  if (data.flags) delete data.flags[MODULE_ID];
+  data.flags ??= {};
+  const stolen = stolenAs === undefined ? data.flags[MODULE_ID]?.stolen : stolenAs;
+  delete data.flags[MODULE_ID];
   if (stolen || restoreFlags) data.flags[MODULE_ID] = { ...(restoreFlags ?? {}), ...(stolen ? { stolen } : {}) };
   return data;
 }

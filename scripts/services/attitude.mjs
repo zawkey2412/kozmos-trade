@@ -4,6 +4,8 @@ import { MODULE_ID, SETTINGS } from "../constants.mjs";
 import { clock } from "../adapter/dnd5e.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { attitudeBand, changeAttitude, currentAttitude, setAttitudeValue } from "../engine/attitude.mjs";
+import { notorietyPenalty } from "../engine/theft.mjs";
+import { notorietyAt } from "./notoriety.mjs";
 import { feature, getTables } from "../settings.mjs";
 import { TradeError } from "./errors.mjs";
 import { broadcast, MESSAGES } from "./socket.mjs";
@@ -41,14 +43,16 @@ export function attitudeStateOf(merchant, key) {
   return currentAttitude(merchantFlags(merchant).attitude[key], clock(), attitudeTables());
 }
 
-// The value prices and access use: 0 when attitude is off.
+// The value prices and access use, with notoriety in the merchant's scene: 0 when attitude is off.
 /**
  * @param {any} merchant
  * @param {any} customer
  */
 export function attitudeValue(merchant, customer) {
   if (!feature("attitude")) return 0;
-  return attitudeStateOf(merchant, attitudeKey(customer)).value;
+  const tables = attitudeTables();
+  const value = attitudeStateOf(merchant, attitudeKey(customer)).value + notorietyPenalty(notorietyAt(merchant, customer), getTables().theft);
+  return Math.min(tables.max, Math.max(tables.min, value));
 }
 
 /**

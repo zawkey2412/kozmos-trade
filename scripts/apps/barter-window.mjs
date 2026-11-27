@@ -3,6 +3,7 @@
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
 import { coinLabels, combatStats, holdingFacts, itemDescription, itemFacts, locale, purse, rollCheck, skillLabel } from "../adapter/dnd5e.mjs";
 import { appraisalDC } from "../engine/appraisal.mjs";
+import { itemFlags } from "../data/flags.mjs";
 import { situationOf } from "../engine/reactions.mjs";
 import { arrange, CATEGORIES, SORTS } from "../engine/catalog.mjs";
 import { COPPER, coinsToCopper, formatCoins, formatCopper, payFrom, splitCopper } from "../engine/money.mjs";
@@ -518,6 +519,7 @@ export default class BarterWindow extends HandlebarsApplication {
       if (quote.scrap) tags.push(tag("scrap", "fa-solid fa-recycle"));
       if (appraisal === "appraised") tags.push(tag("appraised", "fa-solid fa-magnifying-glass-dollar"));
       if (quote.scrap && appraisal === "failed") tags.push(tag("appraiseFailed", "fa-solid fa-clock"));
+      if (itemFlags(item).stolen) tags.push(tag("stolen", "fa-solid fa-mask"));
       if (quote.wanted) tags.push(tag("wanted", "fa-solid fa-bullhorn"));
       else if (quote.favored) tags.push(tag("favored", "fa-solid fa-thumbs-up"));
       const staged = this.offer.give.get(item.id) ?? 0;
@@ -708,8 +710,9 @@ export default class BarterWindow extends HandlebarsApplication {
     const modifiers = [];
     const { attitude } = this.snapshot;
     if (attitude.on && attitude.adjustment) {
+      const band = game.i18n.localize(`KT.Attitude.${attitude.band}`);
       modifiers.push({
-        label: game.i18n.localize("KT.Balance.Attitude", { band: game.i18n.localize(`KT.Attitude.${attitude.band}`) }),
+        label: attitude.notoriety ? game.i18n.localize("KT.Balance.AttitudeNotoriety", { band, points: attitude.notoriety }) : game.i18n.localize("KT.Balance.Attitude", { band }),
         value: `${attitude.adjustment > 0 ? "+" : "-"}${Math.round(Math.abs(attitude.adjustment) * 100)}%`,
         tone: attitude.adjustment > 0 ? "good" : "bad",
       });
