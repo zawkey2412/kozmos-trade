@@ -108,10 +108,7 @@
       "SetUp": "Set up as a shop",
       "Trade": "Open the shop",
       "RightClick": "Right-click to configure it.",
-      "Configure": "Configure shop",
-      "OpenSelected": "Open the selected shop",
-      "ConfigureSelected": "Configure the selected shop",
-      "SelectOne": "Select one NPC token first."
+      "Configure": "Configure shop"
     },
     "Configure": {
       "Title": "Shop: {name}",
@@ -695,7 +692,7 @@
     "Market": {
       "Title": "Shops",
       "Hint": "Merchants your party has visited. Some also trade from afar.",
-      "HintGM": "Every shop in the world. Players see only the ones their party has visited.",
+      "HintGM": "Every shop in the world. Players see only the shops their party has visited.",
       "Reload": "Check again",
       "Trade": "Trade",
       "Open": "Open",
@@ -707,7 +704,7 @@
       "VisitedYesterday": "Visited yesterday",
       "VisitedDays": "Visited {days} days ago",
       "Empty": "Your party has not visited any merchants yet.",
-      "EmptyGM": "No shops yet. Use the scales button on an NPC's token to make one.",
+      "EmptyGM": "No shops yet. Select an NPC token on the map, then click Set up as a shop above.",
       "Rules": {
         "Title": "Market rules",
         "Open": "Edit market rules",
@@ -738,6 +735,25 @@
         "BadPercent": "The price change must be a number other than 0, from -90 to 500.",
         "BadCategory": "That is not a kind of goods a rule can name.",
         "BadDays": "The length must be more than 0 days, or empty."
+      },
+      "ToolGM": "Shops: set up, open and manage shops",
+      "AllShops": "All shops",
+      "Search": "Search shops",
+      "NoMatch": "No shop matches that name.",
+      "Configure": "Configure",
+      "Find": "Show on the map",
+      "ToggleOpen": "Open or close this shop",
+      "Kind": {
+        "unique": "One person",
+        "generic": "Per token"
+      },
+      "Selected": {
+        "Title": "Selected token",
+        "None": "Select an NPC token on the map to set it up as a shop, or to open or configure its shop.",
+        "Many": "Select only one token.",
+        "NotNpc": "Only NPCs can be shops. Select an NPC token.",
+        "Shop": "{archetype}, {state}, {kind}",
+        "NotShop": "Not a shop yet."
       }
     },
     "Visit": {

@@ -1,8 +1,10 @@
 <section class="kt-market">
+  {{#if gm}}<h3 class="kt-market-heading">{{localize "KT.Market.AllShops"}}</h3>{{/if}}
+  <p class="hint">{{localize (ifThen gm "KT.Market.HintGM" "KT.Market.Hint")}}</p>
   <div class="kt-market-tools">
-    <p class="hint">{{localize (ifThen gm "KT.Market.HintGM" "KT.Market.Hint")}}</p>
+    <input type="search" class="kt-market-search" placeholder="{{localize "KT.Market.Search"}}" aria-label="{{localize "KT.Market.Search"}}" value="{{search}}">
     {{#if gm}}
-    <button type="button" class="kt-market-rules-button" data-action="rules">
+    <button type="button" class="kt-tool-button" data-action="rules">
       <i class="fa-solid fa-chart-line" inert></i> {{localize "KT.Market.Rules.Title"}}
     </button>
     {{/if}}
@@ -12,14 +14,22 @@
   {{#if rows.length}}
   <ol class="kt-market-rows plain">
     {{#each rows as |row|}}
-    <li class="kt-market-row{{#unless row.open}} disabled{{/unless}}" data-uuid="{{row.uuid}}">
+    <li class="kt-market-row{{#unless row.open}} disabled{{/unless}}" data-uuid="{{row.uuid}}" data-name="{{row.name}}">
       <img src="{{row.img}}" alt="">
       <div class="kt-market-text">
         <strong>{{row.name}}</strong>
         <span class="kt-muted">{{row.archetype}}{{#if row.scene}}, {{row.scene}}{{/if}}</span>
-        <span class="kt-muted">
-          <i class="fa-solid {{#if row.open}}fa-door-open{{else}}fa-door-closed{{/if}}" inert></i> {{row.status}}
-          <i class="fa-regular fa-calendar" inert></i> {{row.visited}}
+        <span class="kt-muted kt-market-facts">
+          {{#if @root.gm}}
+          <button type="button" class="kt-open-toggle{{#if row.open}} active{{/if}}" data-action="toggleOpen" aria-pressed="{{row.open}}"
+                  data-tooltip-text="{{localize "KT.Market.ToggleOpen"}}">
+            <i class="fa-solid {{#if row.open}}fa-door-open{{else}}fa-door-closed{{/if}}" inert></i> {{row.status}}
+          </button>
+          <span><i class="fa-solid {{row.kindIcon}}" inert></i> {{row.kindLabel}}</span>
+          {{else}}
+          <span><i class="fa-solid {{#if row.open}}fa-door-open{{else}}fa-door-closed{{/if}}" inert></i> {{row.status}}</span>
+          {{/if}}
+          <span><i class="fa-regular fa-calendar" inert></i> {{row.visited}}</span>
         </span>
         {{#if row.note}}<span class="kt-muted kt-market-note">{{row.note}}</span>{{/if}}
       </div>
@@ -28,6 +38,11 @@
         <button type="button" data-action="trade"><i class="fa-solid fa-scale-balanced" inert></i> {{localize "KT.Market.Trade"}}</button>
         {{/if}}
         {{#if @root.gm}}
+        {{#if row.place}}
+        <button type="button" class="inline-control icon fa-solid fa-location-crosshairs" data-action="find"
+                data-scene="{{row.place.scene}}" data-token="{{row.place.token}}"
+                data-tooltip aria-label="{{localize "KT.Market.Find"}}"></button>
+        {{/if}}
         <button type="button" class="inline-control icon fa-solid fa-sliders" data-action="configure"
                 data-tooltip aria-label="{{localize "KT.Shop.Configure"}}"></button>
         {{/if}}
@@ -35,6 +50,7 @@
     </li>
     {{/each}}
   </ol>
+  <p class="kt-empty kt-market-nomatch hidden">{{localize "KT.Market.NoMatch"}}</p>
   {{else}}
   <p class="kt-empty">{{empty}}</p>
   {{/if}}

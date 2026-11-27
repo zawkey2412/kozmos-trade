@@ -8,7 +8,7 @@ For Foundry VTT 14 and the dnd5e system 6.0 or newer. No other modules needed.
 
 ## Getting started
 
-1. Select an NPC token and click **Configure the selected shop** in the token tools on the left. The store button in the token HUD does the same.
+1. Click the **Shops** tool (store icon) in the token tools on the left, then select an NPC token on the map. The Shops window follows your selection: click **Set up as a shop**. The store button in the token HUD does the same.
 2. Choose whether it is one person or a kind of merchant (see below), then pick what it sells (the archetype) and how wealthy it is.
 3. Click **Generate stock and open** to roll a fresh shelf from the compendiums, or **Open with its own items** to sell what the NPC already carries.
 
@@ -25,11 +25,10 @@ A shop set up on an unlinked token lives on that token only, so deleting the tok
 
 ## Running a shop
 
-- **Left toolbar:** in the token tools, **Shops** lists every shop. For the GM, **Open the selected shop** and **Configure the selected shop** work on the NPC token you have selected.
+- **The Shops window** (store icon in the token tools) is the GM's one place for shops. At the top, the NPC token you have selected: set it up, trade with it or configure it. Below, every shop in the world, with a search box, an Open or Closed toggle on each row, **Show on the map**, **Trade**, **Configure**, and **Market rules**. Players see the shops their party has visited.
 - **Token HUD:** the scales button opens the shop. Right-click it for Configure Shop.
 - **Configure Shop** has five tabs. **Shop** holds the status, what it sells, the rules, and buttons to show it to players or post an Open Shop card. **Shelf** sets prices and pins. **Attitude**, **Wanted** and **Ledger** hold each customer's standing, the Wanted board and the last 50 trades.
 - **In the barter window**, the GM tools switch between Instant Trade and GM Approval, show the shop to players, restock, undo the last trade, and open Configure Shop.
-- **Shops list:** the store tool in the token controls lists every shop, with Market rules for the GM.
 - **Actors sidebar:** right-click an NPC to set up, configure, show or remove a shop.
 
 ## Removing a shop

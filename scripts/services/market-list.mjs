@@ -4,6 +4,7 @@ import { clock } from "../adapter/dnd5e.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { daysSince } from "../engine/visits.mjs";
 import { archetypeLabel } from "./archetypes.mjs";
+import { identityOf } from "./identity.mjs";
 import { MESSAGES, onRequest } from "./socket.mjs";
 import { allShops } from "./stock.mjs";
 import { partyLastVisit } from "./visits.mjs";
@@ -18,6 +19,8 @@ import { partyLastVisit } from "./visits.mjs";
  * @property {boolean} open
  * @property {boolean} remote
  * @property {number | null} days
+ * @property {"unique" | "generic"} kind
+ * @property {{ scene: string, token: string } | null} place
  */
 
 export function registerMarketListHandlers() {
@@ -37,24 +40,32 @@ function listMarket(payload, sender) {
     const last = partyLastVisit(shop);
     if (last === null && !sender.isGM) continue;
     const flags = merchantFlags(shop);
+    const token = tokenOf(shop);
     rows.push({
       uuid: shop.uuid,
       name: shop.name,
       img: shop.img,
       archetype: archetypeLabel(flags.archetype),
-      scene: sceneOf(shop),
+      scene: token?.parent?.name ?? "",
       open: flags.open,
       remote: flags.remoteTrade,
       days: last === null ? null : daysSince(last, now),
+      kind: identityOf(shop),
+      place: sender.isGM && token ? { scene: token.parent.id, token: token.id } : null,
     });
   }
   return rows.sort((a, b) => a.name.localeCompare(b.name, game.i18n.lang));
 }
 
-// The scene a merchant stands in: its own for a token, otherwise the first scene with its token.
+// Where a merchant stands: its own token, or its token in the viewed, active or first scene that has one.
 /** @param {any} actor */
-function sceneOf(actor) {
-  if (actor.isToken) return actor.token?.parent?.name ?? "";
-  const scene = /** @type {any[]} */ (game.scenes.contents).find((s) => s.tokens.some((token) => token.actorLink && token.actorId === actor.id));
-  return scene?.name ?? "";
+function tokenOf(actor) {
+  if (actor.isToken) return actor.token ?? null;
+  const scenes = /** @type {any[]} */ (game.scenes.contents);
+  const ordered = [...scenes.filter((s) => s.isView), ...scenes.filter((s) => s.active && !s.isView), ...scenes];
+  for (const scene of ordered) {
+    const token = scene.tokens.find((t) => t.actorLink && t.actorId === actor.id);
+    if (token) return token;
+  }
+  return null;
 }
