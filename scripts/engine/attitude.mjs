@@ -1,7 +1,7 @@
 // Attitude: bands, price adjustment, events, the daily gain cap and decay.
 
 /** @typedef {typeof import("../data/tables.mjs").TABLES.attitude} AttitudeTables */
-/** @typedef {"fairTrade" | "wanted" | "haggleBigWin" | "intimidate" | "haggleBigLoss" | "caughtStealing"} AttitudeEvent */
+/** @typedef {"fairTrade" | "wanted" | "haggleBigWin" | "intimidate" | "haggleBigLoss" | "caughtStealing" | "theftNoticed"} AttitudeEvent */
 
 /**
  * @typedef {object} Clock

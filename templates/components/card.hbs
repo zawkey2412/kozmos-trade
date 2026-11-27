@@ -21,6 +21,11 @@
       <i class="fa-solid fa-magnifying-glass-dollar" inert></i>
     </button>
     {{/if}}
+    {{#if canPocket}}
+    <button type="button" class="kt-pocket-button icon" data-action="pocket" data-tooltip-text="{{localize "KT.Theft.Button"}}" aria-label="{{localize "KT.Theft.Button"}}">
+      <i class="fa-solid fa-hand" inert></i>
+    </button>
+    {{/if}}
     <span class="kt-card-price">{{priceLabel}}</span>
     {{#if (gt quantity 1)}}<span class="kt-card-quantity">{{available}}</span>{{/if}}
     {{/if}}

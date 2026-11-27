@@ -1,11 +1,12 @@
 // Trade sessions: who is at which merchant, the access checks, and the shelf a customer sees.
 // Documents are typed any here because their system data has no generated types.
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
-import { clock, combatStats, itemDescription, passiveScore, purse, tokensOf } from "../adapter/dnd5e.mjs";
+import { clock, combatStats, itemDescription, passiveScore, purse, sizeFacts, tokensOf } from "../adapter/dnd5e.mjs";
 import { merchantFlags } from "../data/flags.mjs";
 import { accessProblem, squaresBetween } from "../engine/access.mjs";
 import { attitudeAdjustment, attitudeBand } from "../engine/attitude.mjs";
-import { attitudeTables, attitudeValue } from "./attitude.mjs";
+import { applyGrudge, attitudeTables, attitudeValue } from "./attitude.mjs";
+import { pocketSize } from "../engine/theft.mjs";
 import { appraisalKey, appraisalState } from "../engine/appraisal.mjs";
 import { haggleDC, isLocked } from "../engine/haggle.mjs";
 import { coinsToCopper, COPPER, payFrom } from "../engine/money.mjs";
@@ -22,6 +23,7 @@ import { metByParty, recordVisit } from "./visits.mjs";
 
 /** @import { PriceContext } from "./offer.mjs"; */
 /** @import { MarketRule } from "../engine/market.mjs"; */
+/** @import { PocketSize } from "../engine/theft.mjs"; */
 
 /**
  * @typedef {object} PoolEntry
@@ -42,6 +44,7 @@ import { metByParty, recordVisit } from "./visits.mjs";
  * @property {boolean} shown
  * @property {boolean} remote
  * @property {PoolEntry[]} pool
+ * @property {{ by: string | null, tried: string[] }} distraction
  */
 
 /**
@@ -88,6 +91,7 @@ import { metByParty, recordVisit } from "./visits.mjs";
  * @property {boolean} magical
  * @property {string} description
  * @property {{ damage: string | null, ac: number | null }} stats
+ * @property {PocketSize} pocket
  */
 
 /**
@@ -104,6 +108,7 @@ import { metByParty, recordVisit } from "./visits.mjs";
  * @property {PoolView[]} pool
  * @property {ServiceView[]} services
  * @property {MarketRule[]} market
+ * @property {{ on: boolean, distracted: string | null }} theft
  */
 
 /**
@@ -242,9 +247,35 @@ async function openSession({ merchant, customer, remote: fromAfar }, sender) {
     shown,
     remote,
     pool: sameCustomer ? current.pool : [],
+    distraction: sameCustomer ? current.distraction : { by: null, tried: [] },
   });
-  if (!sameCustomer) await recordVisit(pair.merchant, pair.customer).catch((error) => console.error("Kozmos Trade | Visit failed", error));
+  if (!sameCustomer) {
+    await applyGrudge(pair.merchant, pair.customer).catch((error) => console.error("Kozmos Trade | Attitude failed", error));
+    await recordVisit(pair.merchant, pair.customer).catch((error) => console.error("Kozmos Trade | Visit failed", error));
+  }
   return snapshot(pair.merchant, pair.customer);
+}
+
+// Whether the customer may try to steal here.
+/**
+ * @param {any} merchant
+ * @param {any} customer
+ */
+export function theftOpen(merchant, customer) {
+  const session = sessions.get(merchant.uuid);
+  const remote = session?.customer === customer.uuid && session.remote;
+  return feature("theft") && !merchantFlags(merchant).theftProof && !remote;
+}
+
+/** @param {string} merchant */
+export function endSessionAt(merchant) {
+  endSession(merchant);
+}
+
+// Tells the customer and joiners to fetch a fresh snapshot.
+/** @param {string} merchant */
+export function announcePool(merchant) {
+  sendPool(merchant);
 }
 
 // A trade from the Shops list: only where the GM allows it, and only once the party has met the merchant.
@@ -290,6 +321,7 @@ async function joinSession({ merchant, customer }, sender) {
   return {
     merchant: { uuid: pair.merchant.uuid, name: pair.merchant.name, img: pair.merchant.img },
     lead: { uuid: session.customer, name: session.customerName, img: lead?.img ?? "" },
+    theft: Boolean(lead && theftOpen(pair.merchant, lead)),
   };
 }
 
@@ -600,6 +632,10 @@ export function snapshot(merchant, customer) {
     },
     pool: poolView(merchant, customer),
     market: marketRulesFor(merchant),
+    theft: {
+      on: theftOpen(merchant, customer),
+      distracted: session?.customer === customer.uuid && session.distraction.by ? (session.pool.find((entry) => entry.actor === session.distraction.by)?.name ?? null) : null,
+    },
     services: servicesOf(flags.archetype).map((service) => ({
       id: service.id,
       kind: service.kind,
@@ -629,6 +665,7 @@ export function snapshot(merchant, customer) {
         magical: Boolean(facts.magical || facts.rarity || facts.magicalBonus),
         description: itemDescription(item),
         stats: combatStats(item),
+        pocket: pocketSize(sizeFacts(item), tables.theft),
       })),
   };
 }

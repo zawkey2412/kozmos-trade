@@ -45,6 +45,11 @@ export const MESSAGES = Object.freeze({
   PLAYER_CLOSE: "player.close",
   PLAYER_STATE: "player.state",
   PLAYER_CLOSED: "player.closed",
+  THEFT_START: "theft.start",
+  THEFT_ANSWER: "theft.answer",
+  THEFT_GO: "theft.go",
+  THEFT_DISTRACT: "theft.distract",
+  THEFT_PUNISH: "theft.punish",
 });
 
 /** @type {Map<string, RequestHandler>} */
@@ -186,6 +191,16 @@ async function process(type, payload, sender) {
   const key = handler.queueKey?.(payload);
   if (!key) return handler.handle(payload, sender);
   return queue.run(key, () => handler.handle(payload, sender));
+}
+
+// Runs work on the GM in that merchant's queue.
+/**
+ * @template T
+ * @param {string} key
+ * @param {() => T | Promise<T>} task
+ */
+export function queued(key, task) {
+  return queue.run(key, task);
 }
 
 /** @param {object} message */

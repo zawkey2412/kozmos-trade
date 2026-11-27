@@ -31,6 +31,9 @@
     {{/if}}
   </div>
   {{/if}}
+  {{#if balance.distracted}}
+  <p class="kt-distracted"><i class="fa-solid fa-masks-theater" inert></i> {{balance.distracted}}</p>
+  {{/if}}
   {{#if balance.cannotCover}}
   <p class="kt-warning"><i class="fa-solid fa-triangle-exclamation" inert></i> {{localize "KT.Balance.CannotCover"}}</p>
   {{/if}}

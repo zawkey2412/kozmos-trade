@@ -1,9 +1,11 @@
 // Joining another player's trade at a merchant: this character's items and coins go into their offer.
 import { MODULE_ID } from "../constants.mjs";
-import { coinLabels, locale, purse } from "../adapter/dnd5e.mjs";
+import { coinLabels, locale, purse, skillLabel } from "../adapter/dnd5e.mjs";
 import { coinsToCopper, formatCopper } from "../engine/money.mjs";
 import { warn } from "../services/errors.mjs";
 import { MESSAGES, request } from "../services/socket.mjs";
+import { distract } from "../services/theft.mjs";
+import { getTables } from "../settings.mjs";
 import { loadTradePartials } from "./cards.mjs";
 import OfferWindow from "./offer-window.mjs";
 
@@ -11,6 +13,7 @@ import OfferWindow from "./offer-window.mjs";
  * @typedef {object} JoinView
  * @property {{ uuid: string, name: string, img: string }} merchant
  * @property {{ uuid: string, name: string, img: string }} lead
+ * @property {boolean} [theft]
  */
 
 const template = (name) => `modules/${MODULE_ID}/templates/${name}.hbs`;
@@ -20,7 +23,7 @@ export default class JoinWindow extends OfferWindow {
     classes: ["kt-join"],
     window: { icon: "fa-solid fa-people-group" },
     position: { width: 900, height: 680 },
-    actions: { leave: JoinWindow.#onLeave },
+    actions: { leave: JoinWindow.#onLeave, distract: JoinWindow.#onDistract },
   };
 
   static PARTS = {
@@ -77,6 +80,7 @@ export default class JoinWindow extends OfferWindow {
     this.prices = {};
     this.dirty = false;
     this.over = false;
+    this.busy = false;
     this.sendSoon = foundry.utils.debounce(() => this.send(), 300);
   }
 
@@ -154,7 +158,7 @@ export default class JoinWindow extends OfferWindow {
       },
       inventory: this.inventoryContext(),
       tray: this.trayContext(game.i18n.localize("KT.Join.YouAdd")),
-      panel: { lead: this.join.lead.name, merchant: this.join.merchant.name, worth: worth ? formatCopper(worth, this.money) : null },
+      panel: { lead: this.join.lead.name, merchant: this.join.merchant.name, worth: worth ? formatCopper(worth, this.money) : null, distract: Boolean(this.join.theft), busy: this.busy },
     });
   }
 
@@ -166,5 +170,27 @@ export default class JoinWindow extends OfferWindow {
   /** @this {JoinWindow} */
   static #onLeave() {
     this.close();
+  }
+
+  // Distracts the merchant for the customer's next theft attempt.
+  /** @this {JoinWindow} */
+  static async #onDistract() {
+    if (this.busy) return;
+    const skills = getTables().theft.distractSkills;
+    const select = foundry.applications.fields.createSelectInput({ name: "skill", options: skills.map((skill) => ({ value: skill, label: skillLabel(skill) })), value: skills[0] });
+    const group = foundry.applications.fields.createFormGroup({ label: game.i18n.localize("KT.Haggle.Check"), input: select });
+    const hint = game.i18n.localize("KT.Theft.Distract.Hint", { lead: foundry.utils.escapeHTML(this.join.lead.name), merchant: foundry.utils.escapeHTML(this.join.merchant.name) });
+    const data = /** @type {any} */ (await foundry.applications.api.DialogV2.input(/** @type {any} */ ({
+      window: { title: "KT.Theft.Distract.Title", icon: "fa-solid fa-masks-theater" },
+      content: `<p class="hint">${hint}</p>${group.outerHTML}`,
+      ok: { label: "KT.Haggle.Roll", icon: "fa-solid fa-dice-d20" },
+      rejectClose: false,
+    })));
+    if (!data) return;
+    this.busy = true;
+    this.render({ parts: ["panel"] });
+    await distract(this.actor, this.join.merchant.uuid, data.skill);
+    this.busy = false;
+    if (this.rendered) this.render({ parts: ["panel"] });
   }
 }

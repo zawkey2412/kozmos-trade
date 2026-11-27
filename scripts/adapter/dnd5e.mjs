@@ -5,6 +5,7 @@ import { COPPER } from "../engine/money.mjs";
 /** @import { ItemFacts } from "../engine/pricing.mjs"; */
 /** @import { Clock } from "../engine/attitude.mjs"; */
 /** @import { TokenBox } from "../engine/access.mjs"; */
+/** @import { SizeFacts } from "../engine/theft.mjs"; */
 
 /**
  * @typedef {object} HoldingFacts
@@ -136,13 +137,29 @@ export function hasTool(actor, tool) {
 // A skill or tool check through dnd5e, with its chat message carrying the given flags. Answers the message, or null if cancelled.
 /**
  * @param {any} actor
- * @param {{ skill?: string, tool?: string, advantage?: boolean, flags?: object, event?: Event }} check
+ * @param {{ skill?: string, tool?: string, advantage?: boolean, flags?: object, event?: Event, secret?: boolean }} check
  */
-export async function rollCheck(actor, { skill, tool, advantage = false, flags = {}, event }) {
+export async function rollCheck(actor, { skill, tool, advantage = false, flags = {}, event, secret = false }) {
   const config = { advantage, event, ...(tool ? { tool } : { skill }) };
-  const message = { data: { flags } };
+  const message = { data: { flags }, ...(secret ? { rollMode: "gm" } : {}) };
   const rolls = tool ? await actor.rollToolCheck(config, {}, message) : await actor.rollSkill(config, {}, message);
   return rolls?.[0]?.parent ?? null;
+}
+
+// Type, weight in pounds and weapon properties, for what fits in a pocket.
+/**
+ * @param {any} item
+ * @returns {SizeFacts}
+ */
+export function sizeFacts(item) {
+  const system = item.system ?? {};
+  const value = Number(system.weight?.value) || 0;
+  const units = system.weight?.units || "lb";
+  // dnd5e's global namespace has no generated types.
+  const convert = /** @type {any} */ (globalThis).dnd5e?.utils?.convertWeight;
+  const pounds = units === "lb" || !convert ? value : Number(convert(value, units, { to: "lb", legacy: false })?.value) || value;
+  const properties = system.properties ? [...system.properties] : [];
+  return { type: item.type === "backpack" ? "container" : item.type, subtype: system.type?.value ?? "", weight: pounds, properties: item.type === "weapon" ? properties : [] };
 }
 
 // The description a customer may read: the unidentified one until the item is identified.

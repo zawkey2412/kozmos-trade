@@ -126,14 +126,15 @@
   color: var(--kt-text-muted);
 }
 
-/* Appraise button beside the scrap price. */
-.kozmos-trade .kt-card-side:has(.kt-appraise-button) {
+/* Appraise and pocket buttons beside the price. */
+.kozmos-trade .kt-card-side:has(.kt-appraise-button, .kt-pocket-button) {
   flex-direction: row;
   align-items: center;
   gap: var(--kt-space-small);
 }
 
-.kozmos-trade .kt-appraise-button {
+.kozmos-trade .kt-appraise-button,
+.kozmos-trade .kt-pocket-button {
   flex: none;
   width: var(--kt-icon-small);
   height: var(--kt-icon-small);

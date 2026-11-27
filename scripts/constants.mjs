@@ -25,6 +25,7 @@ export const SETTINGS = Object.freeze({
   REACTIONS: "reactions",
   GREETING: "greeting",
   MARKET: "market",
+  THEFT_APPROVAL: "theftApproval",
 });
 
 export const MODES = Object.freeze({

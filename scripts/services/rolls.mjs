@@ -3,7 +3,7 @@
 import { MODULE_ID } from "../constants.mjs";
 import { TradeError } from "./errors.mjs";
 import { isAnsweringWindow } from "./sessions.mjs";
-import { MESSAGES, onRequest } from "./socket.mjs";
+import { MESSAGES, onRequest, queued } from "./socket.mjs";
 
 /**
  * @typedef {object} ExpectedRoll
@@ -82,8 +82,9 @@ async function reportRoll({ nonce, messageId }) {
 
 /** @param {any} message */
 async function onRollMessage(message) {
-  if (!message.flags?.[MODULE_ID]?.roll || !game.users.activeGM?.isSelf || !(await isAnsweringWindow())) return;
-  await settleFrom(message).catch((error) => console.error("Kozmos Trade | Roll failed", error));
+  const flag = message.flags?.[MODULE_ID]?.roll;
+  if (!flag || !game.users.activeGM?.isSelf || !(await isAnsweringWindow())) return;
+  await queued(String(flag.merchant), () => settleFrom(message)).catch((error) => console.error("Kozmos Trade | Roll failed", error));
 }
 
 /** @param {any} message */

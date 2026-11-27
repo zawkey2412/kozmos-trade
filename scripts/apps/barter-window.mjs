@@ -19,6 +19,7 @@ import { TradeError, warn } from "../services/errors.mjs";
 import { APPRAISE_ROLL } from "../services/appraisal.mjs";
 import { reactionLine } from "../services/reactions.mjs";
 import { showShop } from "../services/show.mjs";
+import { pocket } from "../services/theft.mjs";
 import { HAGGLE_ROLL, haggleChoices } from "../services/haggle.mjs";
 import { rollFlags } from "../services/rolls.mjs";
 import { closeTrade } from "../services/open-trade.mjs";
@@ -66,6 +67,7 @@ export default class BarterWindow extends HandlebarsApplication {
       restock: BarterWindow.#onRestock,
       haggle: BarterWindow.#onHaggle,
       appraise: BarterWindow.#onAppraise,
+      pocket: BarterWindow.#onPocket,
       showPlayers: BarterWindow.#onShowPlayers,
     },
   };
@@ -551,6 +553,7 @@ export default class BarterWindow extends HandlebarsApplication {
         priceLabel: formatCopper(unit, this.money),
         tags: tags.filter(Boolean),
         dim: unit > budget,
+        canPocket: Boolean(this.snapshot.theft?.on && entry.pocket !== "bulky" && !this.counter && !this.busy),
       };
     });
   }
@@ -735,6 +738,7 @@ export default class BarterWindow extends HandlebarsApplication {
       change: result.change ? formatCopper(result.change, this.money) : null,
       modifiers,
       cannotCover: needed > 0 && this.purseCheck?.amount === needed && !this.purseCheck.covers,
+      distracted: this.snapshot.theft?.on && this.snapshot.theft.distracted ? game.i18n.localize("KT.Theft.Distracted", { name: this.snapshot.theft.distracted }) : null,
     };
   }
 
@@ -853,6 +857,31 @@ export default class BarterWindow extends HandlebarsApplication {
       this.busy = false;
       this.tooltips.clear();
       this.refresh();
+    }
+  }
+
+  // Tries to pocket one of a shelf item, with the DC hidden.
+  /** @param {string} id */
+  async pocket(id) {
+    const entry = this.snapshot.shelf.find((e) => e.id === id);
+    if (!entry) return;
+    const hint = game.i18n.localize(this.snapshot.theft?.distracted ? "KT.Theft.ConfirmDistracted" : "KT.Theft.Confirm", { item: foundry.utils.escapeHTML(entry.name), name: foundry.utils.escapeHTML(this.snapshot.theft?.distracted ?? "") });
+    const ok = await foundry.applications.api.DialogV2.confirm(/** @type {any} */ ({
+      window: { title: game.i18n.localize("KT.Theft.ConfirmTitle", { item: entry.name }), icon: "fa-solid fa-hand" },
+      content: `<p>${hint}</p>`,
+      yes: { label: "KT.Theft.Pocket", icon: "fa-solid fa-hand" },
+      rejectClose: false,
+    }));
+    if (!ok) return;
+    this.busy = true;
+    this.refresh(["merchant", "balance", "footer"]);
+    try {
+      await pocket(this.customer, this.snapshot.merchant.uuid, id);
+    } catch (error) {
+      warn(error);
+    } finally {
+      this.busy = false;
+      if (this.rendered) this.refresh();
     }
   }
 
@@ -1120,6 +1149,16 @@ export default class BarterWindow extends HandlebarsApplication {
     event.stopPropagation();
     const id = /** @type {HTMLElement} */ (target.closest(".kt-card")).dataset.itemId;
     return this.appraise(id, event);
+  }
+
+  /**
+   * @this {BarterWindow}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static #onPocket(event, target) {
+    event.stopPropagation();
+    return this.pocket(/** @type {HTMLElement} */ (target.closest(".kt-card")).dataset.itemId);
   }
 
   /**

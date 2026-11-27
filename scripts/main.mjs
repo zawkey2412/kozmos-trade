@@ -20,6 +20,7 @@ import { registerReceiptCards, registerReceiptHandlers } from "./services/receip
 import { registerShopCards } from "./services/shop-card.mjs";
 import { registerAutoRestock } from "./services/stock.mjs";
 import { registerSessionHandlers } from "./services/session.mjs";
+import { registerTheftCards, registerTheftHandlers } from "./services/theft.mjs";
 import { listen, MESSAGES, onBroadcast } from "./services/socket.mjs";
 import { registerTradeHandlers } from "./services/trade.mjs";
 import { registerSettings } from "./settings.mjs";
@@ -43,6 +44,7 @@ Hooks.once("init", () => {
   registerProposalCards();
   registerReceiptCards();
   registerShopCards();
+  registerTheftCards();
   registerTradeLinks();
   // Module has no api property in the generated types.
   /** @type {any} */ (game.modules.get(MODULE_ID)).api = createApi();
@@ -55,6 +57,7 @@ Hooks.once("ready", () => {
   registerRollHandlers();
   registerHaggleHandlers();
   registerAppraisalHandlers();
+  registerTheftHandlers();
   registerShowHandlers();
   registerReceiptHandlers();
   registerMarketListHandlers();

@@ -1,15 +1,18 @@
-// GM controls: the scales button on NPC token HUDs and actor sheet headers, and an item's true value.
+// GM controls: the scales button on NPC token HUDs and actor sheet headers, the guard toggle, and an item's true value.
 import ConfigureShop from "../apps/configure-shop.mjs";
 import { openTrade, pickCustomer } from "../services/open-trade.mjs";
 import { showShop } from "../services/show.mjs";
 import { canBeShop, isShop, setTrueValue } from "../services/shop.mjs";
-import { itemFlags } from "../data/flags.mjs";
+import { MODULE_ID } from "../constants.mjs";
+import { itemFlags, tokenFlags } from "../data/flags.mjs";
 import { COPPER } from "../engine/money.mjs";
+import { feature } from "../settings.mjs";
 
 const ICON = "fa-solid fa-scale-balanced";
 
 export function registerGmControls() {
   Hooks.on("renderTokenHUD", addHudButton);
+  Hooks.on("renderTokenHUD", addGuardButton);
   Hooks.on("getHeaderControlsActorSheetV2", addHeaderControl);
   Hooks.on("getHeaderControlsDocumentSheetV2", addTrueValueControl);
   Hooks.on("getActorContextOptions", addShowOption);
@@ -61,6 +64,34 @@ function addHudButton(hud, element) {
   button.addEventListener("click", (event) => {
     event.preventDefault();
     openShopFor(actor);
+  });
+  column.append(button);
+}
+
+// Guard toggle on any token's HUD.
+/**
+ * @param {any} hud
+ * @param {HTMLElement} element
+ */
+function addGuardButton(hud, element) {
+  const token = hud.document;
+  if (!game.user.isGM || !token || !feature("theft")) return;
+  const column = element.querySelector(".col.right");
+  if (!column || column.querySelector(".kt-hud-guard")) return;
+  const on = tokenFlags(token).guard;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `control-icon kt-hud-guard${on ? " active" : ""}`;
+  button.dataset.tooltip = "";
+  button.setAttribute("aria-label", game.i18n.localize("KT.Theft.Guard"));
+  button.setAttribute("aria-pressed", String(on));
+  button.innerHTML = `<i class="fa-solid fa-shield-halved" inert></i>`;
+  button.addEventListener("click", async (event) => {
+    event.preventDefault();
+    const next = !tokenFlags(token).guard;
+    await token.update({ [`flags.${MODULE_ID}.guard`]: next });
+    button.classList.toggle("active", next);
+    button.setAttribute("aria-pressed", String(next));
   });
   column.append(button);
 }

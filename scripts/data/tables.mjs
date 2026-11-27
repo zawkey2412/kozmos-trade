@@ -124,6 +124,34 @@ export const TABLES = {
     bigWin: 10,
     bigLoss: 5,
   },
+  theft: {
+    skill: "slt",
+    distractSkills: ["dec", "prf"],
+    // Margins that make a clean take or a catch.
+    clean: 5,
+    caught: 5,
+    // Pocketable items: by subtype, or by weight in pounds above 0.
+    small: {
+      dc: -2,
+      subtypes: { consumable: ["potion", "scroll"], equipment: ["ring", "trinket"], loot: ["gem"] },
+      maxWeight: 1,
+    },
+    // Items that cannot be stolen: by subtype, weapon property or weight in pounds.
+    bulky: {
+      subtypes: { equipment: ["light", "medium", "heavy", "shield"] },
+      properties: ["hvy"],
+      minWeight: 20,
+    },
+    limited: 5,
+    perSuspicion: 2,
+    maxSuspicion: 3,
+    friendly: -2,
+    guard: 3,
+    // Highest rarity a customer may try for without GM approval, when the cap is on.
+    approvalAbove: "uncommon",
+    // What a caught thief pays for the item, as a share of its price.
+    fine: 2,
+  },
   appraisal: {
     skills: ["inv", "arc", "nat"],
     dc: 12,
@@ -152,6 +180,7 @@ export const TABLES = {
       intimidate: -5,
       haggleBigLoss: -10,
       caughtStealing: -30,
+      theftNoticed: -10,
     },
     sweeten: {
       step: 0.05,

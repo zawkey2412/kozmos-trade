@@ -70,6 +70,19 @@ export function registerSettings() {
     type: new foundry.data.fields.BooleanField({ initial: false }),
   });
 
+  register(SETTINGS.THEFT_APPROVAL, {
+    name: "KT.Settings.TheftApproval.Name",
+    hint: "KT.Settings.TheftApproval.Hint",
+    scope: "world",
+    config: true,
+    type: new foundry.data.fields.StringField({
+      required: true,
+      blank: false,
+      initial: "rare",
+      choices: { none: "KT.Settings.TheftApproval.None", rare: "KT.Settings.TheftApproval.Rare", all: "KT.Settings.TheftApproval.All" },
+    }),
+  });
+
   register(SETTINGS.COMPENDIUMS, {
     name: "KT.Settings.Compendiums.Name",
     hint: "KT.Settings.Compendiums.Hint",

@@ -41,6 +41,13 @@
       "Greeting": {
         "Name": "Merchant greetings",
         "Hint": "A merchant greets a player in a speech bubble when their token comes close. Needs core chat bubbles."
+      },
+      "TheftApproval": {
+        "Name": "Thefts need GM approval",
+        "Hint": "When theft is on, a theft can wait for you to allow it before the player rolls.",
+        "None": "Never",
+        "Rare": "For rare items and better",
+        "All": "For every theft"
       }
     },
     "Error": {
@@ -102,6 +109,10 @@
       "Remote": {
         "Label": "Trade from the Shops list",
         "Hint": "Once the party has visited, players can trade here from the Shops list in the token controls, without walking up."
+      },
+      "TheftProof": {
+        "Label": "Theft-proof",
+        "Hint": "Nobody can try to steal here, such as at a temple, a vault or a guarded shop."
       },
       "Archetype": "Archetype",
       "Tier": "Wealth",
@@ -395,8 +406,8 @@
         "Hint": "Customers can roll to push a price."
       },
       "rolledInsight": {
-        "Name": "Rolled merchant Insight",
-        "Hint": "Haggles are opposed by a rolled Insight check instead of passive Insight."
+        "Name": "Rolled merchant checks",
+        "Hint": "The merchant rolls Insight against haggles and distractions, and Perception against thefts, instead of using passive scores."
       },
       "appraisal": {
         "Name": "Appraisal checks",
@@ -675,6 +686,81 @@
         "BadPercent": "The price change must be a number other than 0, from -90 to 500.",
         "BadCategory": "That is not a kind of goods a rule can name.",
         "BadDays": "The length must be more than 0 days, or empty."
+      }
+    },
+    "Theft": {
+      "Title": "Theft",
+      "Button": "Try to steal this",
+      "Pocket": "Pocket",
+      "ConfirmTitle": "Steal {item}?",
+      "Confirm": "You try to pocket one {item} without the merchant noticing. You won't know how hard it is, and getting caught has a price.",
+      "ConfirmDistracted": "You try to pocket one {item} while {name} keeps the merchant busy. You roll with advantage, but getting caught still has a price.",
+      "Distracted": "{name} is keeping the merchant busy.",
+      "Off": "Nobody can steal from {name}.",
+      "Bulky": "{item} is too big to pocket.",
+      "Waiting": "You wait for the right moment to take {item}. The GM decides if you get one.",
+      "Refused": "No chance to take {item} comes up.",
+      "Answered": "This theft has already been settled.",
+      "CannotPay": "{name} can't pay {price}. Pick something else.",
+      "MerchantPerception": "Perception against a theft",
+      "MerchantInsight": "Insight against a distraction",
+      "Guard": "Guard: makes theft harder in this scene",
+      "AskTitle": "Theft attempt",
+      "Ask": "{customer} wants to pocket {item} from {merchant}. Allow the roll?",
+      "Allow": "Allow",
+      "Refuse": "Refuse",
+      "Allowed": "Allowed. The player rolls now.",
+      "RefusedStatus": "Refused.",
+      "Result": {
+        "pocketed": "You pocket {item}.",
+        "fumble": "Your hand slips, and {item} stays where it was.",
+        "caught": "The merchant catches you reaching for {item}."
+      },
+      "Factor": {
+        "passive": "passive Perception {value}",
+        "rolled": "rolled Perception {value}",
+        "small": "small item {value}",
+        "limited": "Limited Stock or pinned {value}",
+        "suspicion": "Suspicion {value}",
+        "friendly": "Friendly {value}",
+        "guard": "guard nearby {value}"
+      },
+      "Card": {
+        "Try": "{customer} tries to pocket {item}.",
+        "Distracted": "Another character distracts the merchant, so the roll has advantage.",
+        "Roll": "DC {dc} ({reasons}). Rolled {total}.",
+        "clean": "Clean. Nobody notices.",
+        "taken": "Taken. The merchant will notice at the next restock.",
+        "fumble": "Fumble. The item stays, and Suspicion is now {suspicion} until tomorrow.",
+        "caught": "Caught in the act. Choose what the merchant does.",
+        "Distract": "{name} tries to distract the merchant with {check}.",
+        "DistractRoll": "Insight {dc}, rolled {total}.",
+        "DistractWorks": "It works. The next theft attempt has advantage.",
+        "DistractFails": "The merchant is not fooled.",
+        "Noticed": "{merchant} notices what is missing: {items}.",
+        "Blamed": "The merchant blames its last customer, {name}: attitude {value} on their next visit."
+      },
+      "Punish": {
+        "double": "Pay double",
+        "attitude": "Attitude {value}",
+        "guards": "Call the guards",
+        "ban": "Banned for the day"
+      },
+      "Done": {
+        "double": "{merchant} makes {customer} pay {price} for {item}.",
+        "attitude": "{merchant} will remember this. Attitude {value}, and {customer} is not welcome back today.",
+        "guards": "{merchant} shouts for the guards. {customer} has trouble coming.",
+        "ban": "{merchant} throws {customer} out for the rest of the day."
+      },
+      "Distract": {
+        "Button": "Distract the merchant",
+        "Title": "Distract the merchant",
+        "Hint": "Keep {merchant} busy so {lead} can try to steal with advantage. You roll against the merchant's Insight, once per attempt.",
+        "Success": "The merchant is busy with you. The next theft attempt has advantage.",
+        "Failure": "The merchant is not fooled.",
+        "BadSkill": "That check cannot be used to distract.",
+        "Already": "The merchant is already distracted.",
+        "Tried": "You already tried. Wait for the next theft attempt."
       }
     },
     "Show": {

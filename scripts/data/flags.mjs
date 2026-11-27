@@ -22,7 +22,10 @@ import { TABLES } from "./tables.mjs";
  * @property {object[]} ledger
  * @property {"instant" | "approval"} executionMode
  * @property {number} suspicion
+ * @property {number | null} suspicionDay
  * @property {boolean} theftProof
+ * @property {{ actor: string, name: string, item: string, time: number }[]} thefts
+ * @property {Record<string, number>} grudges
  */
 
 /**
@@ -95,7 +98,17 @@ export class MerchantFlags extends foundry.abstract.DataModel {
       ledger: new ArrayField(new ObjectField()),
       executionMode: new StringField({ required: true, choices: [...EXECUTION_MODES], initial: "instant" }),
       suspicion: new NumberField({ ...whole, min: 0, initial: 0 }),
+      suspicionDay: new NumberField({ integer: true, nullable: true, initial: null }),
       theftProof: new BooleanField(),
+      thefts: new ArrayField(
+        new SchemaField({
+          actor: new StringField({ required: true, blank: false }),
+          name: new StringField({ required: true, blank: true }),
+          item: new StringField({ required: true, blank: true }),
+          time: new NumberField({ required: true, nullable: false, initial: 0 }),
+        }),
+      ),
+      grudges: new TypedObjectField(new NumberField({ required: true, nullable: false, integer: true })),
     };
   }
 }

@@ -1,0 +1,18 @@
+<div class="kozmos-trade kt-chat kt-check-card kt-theft-card {{tone}}">
+  <header class="kt-chat-title">
+    <i class="{{icon}}" inert></i>
+    <strong>{{title}}</strong>
+  </header>
+  {{#each lines as |line|}}
+  <p>{{line}}</p>
+  {{/each}}
+  {{#if buttons.length}}
+  <div class="kt-chat-buttons">
+    {{#each buttons as |button|}}
+    <button type="button" data-kt-action="{{button.action}}"><i class="{{button.icon}}" inert></i> {{button.label}}</button>
+    {{/each}}
+  </div>
+  {{else if status}}
+  <p class="kt-chat-status">{{status}}</p>
+  {{/if}}
+</div>

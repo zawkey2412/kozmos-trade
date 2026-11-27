@@ -451,7 +451,8 @@
   padding-inline: var(--kt-space);
 }
 
-.kt-barter .kt-haggle-locked {
+.kt-barter .kt-haggle-locked,
+.kt-barter .kt-distracted {
   margin: 0;
   font-size: var(--kt-font-small);
   color: var(--kt-text-muted);

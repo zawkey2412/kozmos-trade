@@ -47,7 +47,12 @@
 
 .kozmos-trade .kt-chat-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--kt-space-small);
+}
+
+.kozmos-trade.kt-theft-card .kt-chat-buttons button {
+  flex: 1 1 40%;
 }
 
 .kozmos-trade .kt-chat-status {

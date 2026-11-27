@@ -17,6 +17,16 @@
     </div>
     <p class="hint">{{localize "KT.Configure.Remote.Hint"}}</p>
   </div>
+
+  {{#if theftOn}}
+  <div class="form-group">
+    <label for="{{rootId}}-theft-proof">{{localize "KT.Configure.TheftProof.Label"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" id="{{rootId}}-theft-proof" name="theftProof" {{checked shop.theftProof}}>
+    </div>
+    <p class="hint">{{localize "KT.Configure.TheftProof.Hint"}}</p>
+  </div>
+  {{/if}}
   {{/if}}
 
   <div class="form-group">

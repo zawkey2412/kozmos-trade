@@ -74,6 +74,18 @@ export async function recordAttitude(merchant, customer, events) {
   return change;
 }
 
+// Charges the attitude for thefts blamed on this customer.
+/**
+ * @param {any} merchant
+ * @param {any} customer
+ */
+export async function applyGrudge(merchant, customer) {
+  const grudges = merchantFlags(merchant).grudges;
+  if (!(customer.id in grudges)) return 0;
+  await merchant.update({ [`flags.${MODULE_ID}.grudges.${customer.id}`]: new foundry.data.operators.ForcedDeletion() });
+  return recordAttitude(merchant, customer, Array.from({ length: Math.max(1, grudges[customer.id]) }, () => /** @type {AttitudeEvent} */ ("theftNoticed")));
+}
+
 // Who the GM can set attitude for: the party, or every player character and anyone the merchant already knows.
 /** @param {any} merchant */
 export function attitudeRows(merchant) {

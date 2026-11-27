@@ -4,5 +4,8 @@
   {{#if panel.worth}}
   <p>{{localize "KT.Join.Worth" merchant=panel.merchant amount=panel.worth}}</p>
   {{/if}}
+  {{#if panel.distract}}
+  <button type="button" data-action="distract" {{disabled panel.busy}}><i class="fa-solid fa-masks-theater" inert></i> {{localize "KT.Theft.Distract.Button"}}</button>
+  {{/if}}
   <button type="button" data-action="leave"><i class="fa-solid fa-right-from-bracket" inert></i> {{localize "KT.Join.Leave"}}</button>
 </section>

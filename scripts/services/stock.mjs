@@ -16,6 +16,7 @@ import { TradeError } from "./errors.mjs";
 import { isAnsweringWindow } from "./sessions.mjs";
 import { saveShop, shelf } from "./shop.mjs";
 import { broadcast, MESSAGES } from "./socket.mjs";
+import { noticeThefts } from "./theft.mjs";
 
 /** @import { Candidate } from "../engine/stock.mjs"; */
 /** @import { MerchantFlagData } from "../data/flags.mjs"; */
@@ -52,6 +53,7 @@ export async function generateStock(merchant, { archetype, tier } = {}) {
   const definition = getArchetypes()[options.archetype];
   if (!definition) throw new TradeError("KT.Error.NoArchetype", { name: options.archetype });
   if (Hooks.call("kozmosTrade.preGenerateStock", merchant, options) === false) return null;
+  await noticeThefts(merchant).catch((error) => console.error("Kozmos Trade | Theft check failed", error));
 
   const tables = getTables();
   const rules = rulesVersion();
